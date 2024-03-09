@@ -1,5 +1,7 @@
 import { splitAlias } from '../helpers/split-alias';
 import { Node as INode, NodeOptions, Tree } from '../types/core.types';
+import { NodeRange } from '../types/node.types';
+import { isAlias, isOption } from '../utils/arg.utils';
 import { range } from '../utils/range';
 
 export class Node {
@@ -8,13 +10,15 @@ export class Node {
   readonly hasChildren: boolean = true;
   readonly parse: (arg: string) => NodeOptions | null | undefined;
   private readonly nodes: Node[] = [];
-  private readonly aliases: string[];
+  private readonly aliases: string[] = [];
   private readonly aliasMap: {
     [name: string]: string | string[] | null | undefined;
   };
+  private readonly options: NodeOptions;
 
-  constructor(id: string | null = null, private readonly options: NodeOptions) {
-    this.id = options.id ?? id;
+  constructor(id: string | null, options: NodeOptions) {
+    this.options = options;
+    this.id = options.id ?? id ?? null;
 
     const { args, alias } = options;
     let _opts: { [name: string]: NodeOptions | null | undefined };
@@ -31,11 +35,20 @@ export class Node {
       Object.assign(this.aliasMap, alias);
     }
 
-    // get aliases and sort by highest length
-    this.aliases = Object.keys(this.aliasMap)
-      .map(alias => alias.trim())
-      .filter(Boolean)
-      .sort((a, b) => b.length - a.length);
+    // get aliases and sort by length desc
+    for (let alias in this.aliasMap) {
+      alias = alias.trim();
+      if (!isAlias(alias)) {
+        continue;
+      }
+      const args = alias ? this.getAliasArgs(alias) : [];
+      // skip command aliases since we don't need to split them
+      if (args.length > 0 && isOption(args[0])) {
+        // remove prefix only when saving
+        this.aliases.push(alias.slice(1));
+      }
+    }
+    this.aliases.sort((a, b) => b.length - a.length);
   }
 
   getAliasArgs(alias: string): string[] {
@@ -43,27 +56,24 @@ export class Node {
     return Array.isArray(args) ? args : typeof args === 'string' ? [args] : [];
   }
 
-  expandAlias(arg: string): string[] {
-    const split = splitAlias(arg, this.aliases);
-    // left over string from split, not matched by any of the aliases
-    const unknown = split.value.trim();
-    if (unknown) {
-      const parts = Array.from(new Set(unknown.split('')));
-      const label = parts.length === 1 ? 'alias' : 'aliases';
-      const opts = parts.map(part => '-' + part).join(', ');
-      // TODO: update error handling
-      throw new Error(`Unknown ${label}: ${opts}`);
-    }
+  expandAlias(arg: string): { arg: string | null; args: string[] } {
+    const isAnAlias = isAlias(arg);
+    // remove first `-` for alias
+    const split = isAnAlias
+      ? splitAlias(arg.slice(1), this.aliases)
+      : { value: arg, aliases: [arg] };
 
     const args: string[] = [];
-    for (const alias of split.aliases) {
+    for (let alias of split.aliases) {
+      // note that split.aliases does not have `-` prefix
       // get arg from alias map and use first arg if any
+      alias = (isAnAlias ? '-' : '') + alias;
       const aliasArgs = this.getAliasArgs(alias);
       if (aliasArgs.length > 0) {
         args.push(aliasArgs[0]);
       }
     }
-    return args;
+    return { args, arg: args.length > 0 ? null : split.value };
   }
 
   push(arg: string): this {
@@ -71,8 +81,9 @@ export class Node {
     return this;
   }
 
-  save(node: Node): void {
+  save(node: Node): Node {
     this.nodes.push(node);
+    return node;
   }
 
   toJSON<T extends Tree | INode>(): T {
@@ -86,25 +97,16 @@ export class Node {
     return tree;
   }
 
-  validate(options: { argsLength?: number; throwError?: boolean } = {}): {
-    min: boolean;
-    max: boolean;
-  } {
-    const { argsLength = this.args.length, throwError = true } = options;
+  range(argsLength = this.args.length): NodeRange {
     const { min, max } = range(this.options);
-    const satisfies = {
-      min: min === null || argsLength >= min,
-      max: max === null || argsLength <= max
+    return {
+      min,
+      max,
+      satisfies: {
+        min: min === null || argsLength >= min,
+        max: max === null || argsLength <= max,
+        exactMax: max === argsLength
+      }
     };
-    if (throwError && !(satisfies.min && satisfies.max)) {
-      const what: string[] = [];
-      !satisfies.min && what.push('min');
-      !satisfies.max && what.push('max');
-      // TODO: update error handling
-      throw new Error(
-        `Option '${this.id}' does not satisfy: ${what.join(' ')}`
-      );
-    }
-    return satisfies;
   }
 }
