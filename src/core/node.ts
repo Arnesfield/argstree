@@ -1,5 +1,5 @@
 import { splitAlias } from '../helpers/split-alias';
-import { Node as INode, NodeOptions, Tree } from '../types/core.types';
+import { Node as INode, NodeOptions } from '../types/core.types';
 import { NodeRange } from '../types/node.types';
 import { isAlias, isOption } from '../utils/arg.utils';
 import { range } from '../utils/range';
@@ -86,15 +86,30 @@ export class Node {
     return node;
   }
 
-  toJSON<T extends Tree | INode>(): T {
-    const tree = { id: this.id } as T;
-    if (this.args.length > 0) {
-      tree.args = this.args;
+  build(parent: INode | null = null, depth = 0): INode {
+    const node: INode = {
+      id: this.id,
+      class: this.options.class ?? null,
+      depth,
+      args: this.args,
+      parent,
+      children: [],
+      ancestors: [],
+      descendants: []
+    };
+
+    // prepare ancestors before checking children and descendants
+    if (parent) {
+      node.ancestors.push(...parent.ancestors, parent);
     }
-    if (this.nodes.length > 0) {
-      tree.nodes = this.nodes.map(node => node.toJSON());
+
+    for (const instance of this.nodes) {
+      const child = instance.build(node, depth + 1);
+      node.children.push(child);
+      // also save descendants of child
+      node.descendants.push(child, ...child.descendants);
     }
-    return tree;
+    return node;
   }
 
   range(argsLength = this.args.length): NodeRange {

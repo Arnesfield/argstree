@@ -1,5 +1,6 @@
 export interface NodeOptions extends ArgsTreeOptions {
   id?: string;
+  class?: string;
 }
 
 export interface ArgsTreeOptions {
@@ -11,12 +12,13 @@ export interface ArgsTreeOptions {
     | ((arg: string) => NodeOptions | null | undefined);
 }
 
-export interface Node extends Omit<Tree, 'id'> {
-  id: string;
-}
-
-export interface Tree {
-  id: null;
-  args?: string[];
-  nodes?: Node[];
+export interface Node {
+  id: string | null;
+  class: string | null;
+  depth: number;
+  args: string[];
+  parent: Node | null;
+  children: Node[];
+  ancestors: Node[];
+  descendants: Node[];
 }
