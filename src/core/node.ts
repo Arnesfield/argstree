@@ -51,7 +51,18 @@ export class Node {
     };
   }
 
-  validate(argsLength = this.args.length): string | null {
+  validateOptions(): void {
+    // validate min and max
+    const { min, max } = range(this.options);
+    if (min != null && max != null && min > max) {
+      throw new Error(
+        (this.id === null ? 'Invalid' : `Option '${this.id}' has invalid`) +
+          ` min and max range: ${min}-${max}.`
+      );
+    }
+  }
+
+  validateRange(argsLength = this.args.length): void {
     const { min, max, satisfies } = this.range(argsLength);
     const phrase: [string | number, number] | null =
       satisfies.min && satisfies.max
@@ -67,17 +78,16 @@ export class Node {
           ? ['no', max]
           : [`up to ${max}`, max]
         : null;
-    if (phrase === null) {
-      return null;
+    if (phrase != null) {
+      throw new Error(
+        (this.id === null ? 'E' : `Option '${this.id}' e`) +
+          'xpected ' +
+          phrase[0] +
+          ' ' +
+          pluralize('argument', phrase[1]) +
+          `, but got ${argsLength}.`
+      );
     }
-    return (
-      (this.id === null ? 'E' : `Option '${this.id}' e`) +
-      'xpected ' +
-      phrase[0] +
-      ' ' +
-      pluralize('argument', phrase[1]) +
-      `, but got ${argsLength}.`
-    );
   }
 
   build(parent: INode | null = null, depth = 0): INode {

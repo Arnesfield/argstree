@@ -1,37 +1,16 @@
-import { isAlias } from '../utils/arg.utils';
-import { pluralize } from '../utils/pluralize';
+import { Validate } from '../helpers/validate';
 import { Node } from './node';
 
 export class Parser {
   private readonly args: string[];
+  private readonly validate = new Validate();
 
   constructor(args: string[]) {
     this.args = Array.from(args);
   }
 
-  error(message: string): void {
-    // TODO: error handling
-    throw new Error(message);
-  }
-
-  private validateNode(node: Node) {
-    const message = node.validate();
-    if (message != null) {
-      this.error(message);
-    }
-  }
-
-  private validateUnknown(arg: string) {
-    // NOTE: only use validateUnknown for left over alias split arg
-    if (isAlias(arg)) {
-      const aliases = Array.from(new Set(arg.trim().slice(1).split('')));
-      const label = pluralize('alias', aliases.length, 'es');
-      const list = aliases.map(alias => '-' + alias).join(', ');
-      this.error(`Unknown ${label}: ${list}.`);
-    }
-  }
-
   parse(parent: Node): Node {
+    this.validate.options(parent);
     let child: Node | undefined;
     while (this.args.length > 0) {
       const arg = this.args.shift();
@@ -45,7 +24,7 @@ export class Parser {
         // is an option
         // validate existing child then make new child
         if (child) {
-          this.validateNode(child);
+          this.validate.range(child);
         }
         // make new child
         parent.save((child = new Node(arg, options)));
@@ -53,6 +32,9 @@ export class Parser {
         // TODO: update condition
         if (child.hasChildren) {
           this.parse(child);
+        } else {
+          // avoid duplicate validation
+          this.validate.options(child);
         }
         continue;
       }
@@ -65,9 +47,9 @@ export class Parser {
         // treat left over from split as argument if it's not an alias like option
         if (split.arg != null) {
           // make sure to check if this can be accepted
-          this.validateUnknown(split.arg);
+          this.validate.unknown(split.arg);
           parent.push(split.arg);
-          this.validateNode(parent);
+          this.validate.range(parent);
         }
       }
 
@@ -77,14 +59,14 @@ export class Parser {
         child.push(arg);
       } else {
         parent.push(arg);
-        this.validateNode(parent);
+        this.validate.range(parent);
       }
     }
     // finally, make sure to validate the rest of the nodes
     if (child) {
-      this.validateNode(child);
+      this.validate.range(child);
     }
-    this.validateNode(parent);
+    this.validate.range(parent);
     return parent;
   }
 }
