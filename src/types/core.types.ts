@@ -1,15 +1,12 @@
-export interface NodeOptions extends ArgsTreeOptions {
+export interface Options {
   id?: string;
   class?: string;
-}
-
-export interface ArgsTreeOptions {
   min?: number | null;
   max?: number | null;
   alias?: { [alias: string]: string | string[] | null | undefined };
   args?:
-    | { [id: string]: NodeOptions | null | undefined }
-    | ((arg: string) => NodeOptions | null | undefined);
+    | { [id: string]: Options | null | undefined }
+    | ((arg: string) => Options | null | undefined);
 }
 
 export interface Node {

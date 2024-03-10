@@ -1,5 +1,5 @@
 import { splitAlias } from '../helpers/split-alias';
-import { NodeOptions } from '../types/core.types';
+import { Options } from '../types/core.types';
 import { isAlias, isOption } from '../utils/arg.utils';
 
 export class Alias {
@@ -8,7 +8,7 @@ export class Alias {
     [name: string]: string | string[] | null | undefined;
   } = Object.create(null);
 
-  constructor(alias: NodeOptions['alias']) {
+  constructor(alias: Options['alias']) {
     if (typeof alias === 'object' && alias !== null) {
       Object.assign(this.aliasMap, alias);
     }
@@ -48,6 +48,14 @@ export class Alias {
         args.push(aliasArgs[0]);
       }
     }
-    return { args, arg: args.length > 0 ? null : split.value };
+    // handle left over value from split
+    const value = !split.value
+      ? null
+      : isAnAlias
+      ? '-' + split.value
+      : args.length === 0
+      ? split.value
+      : null;
+    return { args, arg: value };
   }
 }

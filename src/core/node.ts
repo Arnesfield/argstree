@@ -1,4 +1,4 @@
-import { Node as INode, NodeOptions } from '../types/core.types';
+import { Node as INode, Options } from '../types/core.types';
 import { NodeRange } from '../types/node.types';
 import { pluralize } from '../utils/pluralize';
 import { range } from '../utils/range';
@@ -9,17 +9,17 @@ export class Node {
   readonly args: string[] = [];
   readonly alias: Alias;
   readonly hasChildren: boolean = true;
-  readonly parse: (arg: string) => NodeOptions | null | undefined;
+  readonly parse: (arg: string) => Options | null | undefined;
   private readonly children: Node[] = [];
-  private readonly options: NodeOptions;
+  private readonly options: Options;
 
-  constructor(id: string | null, options: NodeOptions) {
+  constructor(id: string | null, options: Options) {
     this.options = options;
     this.id = options.id ?? id ?? null;
     this.alias = new Alias(options.alias);
 
     const { args } = options;
-    let _opts: { [name: string]: NodeOptions | null | undefined };
+    let _opts: { [name: string]: Options | null | undefined };
     this.parse =
       typeof args === 'function'
         ? args
