@@ -1,16 +1,31 @@
 import { Node } from '../types/core.types';
 
 export interface StreengifyOptions {
-  hide?: { args?: boolean; ancestors?: boolean; descendants?: boolean };
+  show?: {
+    /**
+     * @default true
+     */
+    args?: boolean;
+    /**
+     * @default false
+     */
+    ancestors?: boolean;
+    /**
+     * @default false
+     */
+    descendants?: boolean;
+  };
 }
 
 export function streengify(
   tree: Node,
   options: StreengifyOptions = {}
 ): string {
-  // set default hide values
-  const hide = options.hide || {};
+  // set default show values
+  const show = { ...options.show };
+  show.args ??= true;
   const logs: string[] = [];
+  // TODO: update implementation
   // save logged nodes to avoid circular logging
   const loggedList = new Set<Node>();
   const states = { normal: 0, first: 1, last: 2 };
@@ -41,9 +56,9 @@ export function streengify(
     // 4 - the descendants label
     const directNextLength =
       node.children.length +
-      +(!hide.args && node.args.length > 0) +
-      +(!hide.ancestors && node.ancestors.length > 0) +
-      +(!hide.descendants && node.descendants.length > 0);
+      +!!(show.args && node.args.length > 0) +
+      +!!(show.ancestors && node.ancestors.length > 0) +
+      +!!(show.descendants && node.descendants.length > 0);
 
     const labels = [`depth: ${node.depth}`];
     node.class != null && labels.push(`class: ${node.class}`);
@@ -71,7 +86,7 @@ export function streengify(
     }
 
     for (const type of ['args', 'ancestors', 'descendants'] as const) {
-      if (hide[type] || node[type].length === 0) {
+      if (!show[type] || node[type].length === 0) {
         continue;
       }
       log(
