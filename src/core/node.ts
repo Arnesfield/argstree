@@ -29,6 +29,10 @@ export class Node {
         : ((this.hasChildren = false), () => null);
   }
 
+  displayName(): string | null {
+    return this.options.name ?? this.id ?? null;
+  }
+
   push(arg: string): this {
     this.args.push(arg);
     return this;
@@ -55,8 +59,9 @@ export class Node {
     // validate min and max
     const { min, max } = range(this.options);
     if (min != null && max != null && min > max) {
+      const name = this.displayName();
       throw new Error(
-        (this.id === null ? 'Invalid' : `Option '${this.id}' has invalid`) +
+        (name === null ? 'Invalid' : `Option '${name}' has invalid`) +
           ` min and max range: ${min}-${max}.`
       );
     }
@@ -79,8 +84,9 @@ export class Node {
           : [`up to ${max}`, max]
         : null;
     if (phrase != null) {
+      const name = this.displayName();
       throw new Error(
-        (this.id === null ? 'E' : `Option '${this.id}' e`) +
+        (name === null ? 'E' : `Option '${name}' e`) +
           'xpected ' +
           phrase[0] +
           ' ' +
@@ -91,8 +97,10 @@ export class Node {
   }
 
   build(parent: INode | null = null, depth = 0): INode {
+    // use configured name instead of display name
     const node: INode = {
       id: this.id,
+      name: this.options.name ?? null,
       class: this.options.class ?? null,
       depth,
       args: this.args,

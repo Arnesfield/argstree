@@ -18,7 +18,7 @@ export interface StreengifyOptions {
 }
 
 export function streengify(
-  tree: Node,
+  node: Node,
   options: StreengifyOptions = {}
 ): string {
   // set default show values
@@ -64,7 +64,7 @@ export function streengify(
     node.class != null && labels.push(`class: ${node.class}`);
     const logged = loggedList.has(node);
     const childPrefix = log(
-      `${node.id} (${labels.join(', ')})`,
+      (node.name ?? node.id) + ` (${labels.join(', ')})`,
       !logged && directNextLength > 0,
       prefix,
       state
@@ -109,6 +109,6 @@ export function streengify(
     }
   }
 
-  draw(tree, '', states.first);
+  draw(node, '', states.first);
   return logs.join('\n');
 }

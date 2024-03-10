@@ -1,5 +1,6 @@
 export interface Options {
   id?: string;
+  name?: string;
   class?: string;
   min?: number | null;
   max?: number | null;
@@ -11,6 +12,7 @@ export interface Options {
 
 export interface Node {
   id: string | null;
+  name: string | null;
   class: string | null;
   depth: number;
   args: string[];
