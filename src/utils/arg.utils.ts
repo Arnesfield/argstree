@@ -5,7 +5,3 @@ export function isAlias(arg: string): boolean {
 export function isOption(arg: string): boolean {
   return arg.length >= 3 && arg.slice(0, 2) === '--';
 }
-
-export function isOptionLike(arg: string): boolean {
-  return arg.startsWith('-');
-}

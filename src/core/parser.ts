@@ -1,5 +1,5 @@
 import { Validate } from '../helpers/validate';
-import { isAlias, isOption, isOptionLike } from '../utils/arg.utils';
+import { isAlias, isOption } from '../utils/arg.utils';
 import { Node } from './node';
 
 enum ParsedType {
@@ -43,13 +43,11 @@ export class Parser {
       const minIndex = type === ParsedType.Alias ? 1 : 2;
       const equalIndex = arg.indexOf('=');
       if (equalIndex > minIndex) {
-        // if found, split arg and treat 2nd portion as value
+        // if found, split arg and treat 2nd part as value
         // allow empty string value
         const alias = arg.slice(0, equalIndex);
         const value = arg.slice(equalIndex + 1);
-        // value may look like an option. if so, force it to be parsed as a value
-        const valueType = isOptionLike(value) ? ParsedType.Value : null;
-        parsed.push({ type, value: alias }, { type: valueType, value });
+        parsed.push({ type, value: alias }, { type: ParsedType.Value, value });
       } else {
         // treat as an arg without splitting `=` if ever it exists
         parsed.push({ type, value: arg });
