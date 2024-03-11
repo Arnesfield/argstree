@@ -1,11 +1,6 @@
 import { Node } from '../types/core.types';
-
-interface PrefixOptions {
-  prefix?: string;
-  first?: boolean;
-  last?: boolean;
-  next?: boolean;
-}
+import * as PREFIX from '../utils/prefix';
+import { PrefixOptions } from '../utils/prefix';
 
 export interface StringifyOptions {
   show?: {
@@ -30,25 +25,6 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
   show.args ??= true;
   const lines: string[] = [];
   const indicator = ':';
-
-  // NOTE: taken from:
-  // - https://github.com/megahertz/howfat
-  // - https://github.com/megahertz/howfat/blob/master/src/reporters/Tree.js
-  const PREFIX = {
-    self(options: PrefixOptions) {
-      return options.first
-        ? ''
-        : (options.prefix || '') +
-            (options.last ? '└─' : '├─') +
-            (options.next ? '┬' : '─') +
-            ' ';
-    },
-    child(options: PrefixOptions) {
-      return options.first
-        ? ''
-        : (options.prefix || '') + (options.last ? '  ' : '│ ');
-    }
-  };
 
   function draw(options: PrefixOptions & { node: Node; childNodes?: boolean }) {
     const { node, childNodes, ...prefix } = options;
