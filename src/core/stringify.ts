@@ -1,6 +1,6 @@
 import { Node } from '../types/core.types';
 
-export interface StreengifyOptions {
+export interface StringifyOptions {
   show?: {
     /**
      * @default true
@@ -17,10 +17,7 @@ export interface StreengifyOptions {
   };
 }
 
-export function streengify(
-  node: Node,
-  options: StreengifyOptions = {}
-): string {
+export function stringify(node: Node, options: StringifyOptions = {}): string {
   // set default show values
   const show = { ...options.show };
   show.args ??= true;

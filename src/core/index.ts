@@ -1,2 +1,2 @@
 export * from './argstree';
-export * from './streengify';
+export * from './stringify';
