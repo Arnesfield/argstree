@@ -30,7 +30,7 @@ export class Parser {
         parent.save((child = new Node(arg, options)));
         // if this child has args, parse it
         // TODO: update condition
-        if (child.hasChildren) {
+        if (child.isCommand) {
           this.parse(child);
         } else {
           // avoid duplicate validation

@@ -8,10 +8,10 @@ export class Node {
   readonly id: string | null;
   readonly args: string[] = [];
   readonly alias: Alias;
-  readonly hasChildren: boolean = true;
-  readonly parse: (arg: string) => Options | null | undefined;
+  readonly isCommand: boolean = true;
   private readonly children: Node[] = [];
   private readonly options: Options;
+  private readonly _parse: (arg: string) => Options | null | undefined;
 
   constructor(id: string | null, options: Options) {
     this.options = options;
@@ -20,13 +20,13 @@ export class Node {
 
     const { args } = options;
     let _opts: { [name: string]: Options | null | undefined };
-    this.parse =
+    this._parse =
       typeof args === 'function'
         ? args
         : typeof args === 'object' && args !== null
         ? ((_opts = Object.assign(Object.create(null), args)),
           (arg: string) => _opts[arg] ?? null)
-        : ((this.hasChildren = false), () => null);
+        : ((this.isCommand = false), () => null);
   }
 
   displayName(): string | null {
@@ -40,6 +40,14 @@ export class Node {
 
   save(node: Node): void {
     this.children.push(node);
+  }
+
+  parse(arg: string): Options | null {
+    // make sure parse result is a valid object
+    const options = this._parse(arg);
+    return typeof options === 'object' && !Array.isArray(options)
+      ? options
+      : null;
   }
 
   range(argsLength = this.args.length): NodeRange {
