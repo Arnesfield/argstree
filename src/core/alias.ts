@@ -43,10 +43,8 @@ export class Alias {
       // note that split.aliases does not have `-` prefix
       // get arg from alias map and use first arg if any
       alias = (isAnAlias ? '-' : '') + alias;
-      const aliasArgs = this.getAliasArgs(alias);
-      if (aliasArgs.length > 0) {
-        args.push(aliasArgs[0]);
-      }
+      // save all args
+      args.push(...this.getAliasArgs(alias));
     }
     // handle left over value from split
     const value = !split.value
