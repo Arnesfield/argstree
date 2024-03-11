@@ -1,5 +1,12 @@
 import { Node } from '../types/core.types';
 
+interface PrefixOptions {
+  prefix?: string;
+  first?: boolean;
+  last?: boolean;
+  next?: boolean;
+}
+
 export interface StringifyOptions {
   show?: {
     /**
@@ -21,91 +28,100 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
   // set default show values
   const show = { ...options.show };
   show.args ??= true;
-  const logs: string[] = [];
-  // TODO: update implementation
-  // save logged nodes to avoid circular logging
-  const loggedList = new Set<Node>();
-  const states = { normal: 0, first: 1, last: 2 };
+  const lines: string[] = [];
+  const indicator = ':';
 
   // NOTE: taken from:
   // - https://github.com/megahertz/howfat
   // - https://github.com/megahertz/howfat/blob/master/src/reporters/Tree.js
-  function log(label: string, hasNext: boolean, prefix: string, state: number) {
-    const nameChar = hasNext ? '┬' : '─';
-    let selfPrefix =
-      prefix + (state === states.last ? '└─' : '├─') + nameChar + ' ';
-    let childPrefix = prefix + (state === states.last ? '  ' : '│ ');
-
-    if (state === states.first) {
-      selfPrefix = '';
-      childPrefix = '';
+  const PREFIX = {
+    self(options: PrefixOptions) {
+      return options.first
+        ? ''
+        : (options.prefix || '') +
+            (options.last ? '└─' : '├─') +
+            (options.next ? '┬' : '─') +
+            ' ';
+    },
+    child(options: PrefixOptions) {
+      return options.first
+        ? ''
+        : (options.prefix || '') + (options.last ? '  ' : '│ ');
     }
+  };
 
-    logs.push(selfPrefix + label);
-    return childPrefix;
-  }
+  function draw(options: PrefixOptions & { node: Node; childNodes?: boolean }) {
+    const { node, childNodes, ...prefix } = options;
 
-  function draw(node: Node, prefix: string, state: number) {
-    // get direct children for this log
-    // 1 - list of children
-    // 2 - the args label
+    // 1 - the args label
+    // 2 - list of children
     // 3 - the ancestors label
     // 4 - the descendants label
-    const directNextLength =
-      node.children.length +
-      +!!(show.args && node.args.length > 0) +
-      +!!(show.ancestors && node.ancestors.length > 0) +
-      +!!(show.descendants && node.descendants.length > 0);
+    const child = {
+      index: -1,
+      prefix: PREFIX.child(prefix),
+      length: childNodes
+        ? +!!(show.args && node.args.length > 0) +
+          node.children.length +
+          +!!(show.ancestors && node.ancestors.length > 0) +
+          +!!(show.descendants && node.descendants.length > 0)
+        : 0
+    };
 
+    prefix.next = child.length > 0;
     const labels = [`depth: ${node.depth}`];
     node.class != null && labels.push(`class: ${node.class}`);
-    const logged = loggedList.has(node);
-    const childPrefix = log(
-      (node.name ?? node.id) + ` (${labels.join(', ')})`,
-      !logged && directNextLength > 0,
-      prefix,
-      state
+    lines.push(
+      PREFIX.self(prefix) + (node.name ?? node.id) + ` (${labels.join(', ')})`
     );
 
-    // avoid circular logging!
-    if (logged) {
+    if (!prefix.next) {
       return;
     }
 
-    function getState(index: number, length: number) {
-      return index >= length - 1 ? states.last : states.normal;
+    // draw args
+    if (show.args && node.args.length > 0) {
+      // increment once only
+      const last = ++child.index >= child.length - 1;
+      const self = PREFIX.self({ last, next: true, prefix: child.prefix });
+      lines.push(self + indicator + `args (total: ${node.args.length})`);
+
+      const prefix = PREFIX.child({ last, prefix: child.prefix });
+      // no sub nodes for args
+      node.args.forEach((arg, index, array) => {
+        const self = PREFIX.self({ prefix, last: index >= array.length - 1 });
+        lines.push(self + arg);
+      });
     }
 
-    loggedList.add(node);
-    let index = -1;
-    for (const child of node.children) {
-      draw(child, childPrefix, getState(++index, directNextLength));
+    // draw children
+    for (const childNode of node.children) {
+      // child.length already accounts for node.children.length
+      draw({
+        node: childNode,
+        childNodes: true,
+        prefix: child.prefix,
+        last: ++child.index >= child.length - 1
+      });
     }
 
-    for (const type of ['args', 'ancestors', 'descendants'] as const) {
+    // draw ancestors and descendants
+    for (const type of ['ancestors', 'descendants'] as const) {
       if (!show[type] || node[type].length === 0) {
         continue;
       }
-      log(
-        `${type} (total: ${node[type].length})`,
-        true,
-        childPrefix,
-        getState(++index, directNextLength)
-      );
-      node[type].forEach((value, valueIndex, array) => {
-        const end = index >= directNextLength - 1 ? '  ' : '│ ';
-        const prefix = childPrefix + end;
-        const state = getState(valueIndex, array.length);
-        if (type === 'args') {
-          // no sub nodes for args
-          log(value as string, false, prefix, state);
-        } else {
-          draw(value as Node, prefix, state);
-        }
+      // increment once per type
+      const last = ++child.index >= child.length - 1;
+      const self = PREFIX.self({ last, next: true, prefix: child.prefix });
+      lines.push(self + indicator + type + ` (total: ${node[type].length})`);
+
+      node[type].forEach((node, index, array) => {
+        const prefix = PREFIX.child({ last, prefix: child.prefix });
+        draw({ node, prefix, last: index >= array.length - 1 });
       });
     }
   }
 
-  draw(node, '', states.first);
-  return logs.join('\n');
+  draw({ node, first: true, childNodes: true });
+  return lines.join('\n');
 }
