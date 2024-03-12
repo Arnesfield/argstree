@@ -50,8 +50,9 @@ export class Node {
       : null;
   }
 
-  range(argsLength = this.args.length): NodeRange {
+  range(diff = 0): NodeRange {
     const { min, max } = range(this.options);
+    const argsLength = this.args.length + diff;
     return {
       min,
       max,
@@ -75,8 +76,8 @@ export class Node {
     }
   }
 
-  validateRange(argsLength = this.args.length): void {
-    const { min, max, satisfies } = this.range(argsLength);
+  validateRange(diff = 0): void {
+    const { min, max, satisfies } = this.range(diff);
     const phrase: [string | number, number] | null =
       satisfies.min && satisfies.max
         ? null
@@ -93,6 +94,7 @@ export class Node {
         : null;
     if (phrase != null) {
       const name = this.displayName();
+      const argsLength = this.args.length + diff;
       throw new Error(
         (name === null ? 'E' : `Option '${name}' e`) +
           'xpected ' +
