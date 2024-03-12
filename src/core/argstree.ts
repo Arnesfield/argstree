@@ -4,7 +4,8 @@ import { Node } from './node';
 import { Parser } from './parser';
 
 export function argstree(args: string[], options: Options = {}): INode {
-  return new Parser(args, new Node(null, options), new Validate())
-    .parse()
-    .build();
+  const node = new Node(null, options);
+  const validate = new Validate();
+  validate.options(node);
+  return new Parser(node, validate).parse(args).build();
 }

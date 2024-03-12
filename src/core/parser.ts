@@ -16,14 +16,11 @@ interface Parsed {
 export class Parser {
   private parent: Node;
   private child: Node | null = null;
-  private readonly args: (string | Parsed)[];
 
   constructor(
-    args: string[],
     private readonly root: Node,
     private readonly validate: Validate
   ) {
-    this.args = Array.from(args);
     this.parent = root;
   }
 
@@ -47,6 +44,8 @@ export class Parser {
         // allow empty string value
         const alias = arg.slice(0, equalIndex);
         const value = arg.slice(equalIndex + 1);
+        // for some reason, enclosing quotes are not included
+        // with the value part, so there's no need to handle them
         parsed.push({ type, value: alias }, { type: ParsedType.Value, value });
       } else {
         // treat as an arg without splitting `=` if ever it exists
@@ -56,11 +55,12 @@ export class Parser {
     return parsed;
   }
 
-  private save(parsed: Parsed): void {
+  private save(parsed: Parsed): Parsed[] {
     // option or command
     const arg = parsed.value;
     const isValue = parsed.type === ParsedType.Value;
     const options = isValue ? null : this.parent.parse(arg);
+    const newParsed: Parsed[] = [];
 
     // is an option
     if (options != null) {
@@ -77,13 +77,13 @@ export class Parser {
         this.parent = this.child;
         this.child = null;
       }
-      return;
+      return newParsed;
     }
 
     // not an option
     // if this arg is an alias, expand into multiple args
     const split = isValue ? null : this.parent.alias.split(arg);
-    if (split && split.args.length > 0) {
+    if (split && split.total > 0) {
       // treat left over from split as argument if it's not an alias like option
       if (split.arg != null) {
         // make sure to check if this can be accepted
@@ -92,13 +92,21 @@ export class Parser {
         this.validate.range(this.parent);
       }
       // treat first as is (alias) while the rest as values
-      const [value, ...values] = split.args;
-      this.args.unshift(value);
-      for (const value of values) {
-        this.args.unshift({ value, type: ParsedType.Value });
+      for (const aliasArgs of split.aliases) {
+        aliasArgs.forEach((value, index) => {
+          newParsed.push({
+            type: index === 0 ? null : ParsedType.Value,
+            value
+          });
+        });
       }
     }
-
+    // for value, always save to child if it exists and validate
+    // unlike the next condition which verifies max before saving
+    else if (isValue && this.child) {
+      this.child.push(arg);
+      this.validate.range(this.child);
+    }
     // if current node exists, check if it reached its max args, if not then save arg
     // otherwise, treat this as an arg for the main node
     else if (this.child?.range(1).satisfies.max) {
@@ -107,24 +115,25 @@ export class Parser {
       this.parent.push(arg);
       this.validate.range(this.parent);
     }
+    return newParsed;
   }
 
-  parse(): Node {
-    this.validate.options(this.parent);
-    // let child: Node | undefined;
-    while (this.args.length > 0) {
-      const arg = this.args.shift();
-      if (arg == null) {
-        // continue instead of break to make sure the loop condition is satisfied
-        continue;
-      }
-      const [parsed, ...extra] =
-        typeof arg === 'string' ? this.preparse(arg) : [arg];
-      // if there are more parsed item, save the rest to this.args before saving
-      this.args.unshift(...extra);
-      this.save(parsed);
+  private _parse(parsed: Parsed[]) {
+    for (const item of parsed) {
+      // if there are new parsed items, process them first before current parsed items
+      this._parse(this.save(item));
     }
+  }
 
+  parse(args: string[]): Node {
+    this.validate.options(this.parent);
+    // create copy to avoid modification
+    for (const arg of args.slice()) {
+      // make sure args are strings
+      if (typeof arg === 'string') {
+        this._parse(this.preparse(arg));
+      }
+    }
     // finally, make sure to validate the rest of the nodes
     if (this.child) {
       this.validate.range(this.child);

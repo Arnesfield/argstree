@@ -31,29 +31,36 @@ export class Alias {
     return Array.isArray(args) ? args : typeof args === 'string' ? [args] : [];
   }
 
-  split(arg: string): { arg: string | null; args: string[] } {
+  split(arg: string): {
+    arg: string | null;
+    aliases: string[][];
+    total: number;
+  } {
     const isAnAlias = isAlias(arg);
     // remove first `-` for alias
     const split = isAnAlias
       ? splitAlias(arg.slice(1), this.aliases)
       : { value: arg, aliases: [arg] };
 
-    const args: string[] = [];
+    let total = 0;
+    const aliases: string[][] = [];
     for (let alias of split.aliases) {
       // note that split.aliases does not have `-` prefix
       // get arg from alias map and use first arg if any
       alias = (isAnAlias ? '-' : '') + alias;
-      // save all args
-      args.push(...this.getAliasArgs(alias));
+      // save all args and related values
+      const args = this.getAliasArgs(alias);
+      total += args.length;
+      aliases.push(args);
     }
     // handle left over value from split
     const value = !split.value
       ? null
       : isAnAlias
       ? '-' + split.value
-      : args.length === 0
+      : total === 0
       ? split.value
       : null;
-    return { args, arg: value };
+    return { arg: value, aliases, total };
   }
 }
