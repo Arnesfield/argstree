@@ -31,11 +31,7 @@ export class Alias {
     return Array.isArray(args) ? args : typeof args === 'string' ? [args] : [];
   }
 
-  split(arg: string): {
-    arg: string | null;
-    aliases: string[][];
-    total: number;
-  } {
+  split(arg: string): { arg: string | null; args: string[][]; total: number } {
     const isAnAlias = isAlias(arg);
     // remove first `-` for alias
     const split = isAnAlias
@@ -43,15 +39,15 @@ export class Alias {
       : { value: arg, aliases: [arg] };
 
     let total = 0;
-    const aliases: string[][] = [];
+    const args: string[][] = [];
     for (let alias of split.aliases) {
       // note that split.aliases does not have `-` prefix
       // get arg from alias map and use first arg if any
       alias = (isAnAlias ? '-' : '') + alias;
       // save all args and related values
-      const args = this.getAliasArgs(alias);
-      total += args.length;
-      aliases.push(args);
+      const aliasArgs = this.getAliasArgs(alias);
+      total += aliasArgs.length;
+      args.push(aliasArgs);
     }
     // handle left over value from split
     const value = !split.value
@@ -61,6 +57,6 @@ export class Alias {
       : total === 0
       ? split.value
       : null;
-    return { arg: value, aliases, total };
+    return { arg: value, args, total };
   }
 }
