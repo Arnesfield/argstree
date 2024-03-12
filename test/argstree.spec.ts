@@ -1,5 +1,24 @@
 import { expect } from 'chai';
-import { argstree } from '../src';
+import { ArgsTreeError, Options, argstree } from '../src';
+
+function expectError(opts: {
+  cause: string;
+  options: Options;
+  equal?: Options;
+  args?: string[];
+}) {
+  const { args = [], cause, options, equal = options } = opts;
+  expect(() => {
+    try {
+      argstree(args, options);
+    } catch (error) {
+      expect(error).to.be.instanceOf(ArgsTreeError);
+      expect(error).to.have.property('cause').that.equals(cause);
+      expect(error).to.have.property('options').that.equals(equal);
+      throw error;
+    }
+  }).to.throw(ArgsTreeError);
+}
 
 describe('argstree', () => {
   it('should be a function', () => {
@@ -16,5 +35,74 @@ describe('argstree', () => {
     expect(node).to.have.property('children').that.is.an('array');
     expect(node).to.have.property('ancestors').that.is.an('array');
     expect(node).to.have.property('descendants').that.is.an('array');
+  });
+
+  // errors
+
+  describe('error', () => {
+    it('should throw an error for invalid options', () => {
+      expectError({
+        cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
+        options: { min: 1, max: 0 }
+      });
+
+      const options = { args: { test: { min: 2, max: 1 } } } satisfies Options;
+      expectError({
+        args: ['test'],
+        cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
+        options,
+        equal: options.args.test
+      });
+    });
+
+    it('should throw an error for invalid range', () => {
+      expect(() => argstree([], { max: 1 })).to.not.throw(ArgsTreeError);
+      expect(() => argstree([], { args: { test: { max: 1 } } })).to.not.throw(
+        ArgsTreeError
+      );
+      expectError({
+        cause: ArgsTreeError.INVALID_RANGE_ERROR,
+        options: { min: 1 }
+      });
+
+      const options = { args: { test: { min: 1, max: 2 } } } satisfies Options;
+      expectError({
+        args: ['test'],
+        cause: ArgsTreeError.INVALID_RANGE_ERROR,
+        options,
+        equal: options.args.test
+      });
+    });
+
+    it('should throw an error for unknown alias', () => {
+      const options = {
+        alias: { '-t': '--test' },
+        args: {
+          '--test': {},
+          test: {
+            alias: { '-T': '--subtest', '-y': '--y' },
+            args: { '--subtest': {}, '--y': {} }
+          }
+        }
+      } satisfies Options;
+
+      const errOpts = {
+        cause: ArgsTreeError.UNKNOWN_ALIAS_ERROR,
+        options,
+        equal: options as Options
+      };
+      expect(() => argstree(['-t'], options)).to.not.throw(ArgsTreeError);
+      expectError({ ...errOpts, args: ['-tx'] });
+      expectError({ ...errOpts, args: ['-xt'] });
+      expectError({ ...errOpts, args: ['-xtx'] });
+
+      errOpts.equal = options.args.test;
+      expect(() =>
+        argstree(['test', '-T', '-Ty', '-yT'], options)
+      ).to.not.throw(ArgsTreeError);
+      expectError({ ...errOpts, args: ['test', '-Tx'] });
+      expectError({ ...errOpts, args: ['test', '-xT'] });
+      expectError({ ...errOpts, args: ['test', '-xTx'] });
+    });
   });
 });

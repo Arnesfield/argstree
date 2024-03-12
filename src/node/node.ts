@@ -1,22 +1,37 @@
+import { ArgsTreeError } from '../core/error';
 import { Node as INode, Options } from '../types/core.types';
+import { isAlias } from '../utils/arg.utils';
 import { pluralize } from '../utils/pluralize';
-import { range } from '../utils/range';
+import { Range, range } from '../utils/range';
 import { Alias } from './alias';
 import { NodeRange } from './node.types';
 
 export class Node {
   readonly id: string | null;
   readonly args: string[] = [];
-  readonly alias: Alias;
   readonly isCommand: boolean = true;
+  private _alias: Alias | undefined;
   private readonly children: Node[] = [];
   private readonly options: Options;
+  private readonly _range: Range;
   private readonly _parse: (arg: string) => Options | null | undefined;
 
   constructor(id: string | null, options: Options) {
-    this.options = options;
     this.id = options.id ?? id ?? null;
-    this.alias = new Alias(options.alias);
+    this.options = options;
+    const { min, max } = (this._range = range(this.options));
+
+    // validate min and max
+    if (min != null && max != null && min > max) {
+      const name = this.displayName();
+      throw new ArgsTreeError({
+        cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
+        options: this.options,
+        message:
+          (name === null ? 'Invalid' : `Option '${name}' has invalid`) +
+          ` min and max range: ${min}-${max}.`
+      });
+    }
 
     const { args } = options;
     let _opts: { [name: string]: Options | null | undefined };
@@ -27,6 +42,11 @@ export class Node {
         ? ((_opts = Object.assign(Object.create(null), args)),
           (arg: string) => _opts[arg] ?? null)
         : ((this.isCommand = false), () => null);
+  }
+
+  get alias(): Alias {
+    // only create alias instance when needed
+    return (this._alias ||= new Alias(this.options.alias));
   }
 
   displayName(): string | null {
@@ -51,7 +71,7 @@ export class Node {
   }
 
   range(diff = 0): NodeRange {
-    const { min, max } = range(this.options);
+    const { min, max } = this._range;
     const argsLength = this.args.length + diff;
     return {
       min,
@@ -64,19 +84,7 @@ export class Node {
     };
   }
 
-  validateOptions(): void {
-    // validate min and max
-    const { min, max } = range(this.options);
-    if (min != null && max != null && min > max) {
-      const name = this.displayName();
-      throw new Error(
-        (name === null ? 'Invalid' : `Option '${name}' has invalid`) +
-          ` min and max range: ${min}-${max}.`
-      );
-    }
-  }
-
-  validateRange(diff = 0): void {
+  validateRange(diff = 0): this {
     const { min, max, satisfies } = this.range(diff);
     const phrase: [string | number, number] | null =
       satisfies.min && satisfies.max
@@ -95,15 +103,35 @@ export class Node {
     if (phrase != null) {
       const name = this.displayName();
       const argsLength = this.args.length + diff;
-      throw new Error(
-        (name === null ? 'E' : `Option '${name}' e`) +
+      throw new ArgsTreeError({
+        cause: ArgsTreeError.INVALID_RANGE_ERROR,
+        options: this.options,
+        message:
+          (name === null ? 'E' : `Option '${name}' e`) +
           'xpected ' +
           phrase[0] +
           ' ' +
           pluralize('argument', phrase[1]) +
           `, but got ${argsLength}.`
-      );
+      });
     }
+    return this;
+  }
+
+  validateUnknown(arg: string): this {
+    // only validate unknown for left over alias split arg
+    arg = arg.trim();
+    if (isAlias(arg)) {
+      const aliases = Array.from(new Set(arg.slice(1).split('')));
+      const label = pluralize('alias', aliases.length, 'es');
+      const list = aliases.map(alias => '-' + alias).join(', ');
+      throw new ArgsTreeError({
+        cause: ArgsTreeError.UNKNOWN_ALIAS_ERROR,
+        options: this.options,
+        message: `Unknown ${label}: ${list}.`
+      });
+    }
+    return this;
   }
 
   build(parent: INode | null = null, depth = 0): INode {

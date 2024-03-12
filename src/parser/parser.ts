@@ -1,4 +1,3 @@
-import { Validate } from '../helpers/validate';
 import { Node } from '../node/node';
 import { Parsed } from './parser.types';
 import { preparse } from './preparse';
@@ -7,10 +6,7 @@ export class Parser {
   private parent: Node;
   private child: Node | null = null;
 
-  constructor(
-    private readonly root: Node,
-    private readonly validate: Validate
-  ) {
+  constructor(private readonly root: Node) {
     this.parent = root;
   }
 
@@ -23,12 +19,9 @@ export class Parser {
     // is an option
     if (options != null) {
       // validate existing child then make new child
-      if (this.child) {
-        this.validate.range(this.child);
-      }
+      this.child?.validateRange();
       // make new child
       this.child = new Node(arg, options);
-      this.validate.options(this.child);
       this.parent.save(this.child);
       // if this child has args, switch it for next parse iteration
       if (this.child.isCommand) {
@@ -45,9 +38,7 @@ export class Parser {
       // treat left over from split as argument if it's not an alias like option
       if (split.arg != null) {
         // make sure to check if this can be accepted
-        this.validate.unknown(split.arg);
-        this.parent.push(split.arg);
-        this.validate.range(this.parent);
+        this.parent.validateUnknown(split.arg).push(split.arg).validateRange();
       }
       // treat first as is (alias) while the rest as values
       for (const aliasArgs of split.args) {
@@ -61,7 +52,7 @@ export class Parser {
       this.child.push(arg);
       // validate only if it does not satisfy max
       if (!this.child.range().satisfies.max) {
-        this.validate.range(this.child);
+        this.child.validateRange();
       }
     }
     // if current node exists, check if it reached its max args, if not then save arg
@@ -69,16 +60,12 @@ export class Parser {
     else if (this.child?.range(1).satisfies.max) {
       this.child.push(arg);
     } else {
-      this.parent.push(arg);
-      this.validate.range(this.parent);
+      this.parent.push(arg).validateRange();
     }
     return parsed;
   }
 
   parse(args: readonly string[]): Node {
-    // when starting to parse, validate root node options first
-    this.validate.options(this.root);
-
     const parse = (parsed: Parsed[]) => {
       for (const item of parsed) {
         // if there are new parsed items,
@@ -92,12 +79,10 @@ export class Parser {
     }
 
     // finally, make sure to validate the rest of the nodes
-    if (this.child) {
-      this.validate.range(this.child);
-    }
-    this.validate.range(this.parent);
+    this.child?.validateRange();
+    this.parent.validateRange();
     if (this.parent !== this.root) {
-      this.validate.range(this.root);
+      this.root.validateRange();
     }
     return this.root;
   }
