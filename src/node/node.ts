@@ -1,8 +1,8 @@
 import { Node as INode, Options } from '../types/core.types';
-import { NodeRange } from '../types/node.types';
 import { pluralize } from '../utils/pluralize';
 import { range } from '../utils/range';
 import { Alias } from './alias';
+import { NodeRange } from './node.types';
 
 export class Node {
   readonly id: string | null;

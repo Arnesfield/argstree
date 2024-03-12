@@ -1,4 +1,4 @@
-import { Node } from '../core/node';
+import { Node } from '../node/node';
 import { isAlias } from '../utils/arg.utils';
 import { pluralize } from '../utils/pluralize';
 

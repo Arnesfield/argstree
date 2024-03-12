@@ -1,7 +1,7 @@
 import { Validate } from '../helpers/validate';
+import { Node } from '../node/node';
 import { Parser } from '../parser/parser';
 import { Node as INode, Options } from '../types/core.types';
-import { Node } from './node';
 
 export function argstree(
   args: readonly string[],

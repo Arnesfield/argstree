@@ -1,5 +1,3 @@
-// NOTE: internal
-
 export interface NodeRange {
   min: number | null;
   max: number | null;

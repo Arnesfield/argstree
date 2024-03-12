@@ -1,5 +1,5 @@
-import { Node } from '../core/node';
 import { Validate } from '../helpers/validate';
+import { Node } from '../node/node';
 import { Parsed } from './parser.types';
 import { preparse } from './preparse';
 

@@ -1,6 +1,6 @@
-import { splitAlias } from '../helpers/split-alias';
 import { Options } from '../types/core.types';
 import { isAlias, isOption } from '../utils/arg.utils';
+import { splitAlias } from './split-alias';
 
 export class Alias {
   private readonly aliases: string[] = [];
