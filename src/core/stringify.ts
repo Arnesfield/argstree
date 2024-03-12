@@ -3,31 +3,32 @@ import * as PREFIX from '../utils/prefix';
 import { PrefixOptions } from '../utils/prefix';
 
 export interface StringifyOptions {
-  show?: {
-    /**
-     * @default true
-     */
-    args?: boolean;
-    /**
-     * @default false
-     */
-    ancestors?: boolean;
-    /**
-     * @default false
-     */
-    descendants?: boolean;
-  };
+  /**
+   * Include node arguments.
+   * @default true
+   */
+  args?: boolean;
+  /**
+   * Include node ancestors.
+   * @default false
+   */
+  ancestors?: boolean;
+  /**
+   * Include node descendants.
+   * @default false
+   */
+  descendants?: boolean;
 }
 
 export function stringify(node: Node, options: StringifyOptions = {}): string {
   // set default show values
-  const show = { ...options.show };
-  show.args ??= true;
+  options = { ...options };
+  options.args ??= true;
   const lines: string[] = [];
   const indicator = ':';
 
-  function draw(options: PrefixOptions & { node: Node; childNodes?: boolean }) {
-    const { node, childNodes, ...prefix } = options;
+  function draw(opts: PrefixOptions & { node: Node; childNodes?: boolean }) {
+    const { node, childNodes, ...prefix } = opts;
 
     // 1 - the args label
     // 2 - list of children
@@ -37,10 +38,10 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
       index: -1,
       prefix: PREFIX.child(prefix),
       length: childNodes
-        ? +!!(show.args && node.args.length > 0) +
+        ? +!!(options.args && node.args.length > 0) +
           node.children.length +
-          +!!(show.ancestors && node.ancestors.length > 0) +
-          +!!(show.descendants && node.descendants.length > 0)
+          +!!(options.ancestors && node.ancestors.length > 0) +
+          +!!(options.descendants && node.descendants.length > 0)
         : 0
     };
 
@@ -56,7 +57,7 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
     }
 
     // draw args
-    if (show.args && node.args.length > 0) {
+    if (options.args && node.args.length > 0) {
       // increment once only
       const last = ++child.index >= child.length - 1;
       const self = PREFIX.self({ last, next: true, prefix: child.prefix });
@@ -83,7 +84,7 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
 
     // draw ancestors and descendants
     for (const type of ['ancestors', 'descendants'] as const) {
-      if (!show[type] || node[type].length === 0) {
+      if (!options[type] || node[type].length === 0) {
         continue;
       }
       // increment once per type
