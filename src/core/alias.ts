@@ -40,14 +40,13 @@ export class Alias {
 
     let total = 0;
     const args: string[][] = [];
-    for (let alias of split.aliases) {
+    for (const alias of split.aliases) {
       // note that split.aliases does not have `-` prefix
-      // get arg from alias map and use first arg if any
-      alias = (isAnAlias ? '-' : '') + alias;
-      // save all args and related values
-      const aliasArgs = this.getAliasArgs(alias);
-      total += aliasArgs.length;
+      // get arg from alias map to save
+      const prefix = isAnAlias ? '-' : '';
+      const aliasArgs = this.getAliasArgs(prefix + alias);
       args.push(aliasArgs);
+      total += aliasArgs.length;
     }
     // handle left over value from split
     const value = !split.value
