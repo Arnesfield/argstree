@@ -37,6 +37,39 @@ describe('argstree', () => {
     expect(node).to.have.property('descendants').that.is.an('array');
   });
 
+  it('should treat the first value of an alias argument as an option or value', () => {
+    expect(() => {
+      argstree(['-t'], { alias: { '-t': '--test' }, args: { '--test': {} } });
+      argstree(['-t'], { alias: { '-t': ['--test'] }, args: { '--test': {} } });
+      argstree(['-t'], {
+        alias: { '-t': ['--test', 'foo', 'bar'] },
+        args: { '--test': {} }
+      });
+    }).to.not.throw(ArgsTreeError);
+
+    expectError({
+      args: ['-t'],
+      cause: ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+      options: { alias: { '-t': 'foo' }, args: { '--test': {} } }
+    });
+    expectError({
+      args: ['-t'],
+      cause: ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+      options: {
+        alias: { '-t': ['foo', 'bar', '--test'] },
+        args: { '--test': {} }
+      }
+    });
+    expectError({
+      args: ['-t'],
+      cause: ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+      options: {
+        alias: { '-t': ['not', '--test'] },
+        args: { '--test': {} }
+      }
+    });
+  });
+
   // errors
 
   describe('error', () => {
