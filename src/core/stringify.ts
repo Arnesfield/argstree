@@ -46,11 +46,16 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
     };
 
     prefix.next = child.length > 0;
+    const id = node.id ?? node.raw;
     const labels = [`depth: ${node.depth}`];
-    node.class != null && labels.push(`class: ${node.class}`);
-    lines.push(
-      PREFIX.self(prefix) + (node.name ?? node.id) + ` (${labels.join(', ')})`
-    );
+    // only show if not the same as the displayed id
+    if (node.raw != null && node.raw !== id) {
+      labels.push(`raw: ${node.raw}`);
+    }
+    if (node.name != null && node.name !== id) {
+      labels.push(`name: ${node.name}`);
+    }
+    lines.push(PREFIX.self(prefix) + id + ` (${labels.join(', ')})`);
 
     if (!prefix.next) {
       return;

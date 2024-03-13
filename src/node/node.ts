@@ -7,7 +7,7 @@ import { Alias } from './alias';
 import { NodeRange } from './node.types';
 
 export class Node {
-  readonly id: string | null;
+  readonly raw: string | null;
   readonly args: string[] = [];
   readonly isCommand: boolean = true;
   private _alias: Alias | undefined;
@@ -16,8 +16,9 @@ export class Node {
   private readonly _range: Range;
   private readonly _parse: (arg: string) => Options | null | undefined;
 
-  constructor(id: string | null, options: Options) {
-    this.id = options.id ?? id ?? null;
+  constructor(raw: string | null, options: Options) {
+    // this.id = options.id ?? id ?? null;
+    this.raw = raw;
     this.options = options;
     const { min, max } = (this._range = range(this.options));
 
@@ -50,7 +51,7 @@ export class Node {
   }
 
   displayName(): string | null {
-    return this.options.name ?? this.id ?? null;
+    return this.options.name ?? this.raw ?? null;
   }
 
   push(arg: string): this {
@@ -142,11 +143,10 @@ export class Node {
   }
 
   build(parent: INode | null = null, depth = 0): INode {
-    // use configured name instead of display name
     const node: INode = {
-      id: this.id,
+      id: this.options.id ?? this.raw ?? null,
       name: this.options.name ?? null,
-      class: this.options.class ?? null,
+      raw: this.raw,
       depth,
       args: this.args,
       parent,
