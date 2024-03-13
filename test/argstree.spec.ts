@@ -37,7 +37,7 @@ describe('argstree', () => {
     expect(node).to.have.property('descendants').that.is.an('array');
   });
 
-  it('should treat the first value of an alias argument as an option or value', () => {
+  it('should treat the first value of alias arguments as an option or value', () => {
     expect(() => {
       argstree(['-t'], { alias: { '-t': '--test' }, args: { '--test': {} } });
       argstree(['-t'], { alias: { '-t': ['--test'] }, args: { '--test': {} } });
@@ -67,7 +67,7 @@ describe('argstree', () => {
     });
   });
 
-  it('should treat the rest of the values of an alias argument as values', () => {
+  it('should treat the rest of the values of alias arguments as values', () => {
     let tree = argstree(['-t'], {
       alias: { '-t': ['--test', 'foo', 'bar'] },
       args: { '--test': {}, foo: {}, bar: {} }
