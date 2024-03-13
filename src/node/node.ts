@@ -62,12 +62,19 @@ export class Node {
     this.children.push(node);
   }
 
-  parse(arg: string): Options | null {
+  parse(arg: string, strict = false): Options | null {
     // make sure parse result is a valid object
     const options = this._parse(arg);
-    return typeof options === 'object' && !Array.isArray(options)
-      ? options
-      : null;
+    const value =
+      typeof options === 'object' && !Array.isArray(options) ? options : null;
+    if (strict && !value) {
+      throw new ArgsTreeError({
+        cause: ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+        options: this.options,
+        message: `Unrecognized option or command: ${arg}`
+      });
+    }
+    return value;
   }
 
   range(diff = 0): NodeRange {
@@ -128,7 +135,7 @@ export class Node {
       throw new ArgsTreeError({
         cause: ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
         options: this.options,
-        message: `Unrecognized ${label}: ${list}.`
+        message: `Unrecognized ${label}: ${list}`
       });
     }
     return this;

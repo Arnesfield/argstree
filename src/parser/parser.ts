@@ -1,5 +1,5 @@
 import { Node } from '../node/node';
-import { Parsed } from './parser.types';
+import { Parsed, ParsedType } from './parser.types';
 import { preparse } from './preparse';
 
 export class Parser {
@@ -12,10 +12,12 @@ export class Parser {
 
   private save(item: Parsed): Parsed[] {
     // option or command
-    // `raw` means `is arg a value`
-    const { arg, raw } = item;
+    const { arg, type } = item;
     const parsed: Parsed[] = [];
-    const options = raw ? null : this.parent.parse(arg);
+    const isValue = type === ParsedType.Value;
+    const options = isValue
+      ? null
+      : this.parent.parse(arg, type === ParsedType.Match);
     // is an option
     if (options != null) {
       // validate existing child then make new child
@@ -33,7 +35,7 @@ export class Parser {
 
     // not an option
     // if this arg is an alias, expand into multiple args
-    const split = raw ? null : this.parent.alias.split(arg);
+    const split = isValue ? null : this.parent.alias.split(arg);
     if (split && split.total > 0) {
       // treat left over from split as argument if it's not an alias like option
       if (split.arg != null) {
@@ -43,12 +45,15 @@ export class Parser {
       // treat first as is (alias) while the rest as values
       for (const aliasArgs of split.args) {
         aliasArgs.forEach((arg, index) => {
-          parsed.push({ arg, raw: index > 0 });
+          parsed.push({
+            arg,
+            type: index > 0 ? ParsedType.Value : ParsedType.Match
+          });
         });
       }
     }
     // for value, always save to child if it exists (most likely it exists)
-    else if (raw && this.child) {
+    else if (isValue && this.child) {
       this.child.push(arg);
       // validate only if it does not satisfy max
       if (!this.child.range().satisfies.max) {

@@ -1,5 +1,5 @@
 import { isAlias, isOption } from '../utils/arg.utils';
-import { Parsed } from './parser.types';
+import { Parsed, ParsedType } from './parser.types';
 
 export function preparse(arg: string): Parsed[] {
   const parsed: Parsed[] = [];
@@ -13,7 +13,10 @@ export function preparse(arg: string): Parsed[] {
     const value = arg.slice(equalIndex + 1);
     // for some reason, enclosing quotes are not included
     // with the value part, so there's no need to handle them
-    parsed.push({ arg: alias }, { arg: value, raw: true });
+    parsed.push(
+      { type: ParsedType.Match, arg: alias },
+      { type: ParsedType.Value, arg: value }
+    );
   } else {
     // maybe value or command, ignore equal sign
     // treat as an arg without splitting `=` if ever it exists

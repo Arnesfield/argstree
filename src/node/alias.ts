@@ -1,5 +1,5 @@
 import { Options } from '../types/core.types';
-import { isAlias, isOption } from '../utils/arg.utils';
+import { isAlias } from '../utils/arg.utils';
 import { splitAlias } from './split-alias';
 
 export class Alias {
@@ -17,8 +17,9 @@ export class Alias {
     for (let alias in this.aliasMap) {
       alias = alias.trim();
       const args = alias && isAlias(alias) ? this.getAliasArgs(alias) : [];
-      // skip command aliases since we don't need to split them
-      if (args.length > 0 && isOption(args[0])) {
+      // // skip command aliases since we don't need to split them
+      // && isOption(args[0])
+      if (args.length > 0) {
         // remove prefix only when saving
         this.aliases.push(alias.slice(1));
       }
