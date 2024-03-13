@@ -4,7 +4,9 @@ import { Parsed, ParsedType } from './parser.types';
 export function preparse(arg: string): Parsed[] {
   const parsed: Parsed[] = [];
   let equalIndex: number;
-  const minIndex = isAlias(arg) ? 1 : isOption(arg) ? 2 : null;
+  // NOTE: handle special case for `--`
+  const minIndex =
+    isAlias(arg) || arg.startsWith('--=') ? 1 : isOption(arg) ? 2 : null;
   // for alias and options, check for equal sign
   if (minIndex !== null && (equalIndex = arg.indexOf('=')) > minIndex) {
     // if found, split arg and treat 2nd part as value

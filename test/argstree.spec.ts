@@ -75,9 +75,8 @@ describe('argstree', () => {
     expect(tree.children).be.have.length(1);
     expect(tree.descendants).be.have.length(1);
     expect(tree.children[0]).to.have.property('id').that.equals('--test');
-    expect(tree.children[0])
-      .be.have.property('args')
-      .that.is.an('array')
+    expect(tree.children[0].args)
+      .to.be.an('array')
       .that.deep.equals(['foo', 'bar']);
 
     tree = argstree(['-t', 'f', 'b'], {
@@ -91,23 +90,32 @@ describe('argstree', () => {
     expect(tree.children).be.have.length(3);
     expect(tree.descendants).be.have.length(3);
 
-    expect(tree.children[0]).to.have.property('id').that.equals('--test');
-    expect(tree.children[0])
-      .be.have.property('args')
-      .that.is.an('array')
+    expect(tree.children[0].id).to.equal('--test');
+    expect(tree.children[0].args)
+      .to.be.an('array')
       .that.deep.equals(['foo', 'bar']);
 
-    expect(tree.children[1]).to.have.property('id').that.equals('foo');
-    expect(tree.children[1])
-      .be.have.property('args')
-      .that.is.an('array')
+    expect(tree.children[1].id).to.equal('foo');
+    expect(tree.children[1].args)
+      .to.be.an('array')
       .that.deep.equals(['--test', 'foo', 'bar']);
 
-    expect(tree.children[2]).to.have.property('id').that.equals('bar');
-    expect(tree.children[2])
-      .be.have.property('args')
-      .that.is.an('array')
-      .with.length(0);
+    expect(tree.children[2].id).to.equal('bar');
+    expect(tree.children[2].args).to.be.an('array').with.length(0);
+  });
+
+  it('should handle equal sign for `--` (special case)', () => {
+    const trees = [
+      argstree(['foo', '--', 'bar', 'baz'], { args: { '--': {} } }),
+      argstree(['foo', '--=bar', 'baz'], { args: { '--': {} } })
+    ];
+    for (const tree of trees) {
+      expect(tree.children).to.be.an('array').with.length(1);
+      expect(tree.args).to.be.an('array').that.deep.equals(['foo']);
+      expect(tree.children[0].args)
+        .to.be.an('array')
+        .that.deep.equals(['bar', 'baz']);
+    }
   });
 
   it('should throw an error for invalid options', () => {
