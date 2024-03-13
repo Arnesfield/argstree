@@ -5,6 +5,24 @@
 
 Parse arguments into a tree structure.
 
+## Install
+
+```sh
+npm install argstree
+```
+
+## Usage
+
+Import the module ([ESM only](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c)):
+
+```javascript
+import argstree from 'argstree';
+```
+
+> [!NOTE]
+>
+> **WIP:** README is still a work in progress.
+
 ## License
 
 Licensed under the [MIT License](LICENSE).
