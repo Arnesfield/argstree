@@ -87,7 +87,7 @@ describe('argstree', () => {
       } satisfies Options;
 
       const errOpts = {
-        cause: ArgsTreeError.UNKNOWN_ALIAS_ERROR,
+        cause: ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
         options,
         equal: options as Options
       };

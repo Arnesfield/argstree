@@ -38,7 +38,7 @@ export class Parser {
       // treat left over from split as argument if it's not an alias like option
       if (split.arg != null) {
         // make sure to check if this can be accepted
-        this.parent.validateUnknown(split.arg).push(split.arg).validateRange();
+        this.parent.validateAlias(split.arg).push(split.arg).validateRange();
       }
       // treat first as is (alias) while the rest as values
       for (const aliasArgs of split.args) {

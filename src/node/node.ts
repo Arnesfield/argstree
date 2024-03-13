@@ -118,17 +118,17 @@ export class Node {
     return this;
   }
 
-  validateUnknown(arg: string): this {
-    // only validate unknown for left over alias split arg
+  validateAlias(arg: string): this {
+    // only validate for left over alias split arg
     arg = arg.trim();
     if (isAlias(arg)) {
       const aliases = Array.from(new Set(arg.slice(1).split('')));
       const label = pluralize('alias', aliases.length, 'es');
       const list = aliases.map(alias => '-' + alias).join(', ');
       throw new ArgsTreeError({
-        cause: ArgsTreeError.UNKNOWN_ALIAS_ERROR,
+        cause: ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
         options: this.options,
-        message: `Unknown ${label}: ${list}.`
+        message: `Unrecognized ${label}: ${list}.`
       });
     }
     return this;

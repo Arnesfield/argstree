@@ -9,7 +9,8 @@ export interface ArgsTreeErrorOptions {
 export class ArgsTreeError extends Error {
   static readonly INVALID_OPTIONS_ERROR = 'invalid-options';
   static readonly INVALID_RANGE_ERROR = 'invalid-range';
-  static readonly UNKNOWN_ALIAS_ERROR = 'unknown-alias';
+  static readonly UNRECOGNIZED_ALIAS_ERROR = 'unrecognized-alias';
+  static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
 
   readonly cause: string;
   readonly options: Options;
