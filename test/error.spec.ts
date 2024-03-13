@@ -11,10 +11,18 @@ describe('error', () => {
   });
 
   it('should contain cause strings as static members', () => {
-    expect(ArgsTreeError.INVALID_OPTIONS_ERROR).to.be.a('string');
-    expect(ArgsTreeError.INVALID_RANGE_ERROR).to.be.a('string');
-    expect(ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR).to.be.a('string');
-    expect(ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR).to.be.a('string');
+    expect(ArgsTreeError)
+      .to.have.property('INVALID_OPTIONS_ERROR')
+      .that.equals('invalid-options');
+    expect(ArgsTreeError)
+      .to.have.property('INVALID_RANGE_ERROR')
+      .that.equals('invalid-range');
+    expect(ArgsTreeError)
+      .to.have.property('UNRECOGNIZED_ALIAS_ERROR')
+      .that.equals('unrecognized-alias');
+    expect(ArgsTreeError)
+      .to.have.property('UNRECOGNIZED_ARGUMENT_ERROR')
+      .that.equals('unrecognized-argument');
   });
 
   it('should contain class members', () => {
@@ -24,10 +32,8 @@ describe('error', () => {
       options,
       message: 'foo'
     });
-    expect(error.cause)
-      .to.be.a('string')
-      .that.equals(ArgsTreeError.INVALID_OPTIONS_ERROR);
-    expect(error.options).to.be.an('object').that.equals(options);
-    expect(error.message).to.be.a('string').that.equals('foo');
+    expect(error.cause).to.equal(ArgsTreeError.INVALID_OPTIONS_ERROR);
+    expect(error.options).to.equal(options);
+    expect(error.message).to.equal('foo');
   });
 });
