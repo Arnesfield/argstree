@@ -152,7 +152,7 @@ describe('argstree', () => {
     });
   });
 
-  it('should throw an error for unknown alias', () => {
+  it('should throw an error for unrecognized alias', () => {
     const options = {
       alias: { '-t': '--test' },
       args: {
