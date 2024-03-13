@@ -2,6 +2,9 @@ import { Node } from '../types/core.types';
 import * as PREFIX from '../utils/prefix';
 import { PrefixOptions } from '../utils/prefix';
 
+/**
+ * The stringify options.
+ */
 export interface StringifyOptions {
   /**
    * Include node arguments.
@@ -20,6 +23,12 @@ export interface StringifyOptions {
   descendants?: boolean;
 }
 
+/**
+ * Create a tree structure string from the provided {@linkcode node}.
+ * @param node The Node object.
+ * @param options The stringify options.
+ * @returns The tree string.
+ */
 export function stringify(node: Node, options: StringifyOptions = {}): string {
   // set default show values
   options = { ...options };
