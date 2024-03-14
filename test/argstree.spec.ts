@@ -220,7 +220,8 @@ describe('argstree', () => {
     expect(tree.children).to.have.length(1);
     expect(tree.children[0].id).to.equal('test');
 
-    tree = argstree(['-t'], { alias: { '-t': [] } });
+    // force empty array
+    tree = argstree(['-t'], { alias: { '-t': [] as any } });
     expect(tree.args).to.have.length(0);
     expect(tree.children).to.have.length(0);
 
@@ -234,22 +235,24 @@ describe('argstree', () => {
   });
 
   it('should not immediately validate range for split args', () => {
-    const options = {
+    const tree = argstree(['-fb', 'foo', 'bar'], {
       min: 2,
       alias: { '-f': '--foo', '-b': '--bar' },
       args: { '--foo': { max: 0 }, '--bar': { max: 0 } }
-    } satisfies Options;
-    const tree = argstree(['-fb', 'foo', 'bar'], options);
+    });
     expect(tree.args).to.deep.equal(['foo', 'bar']);
     expect(tree.children).to.have.length(2);
     expect(tree.children[0].id).to.equal('--foo');
     expect(tree.children[1].id).to.equal('--bar');
 
-    options.min++;
     expectError({
       args: ['-fb', 'foo', 'bar'],
       cause: ArgsTreeError.INVALID_RANGE_ERROR,
-      options
+      options: {
+        min: 3,
+        alias: { '-f': '--foo', '-b': '--bar' },
+        args: { '--foo': { max: 0 }, '--bar': { max: 0 } }
+      }
     });
   });
 
@@ -420,7 +423,7 @@ describe('argstree', () => {
           args: { '--subtest': {}, '--y': {} }
         }
       }
-    } satisfies Options;
+    } as const satisfies Options;
 
     const errOpts = {
       cause: ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,

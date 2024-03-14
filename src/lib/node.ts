@@ -12,7 +12,6 @@ export class Node {
   readonly isCommand: boolean = true;
   private _alias: Alias | undefined;
   private readonly children: Node[] = [];
-  private readonly options: Options;
   private readonly _range: {
     min: number | null;
     max: number | null;
@@ -20,10 +19,8 @@ export class Node {
   };
   private readonly _parse: (arg: string) => Options | null | undefined;
 
-  constructor(raw: string | null, options: Options) {
+  constructor(raw: string | null, private readonly options: Options) {
     this.raw = raw;
-    this.options = options;
-
     const min = ensureNumber(options.min);
     const max = ensureNumber(options.max);
     const maxRead = ensureNumber(options.maxRead) ?? max;
