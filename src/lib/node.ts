@@ -1,8 +1,8 @@
 import { Node as INode, Options } from '../core/core.types';
 import { ArgsTreeError } from '../core/error';
 import { isAlias } from '../utils/arg.utils';
+import { ensureNumber } from '../utils/ensure-number';
 import { pluralize } from '../utils/pluralize';
-import { Range, range } from '../utils/range';
 import { Alias } from './alias';
 import { NodeRange } from './node.types';
 
@@ -13,14 +13,21 @@ export class Node {
   private _alias: Alias | undefined;
   private readonly children: Node[] = [];
   private readonly options: Options;
-  private readonly _range: Range;
+  private readonly _range: {
+    min: number | null;
+    max: number | null;
+    maxRead: number | null;
+  };
   private readonly _parse: (arg: string) => Options | null | undefined;
 
   constructor(raw: string | null, options: Options) {
-    // this.id = options.id ?? id ?? null;
     this.raw = raw;
     this.options = options;
-    const { min, max } = (this._range = range(this.options));
+
+    const min = ensureNumber(options.min);
+    const max = ensureNumber(options.max);
+    const maxRead = ensureNumber(options.maxRead) ?? max;
+    this._range = { min, max, maxRead };
 
     // validate min and max
     if (min != null && max != null && min > max) {
@@ -81,21 +88,22 @@ export class Node {
   }
 
   range(diff = 0): NodeRange {
-    const { min, max } = this._range;
+    const { min, max, maxRead } = this._range;
     const argsLength = this.args.length + diff;
     return {
       min,
       max,
+      maxRead,
       satisfies: {
         min: min === null || argsLength >= min,
         max: max === null || argsLength <= max,
-        exactMax: max === argsLength
+        maxRead: maxRead === null || argsLength <= maxRead
       }
     };
   }
 
-  validateRange(diff = 0): this {
-    const { min, max, satisfies } = this.range(diff);
+  validateRange(): this {
+    const { min, max, satisfies } = this.range();
     const phrase: [string | number, number] | null =
       satisfies.min && satisfies.max
         ? null
@@ -112,7 +120,6 @@ export class Node {
         : null;
     if (phrase != null) {
       const name = this.displayName();
-      const argsLength = this.args.length + diff;
       throw new ArgsTreeError({
         cause: ArgsTreeError.INVALID_RANGE_ERROR,
         options: this.options,
@@ -122,7 +129,7 @@ export class Node {
           phrase[0] +
           ' ' +
           pluralize('argument', phrase[1]) +
-          `, but got ${argsLength}.`
+          `, but got ${this.args.length}.`
       });
     }
     return this;

@@ -93,6 +93,54 @@ describe('argstree', () => {
       cause: ArgsTreeError.INVALID_RANGE_ERROR,
       options: { max: 0, args: { test: { max: args.length - 1 } } }
     });
+
+    // use alias to fill max args
+    const options = {
+      alias: { '-t': ['--test', 'foo', 'bar', 'baz'] },
+      args: { '--test': { max: 3 } }
+    } satisfies Options;
+    expectError({
+      args: ['-t=0'],
+      cause: ArgsTreeError.INVALID_RANGE_ERROR,
+      options,
+      equal: options.args['--test']
+    });
+  });
+
+  it('should accept arguments of range (maxRead)', () => {
+    let tree = argstree(['--test', 'foo', 'bar'], {
+      args: { '--test': { maxRead: 0 } }
+    });
+    expect(tree.args).to.deep.equal(['foo', 'bar']);
+    expect(tree.children).to.have.length(1);
+    expect(tree.children[0].id).to.equal('--test');
+
+    tree = argstree(['--test=foo', 'bar'], {
+      args: { '--test': { maxRead: 0 } }
+    });
+    expect(tree.args).to.deep.equal(['bar']);
+    expect(tree.children).to.have.length(1);
+    expect(tree.children[0].id).to.equal('--test');
+    expect(tree.children[0].args).to.deep.equal(['foo']);
+
+    // use alias to fill max args
+    tree = argstree(['-t', 'foo', 'bar'], {
+      alias: { '-t': ['--test', 'foo', 'bar', 'baz'] },
+      args: { '--test': { min: 3, max: 3, maxRead: 0 } }
+    });
+    expect(tree.args).to.deep.equal(['foo', 'bar']);
+    expect(tree.children).to.have.length(1);
+    expect(tree.children[0].id).to.equal('--test');
+    expect(tree.children[0].args).to.deep.equal(['foo', 'bar', 'baz']);
+
+    tree = argstree(['-t=0', 'foo', 'bar'], {
+      alias: { '-t': ['--test', 'foo', 'bar', 'baz'] },
+      args: { '--test': { min: 4, max: 4, maxRead: 0 } }
+    });
+    expect(tree.args).to.deep.equal(['foo', 'bar']);
+    expect(tree.children).to.have.length(1);
+    expect(tree.children[0].id).to.equal('--test');
+    expect(tree.children[0].args).to.deep.equal(['foo', 'bar', 'baz', '0']);
   });
 
   it('should use alias args', () => {
@@ -235,6 +283,10 @@ describe('argstree', () => {
         alias: { '-t': ['--test', 'foo', 'bar'] },
         args: { '--test': {} }
       });
+      argstree(['-t'], {
+        alias: { '-t': ['foo', '--test', 'bar'] },
+        args: { foo: {} }
+      });
     }).to.not.throw(ArgsTreeError);
 
     expectError({
@@ -269,7 +321,7 @@ describe('argstree', () => {
       .to.be.an('array')
       .that.deep.equals(['foo', 'bar']);
 
-    tree = argstree(['-t', 'f', 'b'], {
+    tree = argstree(['-t', 'f', 'b', '-t=baz', 'test'], {
       alias: {
         '-t': ['--test', 'foo', 'bar'],
         f: ['foo', '--test', 'foo', 'bar'],
@@ -277,8 +329,8 @@ describe('argstree', () => {
       },
       args: { '--test': {}, foo: {}, bar: {} }
     });
-    expect(tree.children).be.have.length(3);
-    expect(tree.descendants).be.have.length(3);
+    expect(tree.children).be.have.length(4);
+    expect(tree.descendants).be.have.length(4);
 
     expect(tree.children[0].id).to.equal('--test');
     expect(tree.children[0].args)
@@ -292,6 +344,11 @@ describe('argstree', () => {
 
     expect(tree.children[2].id).to.equal('bar');
     expect(tree.children[2].args).to.be.an('array').with.length(0);
+
+    expect(tree.children[3].id).to.equal('--test');
+    expect(tree.children[3].args)
+      .to.be.an('array')
+      .that.deep.equals(['foo', 'bar', 'baz', 'test']);
   });
 
   it('should not split equal sign for `--` (special case)', () => {

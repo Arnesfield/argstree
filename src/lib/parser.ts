@@ -102,7 +102,7 @@ export class Parser {
   private saveValue(arg: string) {
     // if current node exists, check if it reached its max args, if not then save arg
     // otherwise, treat this as an arg for the main node
-    if (this.child?.range(1).satisfies.max) {
+    if (this.child?.range(1).satisfies.maxRead) {
       this.child.push(arg);
     } else {
       this.parent.push(arg);

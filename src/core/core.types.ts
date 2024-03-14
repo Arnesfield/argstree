@@ -25,6 +25,14 @@ export interface Options {
    */
   max?: number | null;
   /**
+   * Maximum number of arguments to read before the next parsed option or command.
+   *
+   * An error is **NOT** thrown if this option or command does not satisfy this condition.
+   *
+   * If not provided, the value for {@linkcode max} is used instead.
+   */
+  maxRead?: number | null;
+  /**
    * List of aliases mapped to arguments.
    *
    * For multiple alias arguments, use a string array where
