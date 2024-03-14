@@ -1,4 +1,4 @@
-import { Options } from '../types/core.types';
+import { Options } from './core.types';
 
 /**
  * The ArgsTree error options.

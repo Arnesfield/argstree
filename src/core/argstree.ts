@@ -1,6 +1,6 @@
-import { Node } from '../node/node';
-import { Parser } from '../parser/parser';
-import { Node as INode, Options } from '../types/core.types';
+import { Node } from '../lib/node';
+import { Parser } from '../lib/parser';
+import { Node as INode, Options } from './core.types';
 
 /**
  * Parse arguments into a tree structure.

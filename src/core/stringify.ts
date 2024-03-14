@@ -1,6 +1,6 @@
-import { Node } from '../types/core.types';
 import * as PREFIX from '../utils/prefix';
 import { PrefixOptions } from '../utils/prefix';
+import { Node } from './core.types';
 
 /**
  * The stringify options.

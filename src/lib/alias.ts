@@ -1,4 +1,4 @@
-import { Options } from '../types/core.types';
+import { Options } from '../core/core.types';
 import { isAlias } from '../utils/arg.utils';
 import { splitAlias } from './split-alias';
 

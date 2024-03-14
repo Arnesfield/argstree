@@ -1,5 +1,5 @@
+import { Node as INode, Options } from '../core/core.types';
 import { ArgsTreeError } from '../core/error';
-import { Node as INode, Options } from '../types/core.types';
 import { isAlias } from '../utils/arg.utils';
 import { pluralize } from '../utils/pluralize';
 import { Range, range } from '../utils/range';

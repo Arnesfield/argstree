@@ -1,6 +1,6 @@
-import { Node } from '../node/node';
-import { Options } from '../types/core.types';
+import { Options } from '../core/core.types';
 import { isAlias, isOption } from '../utils/arg.utils';
+import { Node } from './node';
 
 export class Parser {
   private parent: Node;
