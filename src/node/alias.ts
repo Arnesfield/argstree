@@ -14,12 +14,9 @@ export class Alias {
     }
 
     // get aliases and sort by length desc
-    for (let alias in this.aliasMap) {
-      alias = alias.trim();
-      const args = alias && isAlias(alias) ? this.getAliasArgs(alias) : [];
-      // // skip command aliases since we don't need to split them
-      // && isOption(args[0])
-      if (args.length > 0) {
+    for (const alias in this.aliasMap) {
+      // skip command aliases since we don't need to split them
+      if (isAlias(alias) && this.getAliasArgs(alias)) {
         // remove prefix only when saving
         this.aliases.push(alias.slice(1));
       }
@@ -27,36 +24,39 @@ export class Alias {
     this.aliases.sort((a, b) => b.length - a.length);
   }
 
-  getAliasArgs(alias: string): string[] {
+  getAliasArgs(alias: string): string[] | null {
     const args = this.aliasMap[alias];
-    return Array.isArray(args) ? args : typeof args === 'string' ? [args] : [];
+    return Array.isArray(args)
+      ? args
+      : typeof args === 'string'
+      ? [args]
+      : null;
   }
 
-  split(arg: string): { arg: string | null; args: string[][]; total: number } {
-    const isAnAlias = isAlias(arg);
+  split(arg: string): { arg: string | null; argsList: string[][] } | undefined {
+    // only accept aliases
+    if (!isAlias(arg)) {
+      return;
+    }
     // remove first `-` for alias
-    const split = isAnAlias
-      ? splitAlias(arg.slice(1), this.aliases)
-      : { value: arg, aliases: [arg] };
-
-    let total = 0;
-    const args: string[][] = [];
+    const split = splitAlias(arg.slice(1), this.aliases);
+    // handle left over value from split
+    const value = split.value ? '-' + split.value : null;
+    // if value matches the same arg, it was never split
+    if (value === arg) {
+      return;
+    }
+    // get args per alias
+    const argsList: string[][] = [];
     for (const alias of split.aliases) {
       // note that split.aliases does not have `-` prefix
-      // get arg from alias map to save
-      const prefix = isAnAlias ? '-' : '';
-      const aliasArgs = this.getAliasArgs(prefix + alias);
-      args.push(aliasArgs);
-      total += aliasArgs.length;
+      const aliasArgs = this.getAliasArgs('-' + alias);
+      // accept regardless if no length
+      if (aliasArgs) {
+        argsList.push(aliasArgs);
+      }
     }
-    // handle left over value from split
-    const value = !split.value
-      ? null
-      : isAnAlias
-      ? '-' + split.value
-      : total === 0
-      ? split.value
-      : null;
-    return { arg: value, args, total };
+    // considered as split only if alias args were found
+    return argsList.length > 0 ? { arg: value, argsList } : undefined;
   }
 }

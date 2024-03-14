@@ -54,8 +54,8 @@ export class Node {
     return this.options.name ?? this.raw ?? null;
   }
 
-  push(arg: string): this {
-    this.args.push(arg);
+  push(...args: string[]): this {
+    this.args.push(...args);
     return this;
   }
 
@@ -63,6 +63,8 @@ export class Node {
     this.children.push(node);
   }
 
+  parse(arg: string, strict?: false): Options | null;
+  parse(arg: string, strict: true): Options;
   parse(arg: string, strict = false): Options | null {
     // make sure parse result is a valid object
     const options = this._parse(arg);
