@@ -130,7 +130,6 @@ export class Node {
 
   validateAlias(arg: string): this {
     // only validate for left over alias split arg
-    arg = arg.trim();
     if (isAlias(arg)) {
       const aliases = Array.from(new Set(arg.slice(1).split('')));
       const label = pluralize('alias', aliases.length, 'es');

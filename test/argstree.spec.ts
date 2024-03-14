@@ -185,6 +185,26 @@ describe('argstree', () => {
     expect(tree.children).to.have.length(0);
   });
 
+  it('should not immediately validate range for split args', () => {
+    const options = {
+      min: 2,
+      alias: { '-f': '--foo', '-b': '--bar' },
+      args: { '--foo': { max: 0 }, '--bar': { max: 0 } }
+    } satisfies Options;
+    const tree = argstree(['-fb', 'foo', 'bar'], options);
+    expect(tree.args).to.deep.equal(['foo', 'bar']);
+    expect(tree.children).to.have.length(2);
+    expect(tree.children[0].id).to.equal('--foo');
+    expect(tree.children[1].id).to.equal('--bar');
+
+    options.min++;
+    expectError({
+      args: ['-fb', 'foo', 'bar'],
+      cause: ArgsTreeError.INVALID_RANGE_ERROR,
+      options
+    });
+  });
+
   it('should properly split aliases with more than one character', () => {
     let tree = argstree(['-abbaa'], {
       alias: { '-a': 'test', '-b': 'bar', '-ba': 'baz', '-aa': 'foo' },
