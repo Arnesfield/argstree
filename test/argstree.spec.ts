@@ -136,6 +136,15 @@ describe('argstree', () => {
     expect(tree.args).to.deep.equal(['-tf']);
     expect(tree.children).to.have.length(0);
 
+    tree = argstree(['-tf'], {
+      alias: { '-t': 'test', '-f': 'foo' },
+      args: { test: {}, foo: {} }
+    });
+    expect(tree.args).to.have.length(0);
+    expect(tree.children).to.have.length(2);
+    expect(tree.children[0].id).to.equal('test');
+    expect(tree.children[1].id).to.equal('foo');
+
     expectError({
       args: ['-tf'],
       cause: ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
@@ -152,6 +161,28 @@ describe('argstree', () => {
         args: { test: {}, foo: {} }
       }
     });
+  });
+
+  it('should not save as arg for empty array alias args', () => {
+    let tree = argstree(['-t'], {
+      alias: { '-t': 'test' },
+      args: { test: {} }
+    });
+    expect(tree.args).to.have.length(0);
+    expect(tree.children).to.have.length(1);
+    expect(tree.children[0].id).to.equal('test');
+
+    tree = argstree(['-t'], { alias: { '-t': [] } });
+    expect(tree.args).to.have.length(0);
+    expect(tree.children).to.have.length(0);
+
+    tree = argstree(['-t']);
+    expect(tree.args).to.deep.equal(['-t']);
+    expect(tree.children).to.have.length(0);
+
+    tree = argstree(['-t'], { alias: { '-t': null } });
+    expect(tree.args).to.deep.equal(['-t']);
+    expect(tree.children).to.have.length(0);
   });
 
   it('should properly split aliases with more than one character', () => {
