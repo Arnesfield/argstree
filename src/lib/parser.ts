@@ -25,7 +25,7 @@ export class Parser {
     if (options != null) {
       return this.saveOption(arg, options);
     }
-    let aliasArgs = this.parent.alias.getAliasArgs(arg);
+    let aliasArgs = this.parent.alias.getArgs(arg);
     if (aliasArgs) {
       return this.saveAliasArgs(aliasArgs);
     }
@@ -46,7 +46,7 @@ export class Parser {
     if (options != null) {
       return this.saveOption(match, options, values);
     }
-    aliasArgs = this.parent.alias.getAliasArgs(match);
+    aliasArgs = this.parent.alias.getArgs(match);
     if (aliasArgs) {
       return this.saveAliasArgs(aliasArgs, values);
     }

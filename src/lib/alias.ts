@@ -16,7 +16,7 @@ export class Alias {
     // get aliases and sort by length desc
     for (const alias in this.aliasMap) {
       // skip command aliases since we don't need to split them
-      if (isAlias(alias) && this.getAliasArgs(alias)) {
+      if (isAlias(alias) && this.getArgs(alias)) {
         // remove prefix only when saving
         this.aliases.push(alias.slice(1));
       }
@@ -24,7 +24,7 @@ export class Alias {
     this.aliases.sort((a, b) => b.length - a.length);
   }
 
-  getAliasArgs(alias: string): string[] | null {
+  getArgs(alias: string): string[] | null {
     const args = this.aliasMap[alias];
     return Array.isArray(args)
       ? args
@@ -50,7 +50,7 @@ export class Alias {
     const argsList: string[][] = [];
     for (const alias of split.aliases) {
       // note that split.aliases does not have `-` prefix
-      const aliasArgs = this.getAliasArgs('-' + alias);
+      const aliasArgs = this.getArgs('-' + alias);
       // accept regardless if no length
       if (aliasArgs) {
         argsList.push(aliasArgs);
