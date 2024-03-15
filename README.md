@@ -5,6 +5,30 @@
 
 Parse arguments into a tree structure.
 
+```javascript
+import argstree, { stringify } from 'argstree';
+
+// args: hello --world
+const node = argstree(process.argv.slice(2), {} /* options */);
+const tree = stringify(node, {} /* options */);
+console.log(tree);
+```
+
+```text
+null (depth: 0)
+└─┬ :args (total: 2)
+  ├── hello
+  └── --world
+```
+
+> [!NOTE]
+>
+> **WIP:** README is still a work in progress.
+
+## Motivation
+
+`argstree` is meant to be a _less_ opinionated argument parser that aims to preserve the structure of the provided arguments when they are parsed. This way, more information about the input arguments are known to the consumers (developers) which should give them enough control on how they intend to read these inputs to suit their needs.
+
 ## Install
 
 ```sh
@@ -19,9 +43,64 @@ Import the module ([ESM only](https://gist.github.com/sindresorhus/a39789f98801d
 import argstree from 'argstree';
 ```
 
-> [!NOTE]
->
-> **WIP:** README is still a work in progress.
+## `argstree` Options
+
+Pass in options for `argstree(args, options)`. Note that all options are optional.
+
+### id
+
+Type: `string`<br>
+Default: The parsed argument.
+
+Unique ID for this option or command.
+
+### name
+
+Type: `string`
+
+Display name of option or command for errors.
+
+If not provided, the raw argument is used as the display name when available.
+
+### min
+
+Type: `number | null`
+
+Minimum number of arguments to read before the next parsed option or command.
+
+An error is thrown if this option or command does not satisfy this condition.
+
+### max
+
+Type: `number | null`
+
+Maximum number of arguments to read before the next parsed option or command.
+
+An error is thrown if this option or command does not satisfy this condition.
+
+### maxRead
+
+Type: `number | null`
+
+Maximum number of arguments to read before the next parsed option or command.
+
+An error is **NOT** thrown if this option or command does not satisfy this condition.
+
+If not provided, the value for [max](#max) is used instead.
+
+### alias
+
+Type: `{ [alias: string]: string | [string, ...string[]] | null | undefined; }`
+
+List of aliases mapped to arguments.
+
+For multiple alias arguments, use a string array where the first element string is a valid option or command and the rest are arguments for the said option or command.
+
+### args
+
+Type: `{ [arg: string]: Options | null | undefined; }` or `(arg: string) => Options | null | undefined`
+
+The arguments to match that will be parsed as options or commands.
 
 ## License
 
