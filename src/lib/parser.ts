@@ -73,8 +73,10 @@ export class Parser {
   private saveOption(arg: string, options: Options, values: string[] = []) {
     // validate existing child then make new child
     this.child?.validateRange();
-    // make new child
-    const node = (this.child = new Node(arg, options));
+    // make new child and save values
+    // probably don't need to validate now since it will be
+    // validated when changing child node or at the end of parse
+    this.child = new Node(arg, options).push(...values);
     this.parent.save(this.child);
     // if this child has args, switch it for next parse iteration
     if (this.child.hasArgs) {
@@ -83,11 +85,6 @@ export class Parser {
       this.parent = this.child;
       this.child = null;
     }
-
-    // save values
-    // probably don't need to validate now since node will be
-    // validated when changing child node or at the end of parse
-    node.push(...values);
   }
 
   private saveAliasArgs(aliasArgs: string[], values: string[] = []) {
