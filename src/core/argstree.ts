@@ -1,6 +1,6 @@
 import { Node } from '../lib/node';
 import { Parser } from '../lib/parser';
-import { ArgsMap, Node as INode, Options } from './core.types';
+import { Node as INode, Options } from './core.types';
 
 /**
  * Parse arguments into a tree structure.
@@ -8,11 +8,9 @@ import { ArgsMap, Node as INode, Options } from './core.types';
  * @param options The options object.
  * @returns A {@linkcode INode Node} object.
  */
-export function argstree<T extends ArgsMap>(
+export function argstree(
   args: readonly string[],
-  options: Options<T> = {}
+  options: Options = {}
 ): INode {
-  return new Parser(new Node(null, options as unknown as Options<ArgsMap>))
-    .parse(args)
-    .build();
+  return new Parser(new Node(null, options)).parse(args).build();
 }

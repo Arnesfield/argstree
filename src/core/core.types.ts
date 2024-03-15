@@ -1,14 +1,7 @@
 /**
- * Arguments map.
- */
-export interface ArgsMap {
-  [arg: string]: Options | null | undefined;
-}
-
-/**
  * ArgsTree options.
  */
-export interface Options<T extends ArgsMap = ArgsMap> {
+export interface Options {
   /**
    * Unique ID for this option or command.
    */
@@ -47,13 +40,14 @@ export interface Options<T extends ArgsMap = ArgsMap> {
    * and the rest are arguments for the said option or command.
    */
   alias?: {
-    [alias: string]: keyof T | [keyof T, ...string[]] | null | undefined;
+    [alias: string]: string | [string, ...string[]] | null | undefined;
   };
-  // TODO: figure out options type
   /**
    * The arguments to match that will be parsed as options or commands.
    */
-  args?: T | ((arg: string) => Options | null | undefined);
+  args?:
+    | { [arg: string]: Options | null | undefined }
+    | ((arg: string) => Options | null | undefined);
 }
 
 /**
