@@ -37,6 +37,44 @@ describe('argstree', () => {
     expect(node).to.have.property('descendants').that.is.an('array');
   });
 
+  it('should not treat any arguments as an option or command unless specified', () => {
+    const args = ['--test', 'foo', 'bar', 'baz'];
+    let node = argstree(args);
+    expect(node.args).to.deep.equal(['--test', 'foo', 'bar', 'baz']);
+
+    node = argstree(args, { args: { '--test': {} } });
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('--test');
+    expect(node.children[0].args).to.deep.equal(['foo', 'bar', 'baz']);
+
+    node = argstree(args, { args: { foo: {} } });
+    expect(node.args).to.deep.equal(['--test']);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('foo');
+    expect(node.children[0].args).to.deep.equal(['bar', 'baz']);
+  });
+
+  it('should be variadic by default', () => {
+    const nodes = [
+      argstree(['--test', 'foo', 'bar', 'baz', '--test', 'foo', 'bar'], {
+        args: { '--test': {} }
+      }),
+      argstree(['-t', 'foo', 'bar', 'baz', '-t', 'foo', 'bar'], {
+        alias: { '-t': '--test' },
+        args: { '--test': {} }
+      })
+    ];
+    for (const node of nodes) {
+      expect(node.args).to.have.length(0);
+      expect(node.children).to.have.length(2);
+      expect(node.children[0].id).to.equal('--test');
+      expect(node.children[0].args).to.deep.equal(['foo', 'bar', 'baz']);
+      expect(node.children[1].id).to.equal('--test');
+      expect(node.children[1].args).to.deep.equal(['foo', 'bar']);
+    }
+  });
+
   it('should accept arguments of range (min)', () => {
     const args = ['foo', 'bar', 'baz'];
     const node = argstree(args, { min: args.length });
@@ -71,8 +109,8 @@ describe('argstree', () => {
 
   it('should accept arguments of range (max)', () => {
     const args = ['foo', 'bar', 'baz'];
-    let tree = argstree(args, { max: args.length });
-    expect(tree.args).to.deep.equal(args);
+    let node = argstree(args, { max: args.length });
+    expect(node.args).to.deep.equal(args);
 
     expectError({
       args,
@@ -80,13 +118,13 @@ describe('argstree', () => {
       options: { max: 2 }
     });
 
-    tree = argstree(['test'].concat(args), {
+    node = argstree(['test'].concat(args), {
       args: { test: { max: args.length - 1 } }
     });
-    expect(tree.args).to.deep.equal(['baz']);
-    expect(tree.children).to.have.length(1);
-    expect(tree.children[0].id).to.equal('test');
-    expect(tree.children[0].args).to.deep.equal(['foo', 'bar']);
+    expect(node.args).to.deep.equal(['baz']);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('test');
+    expect(node.children[0].args).to.deep.equal(['foo', 'bar']);
 
     expectError({
       args: ['test'].concat(args),
@@ -108,90 +146,90 @@ describe('argstree', () => {
   });
 
   it('should accept arguments of range (maxRead)', () => {
-    let tree = argstree(['--test', 'foo', 'bar'], {
+    let node = argstree(['--test', 'foo', 'bar'], {
       args: { '--test': { maxRead: 0 } }
     });
-    expect(tree.args).to.deep.equal(['foo', 'bar']);
-    expect(tree.children).to.have.length(1);
-    expect(tree.children[0].id).to.equal('--test');
+    expect(node.args).to.deep.equal(['foo', 'bar']);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('--test');
 
-    tree = argstree(['--test=foo', 'bar'], {
+    node = argstree(['--test=foo', 'bar'], {
       args: { '--test': { maxRead: 0 } }
     });
-    expect(tree.args).to.deep.equal(['bar']);
-    expect(tree.children).to.have.length(1);
-    expect(tree.children[0].id).to.equal('--test');
-    expect(tree.children[0].args).to.deep.equal(['foo']);
+    expect(node.args).to.deep.equal(['bar']);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('--test');
+    expect(node.children[0].args).to.deep.equal(['foo']);
 
     // use alias to fill max args
-    tree = argstree(['-t', 'foo', 'bar'], {
+    node = argstree(['-t', 'foo', 'bar'], {
       alias: { '-t': ['--test', 'foo', 'bar', 'baz'] },
       args: { '--test': { min: 3, max: 3, maxRead: 0 } }
     });
-    expect(tree.args).to.deep.equal(['foo', 'bar']);
-    expect(tree.children).to.have.length(1);
-    expect(tree.children[0].id).to.equal('--test');
-    expect(tree.children[0].args).to.deep.equal(['foo', 'bar', 'baz']);
+    expect(node.args).to.deep.equal(['foo', 'bar']);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('--test');
+    expect(node.children[0].args).to.deep.equal(['foo', 'bar', 'baz']);
 
-    tree = argstree(['-t=0', 'foo', 'bar'], {
+    node = argstree(['-t=0', 'foo', 'bar'], {
       alias: { '-t': ['--test', 'foo', 'bar', 'baz'] },
       args: { '--test': { min: 4, max: 4, maxRead: 0 } }
     });
-    expect(tree.args).to.deep.equal(['foo', 'bar']);
-    expect(tree.children).to.have.length(1);
-    expect(tree.children[0].id).to.equal('--test');
-    expect(tree.children[0].args).to.deep.equal(['foo', 'bar', 'baz', '0']);
+    expect(node.args).to.deep.equal(['foo', 'bar']);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('--test');
+    expect(node.children[0].args).to.deep.equal(['foo', 'bar', 'baz', '0']);
   });
 
   it('should use alias args', () => {
-    let tree = argstree(['-t'], {
+    let node = argstree(['-t'], {
       alias: { '-t': '--tree' },
       args: { '--tree': {} }
     });
-    expect(tree.children).to.have.length(1);
-    expect(tree.children[0].id).to.equal('--tree');
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('--tree');
 
-    tree = argstree(['-t']);
-    expect(tree.args).to.deep.equal(['-t']);
-    expect(tree.children).to.have.length(0);
+    node = argstree(['-t']);
+    expect(node.args).to.deep.equal(['-t']);
+    expect(node.children).to.have.length(0);
 
-    tree = argstree(['-t'], { alias: { t: 'test' }, args: { test: {} } });
-    expect(tree.args).to.deep.equal(['-t']);
-    expect(tree.children).to.have.length(0);
+    node = argstree(['-t'], { alias: { t: 'test' }, args: { test: {} } });
+    expect(node.args).to.deep.equal(['-t']);
+    expect(node.children).to.have.length(0);
 
-    tree = argstree(['t'], { alias: { '-t': 'test' }, args: { test: {} } });
-    expect(tree.args).to.deep.equal(['t']);
-    expect(tree.children).to.have.length(0);
+    node = argstree(['t'], { alias: { '-t': 'test' }, args: { test: {} } });
+    expect(node.args).to.deep.equal(['t']);
+    expect(node.children).to.have.length(0);
 
-    tree = argstree(['t'], { alias: { t: 'test' }, args: { test: {} } });
-    expect(tree.args).to.have.length(0);
-    expect(tree.children).to.have.length(1);
-    expect(tree.children[0].id).to.equal('test');
+    node = argstree(['t'], { alias: { t: 'test' }, args: { test: {} } });
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('test');
   });
 
   it('should not split non-option aliases', () => {
-    let tree = argstree(['tf'], {
+    let node = argstree(['tf'], {
       alias: { t: 'test', f: 'foo' },
       args: { test: {}, foo: {} }
     });
-    expect(tree.args).to.deep.equal(['tf']);
-    expect(tree.children).to.have.length(0);
+    expect(node.args).to.deep.equal(['tf']);
+    expect(node.children).to.have.length(0);
 
-    tree = argstree(['-tf'], {
+    node = argstree(['-tf'], {
       alias: { t: 'test', f: 'foo' },
       args: { test: {}, foo: {} }
     });
-    expect(tree.args).to.deep.equal(['-tf']);
-    expect(tree.children).to.have.length(0);
+    expect(node.args).to.deep.equal(['-tf']);
+    expect(node.children).to.have.length(0);
 
-    tree = argstree(['-tf'], {
+    node = argstree(['-tf'], {
       alias: { '-t': 'test', '-f': 'foo' },
       args: { test: {}, foo: {} }
     });
-    expect(tree.args).to.have.length(0);
-    expect(tree.children).to.have.length(2);
-    expect(tree.children[0].id).to.equal('test');
-    expect(tree.children[1].id).to.equal('foo');
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(2);
+    expect(node.children[0].id).to.equal('test');
+    expect(node.children[1].id).to.equal('foo');
 
     expectError({
       args: ['-tf'],
@@ -212,26 +250,26 @@ describe('argstree', () => {
   });
 
   it('should not save as arg for empty array alias args', () => {
-    let tree = argstree(['-t'], {
+    let node = argstree(['-t'], {
       alias: { '-t': 'test' },
       args: { test: {} }
     });
-    expect(tree.args).to.have.length(0);
-    expect(tree.children).to.have.length(1);
-    expect(tree.children[0].id).to.equal('test');
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('test');
 
     // force empty array
-    tree = argstree(['-t'], { alias: { '-t': [] as any } });
-    expect(tree.args).to.have.length(0);
-    expect(tree.children).to.have.length(0);
+    node = argstree(['-t'], { alias: { '-t': [] as any } });
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(0);
 
-    tree = argstree(['-t']);
-    expect(tree.args).to.deep.equal(['-t']);
-    expect(tree.children).to.have.length(0);
+    node = argstree(['-t']);
+    expect(node.args).to.deep.equal(['-t']);
+    expect(node.children).to.have.length(0);
 
-    tree = argstree(['-t'], { alias: { '-t': null } });
-    expect(tree.args).to.deep.equal(['-t']);
-    expect(tree.children).to.have.length(0);
+    node = argstree(['-t'], { alias: { '-t': null } });
+    expect(node.args).to.deep.equal(['-t']);
+    expect(node.children).to.have.length(0);
   });
 
   it('should not immediately validate range for split args', () => {
@@ -255,24 +293,24 @@ describe('argstree', () => {
   });
 
   it('should properly split aliases with more than one character', () => {
-    let tree = argstree(['-abbaa'], {
+    let node = argstree(['-abbaa'], {
       alias: { '-a': 'test', '-b': 'bar', '-ba': 'baz', '-aa': 'foo' },
       args: { test: {}, bar: {}, baz: {}, foo: {} }
     });
-    expect(tree.children).to.have.length(4);
+    expect(node.children).to.have.length(4);
     let ids = ['test', 'bar', 'baz', 'test'];
     ids.forEach((id, index) => {
-      expect(tree.children[index].id).to.equal(id);
+      expect(node.children[index].id).to.equal(id);
     });
 
-    tree = argstree(['-abbaa'], {
+    node = argstree(['-abbaa'], {
       alias: { '-a': 'test', '-b': 'bar', '-aa': 'foo', '-ba': 'baz' },
       args: { test: {}, bar: {}, baz: {}, foo: {} }
     });
-    expect(tree.children).to.have.length(4);
+    expect(node.children).to.have.length(4);
     ids = ['test', 'bar', 'bar', 'foo'];
     ids.forEach((id, index) => {
-      expect(tree.children[index].id).to.equal(id);
+      expect(node.children[index].id).to.equal(id);
     });
   });
 
@@ -311,18 +349,18 @@ describe('argstree', () => {
   });
 
   it('should treat the rest of the values of alias arguments as values', () => {
-    let tree = argstree(['-t'], {
+    let node = argstree(['-t'], {
       alias: { '-t': ['--test', 'foo', 'bar'] },
       args: { '--test': {}, foo: {}, bar: {} }
     });
-    expect(tree.children).be.have.length(1);
-    expect(tree.descendants).be.have.length(1);
-    expect(tree.children[0]).to.have.property('id').that.equals('--test');
-    expect(tree.children[0].args)
+    expect(node.children).be.have.length(1);
+    expect(node.descendants).be.have.length(1);
+    expect(node.children[0]).to.have.property('id').that.equals('--test');
+    expect(node.children[0].args)
       .to.be.an('array')
       .that.deep.equals(['foo', 'bar']);
 
-    tree = argstree(['-t', 'f', 'b', '-t=baz', 'test'], {
+    node = argstree(['-t', 'f', 'b', '-t=baz', 'test'], {
       alias: {
         '-t': ['--test', 'foo', 'bar'],
         f: ['foo', '--test', 'foo', 'bar'],
@@ -330,51 +368,52 @@ describe('argstree', () => {
       },
       args: { '--test': {}, foo: {}, bar: {} }
     });
-    expect(tree.children).be.have.length(4);
-    expect(tree.descendants).be.have.length(4);
+    expect(node.children).be.have.length(4);
+    expect(node.descendants).be.have.length(4);
 
-    expect(tree.children[0].id).to.equal('--test');
-    expect(tree.children[0].args)
+    expect(node.children[0].id).to.equal('--test');
+    expect(node.children[0].args)
       .to.be.an('array')
       .that.deep.equals(['foo', 'bar']);
 
-    expect(tree.children[1].id).to.equal('foo');
-    expect(tree.children[1].args)
+    expect(node.children[1].id).to.equal('foo');
+    expect(node.children[1].args)
       .to.be.an('array')
       .that.deep.equals(['--test', 'foo', 'bar']);
 
-    expect(tree.children[2].id).to.equal('bar');
-    expect(tree.children[2].args).to.be.an('array').with.length(0);
+    expect(node.children[2].id).to.equal('bar');
+    expect(node.children[2].args).to.be.an('array').with.length(0);
 
-    expect(tree.children[3].id).to.equal('--test');
-    expect(tree.children[3].args)
+    expect(node.children[3].id).to.equal('--test');
+    expect(node.children[3].args)
       .to.be.an('array')
       .that.deep.equals(['foo', 'bar', 'baz', 'test']);
   });
 
   it('should not split equal sign for `--` (special case)', () => {
-    let tree = argstree(['foo', '--', 'bar', 'baz'], { args: { '--': {} } });
-    expect(tree.args).to.be.an('array').that.deep.equals(['foo']);
-    expect(tree.children[0].args)
+    let node = argstree(['foo', '--', 'bar', 'baz'], { args: { '--': {} } });
+    expect(node.args).to.be.an('array').that.deep.equals(['foo']);
+    expect(node.children[0].args)
       .to.be.an('array')
       .that.deep.equals(['bar', 'baz']);
 
-    tree = argstree(['foo', '--=bar', 'baz'], { args: { '--': {} } });
-    expect(tree.args)
+    node = argstree(['foo', '--=bar', 'baz'], { args: { '--': {} } });
+    expect(node.args)
       .to.be.an('array')
       .that.deep.equals(['foo', '--=bar', 'baz']);
-    expect(tree.children).to.be.an('array').with.length(0);
+    expect(node.children).to.be.an('array').with.length(0);
   });
 
   it('should not parse `=` separately if first expression is not a valid option or command', () => {
-    let tree = argstree(['--foo=bar']);
-    expect(tree.args).to.be.an('array').that.deep.equals(['--foo=bar']);
-    expect(tree.children).to.have.length(0);
+    let node = argstree(['--foo=bar']);
+    expect(node.args).to.be.an('array').that.deep.equals(['--foo=bar']);
+    expect(node.children).to.have.length(0);
 
-    tree = argstree(['--foo=bar'], { args: { '--foo': {} } });
-    expect(tree.args).to.be.an('array').with.length(0);
-    expect(tree.children).to.have.length(1);
-    expect(tree.children[0].args).to.be.an('array').that.deep.equals(['bar']);
+    node = argstree(['--foo=bar'], { args: { '--foo': {} } });
+    expect(node.args).to.be.an('array').with.length(0);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('--foo');
+    expect(node.children[0].args).to.be.an('array').that.deep.equals(['bar']);
   });
 
   it('should throw an error for invalid options', () => {
