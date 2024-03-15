@@ -4,49 +4,48 @@ import { isAlias } from '../utils/arg.utils';
 import { ensureNumber } from '../utils/ensure-number';
 import { pluralize } from '../utils/pluralize';
 import { Alias } from './alias';
-import { NodeRange } from './node.types';
 
 export class Node {
   readonly raw: string | null;
   readonly args: string[] = [];
-  readonly isCommand: boolean = true;
   private _alias: Alias | undefined;
   private readonly children: Node[] = [];
-  private readonly _range: {
+  private readonly range: {
     min: number | null;
     max: number | null;
     maxRead: number | null;
   };
-  private readonly _parse: (arg: string) => Options | null | undefined;
+  private readonly _parse: ((arg: string) => Options | null | undefined) | null;
 
   constructor(raw: string | null, private readonly options: Options) {
     this.raw = raw;
     const min = ensureNumber(options.min);
     const max = ensureNumber(options.max);
-    const maxRead = ensureNumber(options.maxRead) ?? max;
-    this._range = { min, max, maxRead };
+    this.range = { min, max, maxRead: ensureNumber(options.maxRead) ?? max };
 
     // validate min and max
     if (min != null && max != null && min > max) {
       const name = this.displayName();
-      throw new ArgsTreeError({
-        cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
-        options: this.options,
-        message:
-          (name === null ? 'Invalid' : `Option '${name}' has invalid`) +
-          ` min and max range: ${min}-${max}.`
-      });
+      throw this.createError(
+        ArgsTreeError.INVALID_OPTIONS_ERROR,
+        (name ? name + 'has i' : 'I') +
+          `nvalid min and max range: ${min}-${max}.`
+      );
     }
 
     const { args } = options;
-    let _opts: { [name: string]: Options | null | undefined };
+    let _opts: { [arg: string]: Options | null | undefined };
     this._parse =
       typeof args === 'function'
         ? args
         : typeof args === 'object' && args !== null
         ? ((_opts = Object.assign(Object.create(null), args)),
-          (arg: string) => _opts[arg] ?? null)
-        : ((this.isCommand = false), () => null);
+          arg => _opts[arg] ?? null)
+        : null;
+  }
+
+  get hasArgs(): boolean {
+    return typeof this._parse === 'function';
   }
 
   get alias(): Alias {
@@ -54,8 +53,20 @@ export class Node {
     return (this._alias ||= new Alias(this.options.alias));
   }
 
-  displayName(): string | null {
-    return this.options.name ?? this.raw ?? null;
+  private displayName() {
+    const name = this.options.name ?? this.raw ?? null;
+    const type = this.hasArgs ? 'Command' : 'Option';
+    return name === null ? '' : `${type} '${name}' `;
+  }
+
+  private createError(cause: string, message: string) {
+    return new ArgsTreeError({
+      cause,
+      message,
+      raw: this.raw,
+      args: this.args,
+      options: this.options
+    });
   }
 
   push(...args: string[]): this {
@@ -71,36 +82,33 @@ export class Node {
   parse(arg: string, strict: true): Options;
   parse(arg: string, strict = false): Options | null {
     // make sure parse result is a valid object
-    const options = this._parse(arg);
+    const options = typeof this._parse === 'function' ? this._parse(arg) : null;
     const value =
       typeof options === 'object' && !Array.isArray(options) ? options : null;
     if (strict && !value) {
-      throw new ArgsTreeError({
-        cause: ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
-        options: this.options,
-        message: `Unrecognized option or command: ${arg}`
-      });
+      const name = this.displayName();
+      throw this.createError(
+        ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+        (name ? name + 'does not recognize the' : 'Unrecognized') +
+          ` option or command: ${arg}`
+      );
     }
     return value;
   }
 
-  range(diff = 0): NodeRange {
-    const { min, max, maxRead } = this._range;
+  checkRange(diff = 0): { min: boolean; max: boolean; maxRead: boolean } {
+    const { min, max, maxRead } = this.range;
     const argsLength = this.args.length + diff;
     return {
-      min,
-      max,
-      maxRead,
-      satisfies: {
-        min: min === null || argsLength >= min,
-        max: max === null || argsLength <= max,
-        maxRead: maxRead === null || argsLength <= maxRead
-      }
+      min: min === null || argsLength >= min,
+      max: max === null || argsLength <= max,
+      maxRead: maxRead === null || argsLength <= maxRead
     };
   }
 
   validateRange(): this {
-    const { min, max, satisfies } = this.range();
+    const { min, max } = this.range;
+    const satisfies = this.checkRange();
     const phrase: [string | number, number] | null =
       satisfies.min && satisfies.max
         ? null
@@ -117,17 +125,12 @@ export class Node {
         : null;
     if (phrase != null) {
       const name = this.displayName();
-      throw new ArgsTreeError({
-        cause: ArgsTreeError.INVALID_RANGE_ERROR,
-        options: this.options,
-        message:
-          (name === null ? 'E' : `Option '${name}' e`) +
-          'xpected ' +
-          phrase[0] +
-          ' ' +
-          pluralize('argument', phrase[1]) +
-          `, but got ${this.args.length}.`
-      });
+      const argsLabel = pluralize('argument', phrase[1]);
+      throw this.createError(
+        ArgsTreeError.INVALID_RANGE_ERROR,
+        (name ? name + 'e' : 'E') +
+          `xpected ${phrase[0]} ${argsLabel}, but got ${this.args.length}.`
+      );
     }
     return this;
   }
@@ -138,11 +141,12 @@ export class Node {
       const aliases = Array.from(new Set(arg.slice(1).split('')));
       const label = pluralize('alias', aliases.length, 'es');
       const list = aliases.map(alias => '-' + alias).join(', ');
-      throw new ArgsTreeError({
-        cause: ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
-        options: this.options,
-        message: `Unrecognized ${label}: ${list}`
-      });
+      const name = this.displayName();
+      throw this.createError(
+        ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
+        (name ? name + 'does not recognize the' : 'Unrecognized') +
+          ` ${label}: ${list}`
+      );
     }
     return this;
   }

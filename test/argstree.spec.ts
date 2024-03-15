@@ -431,7 +431,7 @@ describe('argstree', () => {
     expect(() => argstree(['-t'], options)).to.not.throw(ArgsTreeError);
     expectError({ ...errOpts, args: ['-tx'] });
     expectError({ ...errOpts, args: ['-xt'] });
-    expectError({ ...errOpts, args: ['-xtx'] });
+    expectError({ ...errOpts, args: ['-xty'] });
 
     errOpts.equal = options.args.test;
     expect(() => argstree(['test', '-T', '-Ty', '-yT'], options)).to.not.throw(
@@ -439,6 +439,6 @@ describe('argstree', () => {
     );
     expectError({ ...errOpts, args: ['test', '-Tx'] });
     expectError({ ...errOpts, args: ['test', '-xT'] });
-    expectError({ ...errOpts, args: ['test', '-xTx'] });
+    expectError({ ...errOpts, args: ['test', '-xTy'] });
   });
 });

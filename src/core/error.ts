@@ -18,6 +18,14 @@ export interface ArgsTreeErrorOptions {
    */
   message: string;
   /**
+   * The parsed argument.
+   */
+  raw: string | null;
+  /**
+   * The arguments for this node.
+   */
+  args: string[];
+  /**
    * The options object related to this error (same options object reference).
    */
   options: Options;
@@ -57,6 +65,14 @@ export class ArgsTreeError extends Error {
    */
   cause: string;
   /**
+   * The parsed argument.
+   */
+  raw: string | null;
+  /**
+   * The arguments for this node.
+   */
+  args: string[];
+  /**
    * The options object related to this error (same options object reference).
    */
   options: Options;
@@ -67,7 +83,10 @@ export class ArgsTreeError extends Error {
    */
   constructor(options: ArgsTreeErrorOptions) {
     super(options.message, options);
+    this.name = 'ArgsTreeError';
     this.cause = options.cause;
+    this.raw = options.raw;
+    this.args = options.args;
     this.options = options.options;
   }
 }

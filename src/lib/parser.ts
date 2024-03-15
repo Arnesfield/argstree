@@ -77,7 +77,7 @@ export class Parser {
     const node = (this.child = new Node(arg, options));
     this.parent.save(this.child);
     // if this child has args, switch it for next parse iteration
-    if (this.child.isCommand) {
+    if (this.child.hasArgs) {
       // since we're removing reference to parent, validate it now
       this.parent.validateRange();
       this.parent = this.child;
@@ -102,7 +102,7 @@ export class Parser {
   private saveValue(arg: string) {
     // if current node exists, check if it reached its max args, if not then save arg
     // otherwise, treat this as an arg for the main node
-    if (this.child?.range(1).satisfies.maxRead) {
+    if (this.child?.checkRange(1).maxRead) {
       this.child.push(arg);
     } else {
       this.parent.push(arg);

@@ -26,14 +26,20 @@ describe('error', () => {
   });
 
   it('should contain class members', () => {
+    const args: string[] = [];
     const options: Options = {};
     const error = new ArgsTreeError({
       cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
-      options,
-      message: 'foo'
+      message: 'foo',
+      raw: 'arg',
+      args,
+      options
     });
+    expect(error.name).to.equal('ArgsTreeError');
     expect(error.cause).to.equal(ArgsTreeError.INVALID_OPTIONS_ERROR);
-    expect(error.options).to.equal(options);
     expect(error.message).to.equal('foo');
+    expect(error.raw).to.equal('arg');
+    expect(error.args).to.equal(args);
+    expect(error.options).to.equal(options);
   });
 });
