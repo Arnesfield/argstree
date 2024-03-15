@@ -2,7 +2,6 @@ import { Node as INode, Options } from '../core/core.types';
 import { ArgsTreeError } from '../core/error';
 import { isAlias } from '../utils/arg.utils';
 import { ensureNumber } from '../utils/ensure-number';
-import { pluralize } from '../utils/pluralize';
 import { Alias } from './alias';
 
 export class Node {
@@ -125,11 +124,11 @@ export class Node {
         : null;
     if (phrase != null) {
       const name = this.displayName();
-      const argsLabel = pluralize('argument', phrase[1]);
+      const label = 'argument' + (phrase[1] === 1 ? '' : 's');
       throw this.createError(
         ArgsTreeError.INVALID_RANGE_ERROR,
         (name ? name + 'e' : 'E') +
-          `xpected ${phrase[0]} ${argsLabel}, but got ${this.args.length}.`
+          `xpected ${phrase[0]} ${label}, but got ${this.args.length}.`
       );
     }
     return this;
@@ -139,7 +138,7 @@ export class Node {
     // only validate for left over alias split arg
     if (isAlias(arg)) {
       const aliases = Array.from(new Set(arg.slice(1).split('')));
-      const label = pluralize('alias', aliases.length, 'es');
+      const label = 'alias' + (aliases.length === 1 ? '' : 'es');
       const list = aliases.map(alias => '-' + alias).join(', ');
       const name = this.displayName();
       throw this.createError(
