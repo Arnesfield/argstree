@@ -10,7 +10,6 @@ import type Pkg from './package.json';
 const require = createRequire(import.meta.url);
 const pkg: typeof Pkg = require('./package.json');
 const input = 'src/index.ts';
-// skip sourcemap and umd unless production
 const WATCH = process.env.ROLLUP_WATCH === 'true';
 const PROD = !WATCH || process.env.NODE_ENV === 'production';
 
@@ -21,12 +20,7 @@ function defineConfig(options: (false | RollupOptions)[]) {
 export default defineConfig([
   {
     input,
-    output: {
-      file: pkg.module,
-      format: 'esm',
-      exports: 'named',
-      sourcemap: PROD
-    },
+    output: { file: pkg.module, format: 'esm', exports: 'named' },
     plugins: [esbuild(), outputSize()]
   },
   {
