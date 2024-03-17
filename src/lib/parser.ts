@@ -59,10 +59,7 @@ export class Parser {
         this.parent.validateAlias(split.arg).push(split.arg);
       }
       // treat first as is (alias) while the rest as values
-      split.argsList.forEach((aliasArgs, index, array) => {
-        // save value for last arg
-        this.saveAliasArgs(aliasArgs, index >= array.length - 1 ? values : []);
-      });
+      this.saveAliasArgs(split.argsList, values);
       return;
     }
 
@@ -87,13 +84,19 @@ export class Parser {
     }
   }
 
-  private saveAliasArgs(aliasArgs: string[], values: string[] = []) {
-    if (aliasArgs.length > 0) {
-      const arg = aliasArgs[0];
-      const options = this.parent.parse(arg, true);
-      const extras = aliasArgs.slice(1).concat(values);
-      this.saveOption(arg, options, extras);
-    }
+  private saveAliasArgs(list: string[][], values: string[] = []) {
+    // save values for last of list only
+    list.forEach((aliasArgs, index, array) => {
+      // save value for last arg
+      if (aliasArgs.length > 0) {
+        const arg = aliasArgs[0];
+        const options = this.parent.parse(arg, true);
+        const extras = aliasArgs
+          .slice(1)
+          .concat(index >= array.length - 1 ? values : []);
+        this.saveOption(arg, options, extras);
+      }
+    });
   }
 
   private saveValue(arg: string) {

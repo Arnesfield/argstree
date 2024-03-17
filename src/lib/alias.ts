@@ -4,9 +4,8 @@ import { splitAlias } from './split-alias';
 
 export class Alias {
   private readonly aliases: string[] = [];
-  private readonly aliasMap: {
-    [name: string]: string | string[] | null | undefined;
-  } = Object.create(null);
+  private readonly aliasMap: Exclude<Options['alias'], undefined> =
+    Object.create(null);
 
   constructor(alias: Options['alias']) {
     if (typeof alias === 'object' && alias !== null) {
@@ -16,7 +15,11 @@ export class Alias {
     // get aliases and sort by length desc
     for (const alias in this.aliasMap) {
       // skip command aliases since we don't need to split them
-      if (isAlias(alias) && this.getArgs(alias)) {
+      const aliasArgs = this.aliasMap[alias];
+      if (
+        isAlias(alias) &&
+        (typeof aliasArgs === 'string' || Array.isArray(aliasArgs))
+      ) {
         // remove prefix only when saving
         this.aliases.push(alias.slice(1));
       }
@@ -24,13 +27,28 @@ export class Alias {
     this.aliases.sort((a, b) => b.length - a.length);
   }
 
-  getArgs(alias: string): string[] | null {
+  getArgs(alias: string): [string, ...string[]][] | null {
     const args = this.aliasMap[alias];
-    return Array.isArray(args)
-      ? args
-      : typeof args === 'string'
-      ? [args]
-      : null;
+    const aliasArgs =
+      typeof args === 'string' ? [args] : Array.isArray(args) ? args : null;
+    if (!Array.isArray(aliasArgs)) {
+      return null;
+    }
+    let strList: [string, ...string[]] | undefined;
+    const list: [string, ...string[]][] = [];
+    for (const arg of aliasArgs) {
+      if (Array.isArray(arg)) {
+        list.push(arg);
+      } else if (typeof arg === 'string') {
+        if (!strList) {
+          strList = [arg];
+          list.push(strList);
+        } else {
+          strList.push(arg);
+        }
+      }
+    }
+    return list;
   }
 
   split(arg: string): { arg: string | null; argsList: string[][] } | undefined {
@@ -50,9 +68,9 @@ export class Alias {
     const argsList: string[][] = [];
     for (const alias of split.aliases) {
       // note that split.aliases does not have `-` prefix
-      const aliasArgs = this.getArgs('-' + alias);
+      const list = this.getArgs('-' + alias);
       // accept regardless if no length
-      if (aliasArgs) {
+      for (const aliasArgs of list || []) {
         argsList.push(aliasArgs);
       }
     }

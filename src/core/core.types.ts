@@ -38,9 +38,29 @@ export interface Options {
    * For multiple alias arguments, use a string array where
    * the first element string is a valid option or command
    * and the rest are arguments for the said option or command.
+   *
+   * ```javascript
+   * ['--foo', 'arg1', 'arg2', ...]
+   * ```
+   *
+   * For multiple options or commands with their own arguments,
+   * use an array of string arrays of similar condition.
+   *
+   * ```javascript
+   * [
+   *   ['--foo', 'arg1', 'arg2', ...],
+   *   ['command', 'arg1', 'arg2', ...],
+   *   ...
+   * ]
+   * ```
    */
   alias?: {
-    [alias: string]: string | [string, ...string[]] | null | undefined;
+    [alias: string]:
+      | string
+      | [string, ...string[]]
+      | [string, ...string[]][]
+      | null
+      | undefined;
   };
   /**
    * The arguments to match that will be parsed as options or commands.
