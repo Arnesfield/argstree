@@ -390,6 +390,41 @@ describe('argstree', () => {
       .that.deep.equals(['foo', 'bar', 'baz', 'test']);
   });
 
+  it('should handle multiple alias args', () => {
+    const node = argstree(['-f'], {
+      alias: {
+        '-f': [
+          ['--foo', 'bar', 'baz'],
+          '--bar',
+          ['--baz', 'foo', 'bar'],
+          'foo',
+          'baz'
+        ]
+      },
+      args: { '--foo': {}, '--bar': {}, '--baz': {} }
+    });
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(3);
+    expect(node.children[0].id).to.equal('--foo');
+    expect(node.children[0].args).to.deep.equal(['bar', 'baz']);
+
+    expect(node.children[1].id).to.equal('--bar');
+    expect(node.children[1].args).to.deep.equal(['foo', 'baz']);
+
+    expect(node.children[2].id).to.equal('--baz');
+    expect(node.children[2].args).to.deep.equal(['foo', 'bar']);
+  });
+
+  it('should handle possibly common case for `__proto__`', () => {
+    expect(argstree(['__proto__']).args).to.deep.equal(['__proto__']);
+    expect(argstree(['__proto__'], { args: {} }).args).to.deep.equal([
+      '__proto__'
+    ]);
+    expect(
+      argstree(['__proto__'], { args: arg => ({}[arg]) }).args
+    ).to.deep.equal(['__proto__']);
+  });
+
   it('should not split equal sign for `--` (special case)', () => {
     let node = argstree(['foo', '--', 'bar', 'baz'], { args: { '--': {} } });
     expect(node.args).to.be.an('array').that.deep.equals(['foo']);
