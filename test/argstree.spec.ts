@@ -75,6 +75,36 @@ describe('argstree', () => {
     }
   });
 
+  it('should accept args function', () => {
+    let called = false;
+    const node = argstree(['--foo'], {
+      args: arg => {
+        called = true;
+        return arg === '--foo' ? {} : null;
+      }
+    });
+    expect(called).to.be.true;
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('--foo');
+  });
+
+  it('should accept args function (recursive)', () => {
+    const args: Options['args'] = arg => (arg === '--foo' ? { args } : null);
+    const node = argstree(['--foo', 'foo', '--foo', 'bar', '--foo', 'baz'], {
+      args
+    });
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(1);
+    expect(node.descendants).to.have.length(3);
+    const match = ['foo', 'bar', 'baz'];
+    for (let index = 0; index < node.descendants.length; index++) {
+      const descendant = node.descendants[index];
+      expect(descendant.id).to.equal('--foo');
+      expect(descendant.depth).to.equal(index + 1);
+      expect(descendant.args).to.deep.equal([match[index]]);
+    }
+  });
+
   it('should accept arguments of range (min)', () => {
     const args = ['foo', 'bar', 'baz'];
     const node = argstree(args, { min: args.length });
@@ -179,6 +209,33 @@ describe('argstree', () => {
     expect(node.children).to.have.length(1);
     expect(node.children[0].id).to.equal('--test');
     expect(node.children[0].args).to.deep.equal(['foo', 'bar', 'baz', '0']);
+  });
+
+  it('should not check alias args if there is a matching option or command', () => {
+    const nodes = [
+      argstree(['-f'], {
+        alias: { '-f': '--foo' },
+        args: { '--foo': {}, '-f': { id: 'bar' } }
+      }),
+      argstree(['-f'], {
+        alias: { '-f': '--foo' },
+        args: arg => (arg === '-f' ? { id: 'bar' } : null)
+      })
+    ];
+    for (const node of nodes) {
+      expect(node.args).to.have.length(0);
+      expect(node.children).to.have.length(1);
+      expect(node.children[0].id).to.equal('bar');
+    }
+
+    const node = argstree(['-fb'], {
+      alias: { '-f': '--foo', '-b': '-f' },
+      args: { '--foo': {}, '-f': { id: 'bar' } }
+    });
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(2);
+    expect(node.children[0].id).to.equal('--foo');
+    expect(node.children[1].id).to.equal('bar');
   });
 
   it('should use alias args', () => {
