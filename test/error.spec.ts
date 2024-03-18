@@ -35,6 +35,7 @@ describe('error', () => {
       args,
       options
     });
+    expect(error).to.be.instanceOf(Error);
     expect(error.name).to.equal('ArgsTreeError');
     expect(error.cause).to.equal(ArgsTreeError.INVALID_OPTIONS_ERROR);
     expect(error.message).to.equal('foo');
