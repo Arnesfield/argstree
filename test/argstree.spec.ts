@@ -391,28 +391,43 @@ describe('argstree', () => {
   });
 
   it('should handle multiple alias args', () => {
-    const node = argstree(['-f'], {
-      alias: {
-        '-f': [
-          ['--foo', 'bar', 'baz'],
-          '--bar',
-          ['--baz', 'foo', 'bar'],
-          'foo',
-          'baz'
-        ]
-      },
-      args: { '--foo': {}, '--bar': {}, '--baz': {} }
-    });
-    expect(node.args).to.have.length(0);
-    expect(node.children).to.have.length(3);
-    expect(node.children[0].id).to.equal('--foo');
-    expect(node.children[0].args).to.deep.equal(['bar', 'baz']);
+    const nodes = [
+      argstree(['-f'], {
+        alias: {
+          '-f': [
+            ['--foo', 'bar', 'baz'],
+            ['--bar', 'foo', 'baz'],
+            ['--baz', 'foo', 'bar']
+          ]
+        },
+        args: { '--foo': {}, '--bar': {}, '--baz': {} }
+      }),
+      argstree(['-f'], {
+        // force both string and string array
+        alias: {
+          '-f': [
+            ['--foo', 'bar', 'baz'],
+            '--bar',
+            ['--baz', 'foo', 'bar'],
+            'foo',
+            'baz'
+          ] as any
+        },
+        args: { '--foo': {}, '--bar': {}, '--baz': {} }
+      })
+    ];
+    for (const node of nodes) {
+      expect(node.args).to.have.length(0);
+      expect(node.children).to.have.length(3);
+      expect(node.children[0].id).to.equal('--foo');
+      expect(node.children[0].args).to.deep.equal(['bar', 'baz']);
 
-    expect(node.children[1].id).to.equal('--bar');
-    expect(node.children[1].args).to.deep.equal(['foo', 'baz']);
+      expect(node.children[1].id).to.equal('--bar');
+      expect(node.children[1].args).to.deep.equal(['foo', 'baz']);
 
-    expect(node.children[2].id).to.equal('--baz');
-    expect(node.children[2].args).to.deep.equal(['foo', 'bar']);
+      expect(node.children[2].id).to.equal('--baz');
+      expect(node.children[2].args).to.deep.equal(['foo', 'bar']);
+    }
   });
 
   it('should handle possibly common case for `__proto__`', () => {

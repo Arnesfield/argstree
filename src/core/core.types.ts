@@ -57,7 +57,8 @@ export interface Options {
   alias?: {
     [alias: string]:
       | string
-      | [string | [string, ...string[]], ...(string | [string, ...string[]])[]]
+      | [string, ...string[]]
+      | [[string, ...string[]], ...[string, ...string[]][]]
       | null
       | undefined;
   };
