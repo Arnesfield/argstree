@@ -33,7 +33,7 @@ export interface Options {
    */
   maxRead?: number | null;
   /**
-   * List of aliases mapped to arguments.
+   * List of aliases mapped to {@linkcode args}.
    *
    * For multiple alias arguments, use a string array where
    * the first element string is a valid option or command
