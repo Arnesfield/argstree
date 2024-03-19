@@ -510,7 +510,7 @@ This package includes a function to stringify the `Node` object. The `stringify`
 import argstree, { stringify } from 'argstree';
 
 const node = argstree(['--bar', 'baz', 'foo'], {
-  args: { '--foo': { max: 1 } }
+  args: { '--bar': { max: 1 } }
 });
 const tree = stringify(node);
 console.log(tree);
@@ -518,10 +518,11 @@ console.log(tree);
 
 ```text
 null (depth: 0)
-└─┬ :args (total: 3)
-  ├── --bar
-  ├── baz
-  └── foo
+├─┬ :args (total: 1)
+│ └── foo
+└─┬ --bar (depth: 1)
+  └─┬ :args (total: 1)
+    └── baz
 ```
 
 It also accepts an options object where you can specify what to show or hide from the tree string.
