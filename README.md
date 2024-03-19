@@ -281,7 +281,7 @@ root [ 'bar', 'baz' ]
 --foo []
 ```
 
-However, direct option assignment with `=` bypasses this check since the assigned value is always treated as an argument for the said option or command. And so, it will throw an error.
+However, direct option assignment with `=` bypasses this check since the assigned value is always treated as an argument for the said option. And so, it will throw an error.
 
 ```javascript
 try {
