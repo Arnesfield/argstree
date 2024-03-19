@@ -38,7 +38,7 @@ Parsing arguments is hard. Well, unless you use the many packages out there that
 
 Note that `argstree` only parses arguments based on the configuration it has been given. It is still up to the consumers/developers to interpret the parsed arguments and decide how to use these inputs to suit their application's needs.
 
-If you're looking for something oddly specific, then `argstree` _might_ be for you. Otherwise, you can check out the other great projects out there like [`commander`](https://www.npmjs.com/package/commander), [`yargs`](https://www.npmjs.com/package/yargs), [`minimist`](https://www.npmjs.com/package/minimist), and [many more](https://www.npmjs.com/search?q=keywords%3Aargs%2Cargv).
+If you're looking for something oddly specific, then `argstree` _might_ be for you. Otherwise, you can check out the other great projects for parsing arguments like [`commander`](https://www.npmjs.com/package/commander), [`yargs`](https://www.npmjs.com/package/yargs), [`minimist`](https://www.npmjs.com/package/minimist), and [many more](https://www.npmjs.com/search?q=keywords%3Aargs%2Cargv).
 
 ## Install
 
@@ -64,6 +64,10 @@ console.log(node.id, node.args);
 ```text
 null [ '--hello', 'world' ]
 ```
+
+> [!TIP]
+>
+> Please see [`src/core/core.types.ts`](src/core/core.types.ts) for `Options` and `Node` types.
 
 ### Options and Commands
 
@@ -331,9 +335,246 @@ Note that while you can use both `max` and `maxRead` options together, the only 
 
 ### Aliases
 
-> [!NOTE]
+Specify the list of aliases mapped to arguments (alias -> option or command). Note that aliases are required to map to valid arguments specified in `args`.
+
+```javascript
+// alias string
+const node = argstree(['-f', 'b', 'baz'], {
+  alias: { '-f': '--foo', b: 'bar' },
+  args: { '--foo': {}, bar: {} }
+});
+for (const child of node.children) {
+  console.log(child.id, child.args);
+}
+```
+
+```text
+--foo []
+bar [ 'baz' ]
+```
+
+You can also specify additional arguments to go along with the option or command.
+
+```javascript
+// alias string array
+const node = argstree(['-f', 'baz'], {
+  alias: { '-f': ['--foo', 'bar'] },
+  args: { '--foo': {} }
+});
+const foo = node.children[0];
+console.log(foo.id, foo.args);
+```
+
+```text
+--foo [ 'bar', 'baz' ]
+```
+
+Aliases can also be mapped to multiple options or commands with additional arguments.
+
+```javascript
+// alias array of string arrays
+const node = argstree(['-f', 'baz'], {
+  alias: {
+    '-f': [
+      ['--foo', 'bar', 'baz'],
+      ['--bar', 'foo', 'bar']
+    ]
+  },
+  args: { '--foo': {}, '--bar': {} }
+});
+for (const child of node.children) {
+  console.log(child.id, child.args);
+}
+```
+
+```text
+--foo [ 'bar', 'baz' ]
+--bar [ 'foo', 'bar', 'baz' ]
+```
+
+Aliases that start with one dash (e.g. `-a`) can be used together (does not apply for command aliases, e.g. no starting dash).
+
+```javascript
+const node = argstree(['-bf', 'foo'], {
+  alias: { '-f': '--foo', b: 'bar', '-b': '--baz' },
+  args: { '--foo': {}, bar: {}, '--baz': {} }
+});
+for (const child of node.children) {
+  console.log(child.id, child.args);
+}
+```
+
+```text
+--baz []
+--foo [ 'foo' ]
+```
+
+Notice that `bar` is not matched with the `-bf` argument since its alias (`b`) does not start with a dash. Also, arguments (i.e. `foo`) are saved for the last alias option ([limits](#limits-min-max-maxread) apply).
+
+Aliases are not limited to a single character.
+
+```javascript
+const node = argstree(['-fbab'], {
+  alias: { '-f': '--foo', '-b': 'baz', '-ba': 'bar' },
+  args: { '--foo': {}, bar: {}, baz: {} }
+});
+for (const child of node.children) {
+  console.log(child.id, child.args);
+}
+```
+
+```text
+--foo []
+bar []
+baz []
+```
+
+Assignment with `=` also applies to aliases that start with a dash.
+
+```javascript
+const node = argstree(['-fb=baz'], {
+  alias: {
+    '-f': ['--foo', 'bar', 'baz'],
+    '-b': ['--bar', 'foo']
+  },
+  args: { '--foo': {}, '--bar': {} }
+});
+for (const child of node.children) {
+  console.log(child.id, child.args);
+}
+```
+
+```text
+--foo [ 'bar', 'baz' ]
+--bar [ 'foo', 'baz' ]
+```
+
+Note that [limits](#limits-min-max-maxread) apply to these arguments and an error is thrown if the conditions are not satisfied.
+
+### Other Options
+
+You can specify the `id` and `name` options.
+
+- `id` (type: `string | null`) - Unique ID for this option or command. This is never used in any internal logic, but can be useful in finding the exact node after parsing.
+- `name` (type: `string | null`) - Display name of option or command for errors. If not provided, the raw argument is used as the display name when available.
+
+### ArgsTreeError
+
+For errors related to `argstree` parsing, an `ArgsTreeError` object is thrown which has properties including:
+
+- `cause` string
+- `raw` string argument
+- `args` string array
+- `options` object
+
+You can import the class to reference in catch blocks.
+
+```javascript
+import argstree, { ArgsTreeError } from 'argstree';
+
+try {
+  argstree(['--foo', 'bar'], {
+    args: { '--foo': { min: 2 } }
+  });
+} catch (error) {
+  if (error instanceof ArgsTreeError) {
+    console.error(JSON.stringify(error, undefined, 2));
+  }
+}
+```
+
+```text
+{
+  "name": "ArgsTreeError",
+  "cause": "invalid-range",
+  "message": "Option '--foo' expected at least 2 arguments, but got 1.",
+  "raw": "--foo",
+  "args": [
+    "bar"
+  ],
+  "options": {
+    "min": 2
+  }
+}
+```
+
+> [!TIP]
 >
-> **WIP:** README is still a work in progress.
+> Please see [`src/core/error.ts`](src/core/error.ts) for more details.
+
+### stringify
+
+This package includes a function to stringify the `Node` object. The `stringify` function returns a string.
+
+```javascript
+import argstree, { stringify } from 'argstree';
+
+const node = argstree(['--bar', 'baz', 'foo'], {
+  args: { '--foo': { max: 1 } }
+});
+const tree = stringify(node);
+console.log(tree);
+```
+
+```text
+null (depth: 0)
+└─┬ :args (total: 3)
+  ├── --bar
+  ├── baz
+  └── foo
+```
+
+It also accepts an options object where you can specify what to show or hide from the tree string.
+
+```javascript
+const node = argstree(['--foo', 'bar', 'baz', '--bar', 'foo', '--baz'], {
+  args: {
+    '--foo': {},
+    baz: {
+      args: {
+        '--bar': {},
+        '--baz': {}
+      }
+    }
+  }
+});
+const tree = stringify(node, {
+  args: true, // default: true
+  ancestors: true, // default: false
+  descendants: true // default: false
+});
+console.log(tree);
+```
+
+```text
+null (depth: 0)
+├─┬ --foo (depth: 1)
+│ ├─┬ :args (total: 1)
+│ │ └── bar
+│ └─┬ :ancestors (total: 1)
+│   └── null (depth: 0)
+├─┬ baz (depth: 1)
+│ ├─┬ --bar (depth: 2)
+│ │ ├─┬ :args (total: 1)
+│ │ │ └── foo
+│ │ └─┬ :ancestors (total: 2)
+│ │   ├── null (depth: 0)
+│ │   └── baz (depth: 1)
+│ ├─┬ --baz (depth: 2)
+│ │ └─┬ :ancestors (total: 2)
+│ │   ├── null (depth: 0)
+│ │   └── baz (depth: 1)
+│ ├─┬ :ancestors (total: 1)
+│ │ └── null (depth: 0)
+│ └─┬ :descendants (total: 2)
+│   ├── --bar (depth: 2)
+│   └── --baz (depth: 2)
+└─┬ :descendants (total: 4)
+  ├── --foo (depth: 1)
+  ├── baz (depth: 1)
+  ├── --bar (depth: 2)
+  └── --baz (depth: 2)
+```
 
 ## License
 
