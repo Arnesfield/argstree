@@ -32,6 +32,16 @@ export interface ArgsTreeErrorOptions {
 }
 
 /**
+ * The ArgsTree error object.
+ */
+interface ArgsTreeErrorObject extends ArgsTreeErrorOptions {
+  /**
+   * The Error name.
+   */
+  name: string;
+}
+
+/**
  * ArgsTree error.
  */
 export class ArgsTreeError extends Error {
@@ -88,5 +98,16 @@ export class ArgsTreeError extends Error {
     this.raw = options.raw;
     this.args = options.args;
     this.options = options.options;
+  }
+
+  toJSON(): ArgsTreeErrorObject {
+    return {
+      name: this.name,
+      cause: this.cause,
+      message: this.message,
+      raw: this.raw,
+      args: this.args,
+      options: this.options
+    };
   }
 }

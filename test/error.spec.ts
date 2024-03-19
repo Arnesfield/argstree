@@ -43,4 +43,22 @@ describe('error', () => {
     expect(error.args).to.equal(args);
     expect(error.options).to.equal(options);
   });
+
+  it('should contain properties for toJSON', () => {
+    const error = new ArgsTreeError({
+      cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
+      message: 'foo',
+      raw: 'arg',
+      args: ['bar', 'baz'],
+      options: { max: 2 }
+    });
+    expect(error.toJSON()).to.deep.equal({
+      name: 'ArgsTreeError',
+      cause: 'invalid-options',
+      message: 'foo',
+      raw: 'arg',
+      args: ['bar', 'baz'],
+      options: { max: 2 }
+    });
+  });
 });
