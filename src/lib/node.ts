@@ -25,7 +25,7 @@ export class Node {
     // validate min and max
     if (min != null && max != null && min > max) {
       const name = this.displayName();
-      throw this.createError(
+      throw this.error(
         ArgsTreeError.INVALID_OPTIONS_ERROR,
         (name ? name + 'has i' : 'I') +
           `nvalid min and max range: ${min}-${max}.`
@@ -56,7 +56,7 @@ export class Node {
     return name === null ? '' : `${type} '${name}' `;
   }
 
-  private createError(cause: string, message: string) {
+  private error(cause: string, message: string) {
     return new ArgsTreeError({
       cause,
       message,
@@ -91,7 +91,7 @@ export class Node {
         : null;
     if (strict && !value) {
       const name = this.displayName();
-      throw this.createError(
+      throw this.error(
         ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
         (name ? name + 'does not recognize the' : 'Unrecognized') +
           ` option or command: ${arg}`
@@ -130,7 +130,7 @@ export class Node {
     if (phrase != null) {
       const name = this.displayName();
       const label = 'argument' + (phrase[1] === 1 ? '' : 's');
-      throw this.createError(
+      throw this.error(
         ArgsTreeError.INVALID_RANGE_ERROR,
         (name ? name + 'e' : 'E') +
           `xpected ${phrase[0]} ${label}, but got ${this.args.length}.`
@@ -146,7 +146,7 @@ export class Node {
       const label = 'alias' + (aliases.length === 1 ? '' : 'es');
       const list = aliases.map(alias => '-' + alias).join(', ');
       const name = this.displayName();
-      throw this.createError(
+      throw this.error(
         ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
         (name ? name + 'does not recognize the' : 'Unrecognized') +
           ` ${label}: ${list}`
