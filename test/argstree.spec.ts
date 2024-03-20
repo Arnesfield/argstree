@@ -135,6 +135,16 @@ describe('argstree', () => {
       options: options2,
       equal: options2.args.test.args.bar
     });
+
+    const options3 = {
+      min: 1,
+      args: { foo: { args: { bar: { min: 1 } } } }
+    } satisfies Options;
+    expectError({
+      args: ['foo', 'bar', 'baz'],
+      cause: ArgsTreeError.INVALID_RANGE_ERROR,
+      options: options3
+    });
   });
 
   it('should accept arguments of range (max)', () => {
@@ -172,6 +182,22 @@ describe('argstree', () => {
       cause: ArgsTreeError.INVALID_RANGE_ERROR,
       options,
       equal: options.args['--test']
+    });
+
+    const options2 = {
+      args: { '--foo': { max: 0, args: { bar: { args: {} } } } }
+    } satisfies Options;
+    expectError({
+      args: ['--foo=bar', 'bar', 'baz'],
+      cause: ArgsTreeError.INVALID_RANGE_ERROR,
+      options: options2,
+      equal: options2.args['--foo']
+    });
+
+    expectError({
+      args: ['foo', 'bar'],
+      cause: ArgsTreeError.INVALID_RANGE_ERROR,
+      options: { max: 0, args: { foo: { max: 0 } } }
     });
   });
 

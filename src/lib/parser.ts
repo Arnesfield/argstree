@@ -117,9 +117,6 @@ export class Parser {
     // finally, make sure to validate the rest of the nodes
     this.child?.validateRange();
     this.parent.validateRange();
-    if (this.parent !== this.root) {
-      this.root.validateRange();
-    }
     return this.root;
   }
 }
