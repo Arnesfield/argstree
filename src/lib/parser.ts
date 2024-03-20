@@ -21,13 +21,8 @@ export class Parser {
     // 8 - if has alias args, use second part value as an arg for child (last option)
     // 9 - otherwise, use original arg and treat as value
 
-    let options = this.parent.parse(arg);
-    if (options != null) {
-      return this.saveOption(arg, options);
-    }
-    let aliasArgs = this.parent.alias.getArgs(arg);
-    if (aliasArgs) {
-      return this.saveAliasArgs(aliasArgs);
+    if (this.saveArg(arg)) {
+      return;
     }
 
     // don't treat `--` as an option like
@@ -42,13 +37,8 @@ export class Parser {
     const match = hasEqual ? arg.slice(0, equalIndex) : arg;
     const values = hasEqual ? [arg.slice(equalIndex + 1)] : [];
 
-    options = this.parent.parse(match);
-    if (options != null) {
-      return this.saveOption(match, options, values);
-    }
-    aliasArgs = this.parent.alias.getArgs(match);
-    if (aliasArgs) {
-      return this.saveAliasArgs(aliasArgs, values);
+    if (this.saveArg(match, values)) {
+      return;
     }
 
     const split = this.parent.alias.split(match);
@@ -60,14 +50,25 @@ export class Parser {
       }
       // treat first as is (alias) while the rest as values
       this.saveAliasArgs(split.argsList, values);
-      return;
+    } else {
+      // treat arg as value
+      this.saveValue(arg);
     }
-
-    // treat arg as value
-    this.saveValue(arg);
   }
 
-  private saveOption(arg: string, options: Options, values: string[] = []) {
+  private saveArg(arg: string, values: string[] = []) {
+    let options, aliasArgs;
+    if ((options = this.parent.parse(arg))) {
+      this.saveOptions(arg, options, values);
+    } else if ((aliasArgs = this.parent.alias.getArgs(arg))) {
+      this.saveAliasArgs(aliasArgs, values);
+    } else {
+      return false;
+    }
+    return true;
+  }
+
+  private saveOptions(arg: string, options: Options, values: string[] = []) {
     // validate existing child then make new child
     this.child?.validateRange();
     // make new child and save values
@@ -94,7 +95,7 @@ export class Parser {
         const extras = aliasArgs
           .slice(1)
           .concat(index >= array.length - 1 ? values : []);
-        this.saveOption(arg, options, extras);
+        this.saveOptions(arg, options, extras);
       }
     });
   }
