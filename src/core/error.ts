@@ -93,7 +93,7 @@ export class ArgsTreeError extends Error {
    */
   constructor(options: ArgsTreeErrorOptions) {
     super(options.message, options);
-    this.name = 'ArgsTreeError';
+    this.name = this.constructor.name;
     this.cause = options.cause;
     this.raw = options.raw;
     this.args = options.args;

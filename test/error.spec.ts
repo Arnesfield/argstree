@@ -36,7 +36,7 @@ describe('error', () => {
       options
     });
     expect(error).to.be.instanceOf(Error);
-    expect(error.name).to.equal('ArgsTreeError');
+    expect(error.name).to.equal(ArgsTreeError.name);
     expect(error.cause).to.equal(ArgsTreeError.INVALID_OPTIONS_ERROR);
     expect(error.message).to.equal('foo');
     expect(error.raw).to.equal('arg');
@@ -53,7 +53,7 @@ describe('error', () => {
       options: { max: 2 }
     });
     expect(error.toJSON()).to.deep.equal({
-      name: 'ArgsTreeError',
+      name: ArgsTreeError.name,
       cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
       message: 'foo',
       raw: 'arg',
