@@ -341,10 +341,15 @@ describe('argstree', () => {
     expect(node.children).to.have.length(1);
     expect(node.children[0].id).to.equal('test');
 
-    // force empty array
-    node = argstree(['-t'], { alias: { '-t': [] as any } });
-    expect(node.args).to.have.length(0);
-    expect(node.children).to.have.length(0);
+    // force empty arrays
+    const nodes = [
+      argstree(['-t'], { alias: { '-t': [] as any } }),
+      argstree(['-t'], { alias: { '-t': [[]] as any } })
+    ];
+    for (const node of nodes) {
+      expect(node.args).to.have.length(0);
+      expect(node.children).to.have.length(0);
+    }
 
     node = argstree(['-t']);
     expect(node.args).to.deep.equal(['-t']);
@@ -510,6 +515,65 @@ describe('argstree', () => {
 
       expect(node.children[2].id).to.equal('--baz');
       expect(node.children[2].args).to.deep.equal(['foo', 'bar']);
+    }
+  });
+
+  it('should save extra alias arguments to last available option', () => {
+    // force empty arrays
+    const nodes = [
+      argstree(['-fb=bar', 'baz'], {
+        alias: { '-f': '--foo', '-b': [] as any },
+        args: { '--foo': {} }
+      }),
+      argstree(['-fb=bar', 'baz'], {
+        alias: { '-f': '--foo', '-b': [[]] as any },
+        args: { '--foo': {} }
+      })
+    ];
+    for (const node of nodes) {
+      expect(node.args).to.have.length(0);
+      expect(node.children).to.have.length(1);
+      expect(node.children[0].id).to.equal('--foo');
+      expect(node.children[0].args).to.deep.equal(['bar', 'baz']);
+    }
+  });
+
+  it('should save split aliases to parent node and allow them to have args (subcommand like)', () => {
+    const options = {
+      alias: { '-f': '--foo', '-b': '--baz', '-ba': '--bar' },
+      args: {
+        '--foo': { args: { test: {} } },
+        '--bar': { args: { test: {} } },
+        '--baz': { args: { test: {} } }
+      }
+    } satisfies Options;
+
+    const items = [
+      {
+        ids: ['--foo', '--bar', '--baz'],
+        node: argstree(['-fbab=0', 'test'], options)
+      },
+      {
+        ids: ['--foo', '--baz', '--bar'],
+        node: argstree(['-fbba=0', 'test'], options)
+      }
+    ];
+    for (const item of items) {
+      const { node, ids } = item;
+      expect(node.args).to.have.length(0);
+      expect(node.children).to.have.length(3);
+      expect(node.descendants).to.have.length(4);
+
+      expect(node.children[0].id).to.equal(ids[0]);
+      expect(node.children[0].args).to.have.length(0);
+
+      expect(node.children[1].id).to.equal(ids[1]);
+      expect(node.children[1].args).to.have.length(0);
+
+      expect(node.children[2].id).to.equal(ids[2]);
+      expect(node.children[2].args).to.deep.equal(['0']);
+      expect(node.children[2].children).to.have.length(1);
+      expect(node.children[2].children[0].id).to.equal('test');
     }
   });
 

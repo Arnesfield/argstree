@@ -2,6 +2,12 @@ import { Options } from '../core/core.types';
 import { isAlias, isOption } from '../utils/arg.utils';
 import { Node } from './node';
 
+interface SaveOptions {
+  arg: string;
+  options: Options;
+  values: string[];
+}
+
 export class Parser {
   private parent: Node;
   private child: Node | null = null;
@@ -26,16 +32,17 @@ export class Parser {
     }
 
     // don't treat `--` as an option like
-    // min index determines if arg is an option like or not
-    const minEqualIndex = isAlias(arg) ? 1 : isOption(arg) ? 2 : null;
-    if (minEqualIndex === null) {
+    // min equal index determines if arg is an option like or not
+    const minIndex = isAlias(arg) ? 1 : isOption(arg) ? 2 : null;
+    if (minIndex === null) {
       return this.saveValue(arg);
     }
 
     const equalIndex = arg.indexOf('=');
-    const hasEqual = equalIndex > minEqualIndex;
-    const match = hasEqual ? arg.slice(0, equalIndex) : arg;
-    const values = hasEqual ? [arg.slice(equalIndex + 1)] : [];
+    const [match, values] =
+      equalIndex > minIndex
+        ? [arg.slice(0, equalIndex), [arg.slice(equalIndex + 1)]]
+        : [arg, []];
 
     if (this.saveArg(match, values)) {
       return;
@@ -57,47 +64,60 @@ export class Parser {
   }
 
   private saveArg(arg: string, values: string[] = []) {
-    let options, aliasArgs;
+    let options;
     if ((options = this.parent.parse(arg))) {
-      this.saveOptions(arg, options, values);
-    } else if ((aliasArgs = this.parent.alias.getArgs(arg))) {
-      this.saveAliasArgs(aliasArgs, values);
+      this.saveOptions([{ arg, options, values }]);
+    } else if ((options = this.parent.alias.getArgs(arg))) {
+      this.saveAliasArgs(options, values);
     } else {
       return false;
     }
     return true;
   }
 
-  private saveOptions(arg: string, options: Options, values: string[] = []) {
-    // validate existing child then make new child
-    this.child?.validateRange();
-    // make new child and save values
-    // probably don't need to validate now since it will be
-    // validated when changing child node or at the end of parse
-    this.child = new Node(arg, options).push(...values);
-    this.parent.save(this.child);
+  private saveOptions(options: SaveOptions[]) {
+    let nextChild: Node | undefined;
+    for (const opts of options) {
+      // validate existing child then make new child
+      this.child?.validateRange();
+      // make new child and save values
+      // probably don't need to validate now since it will be
+      // validated when changing child node or at the end of parse
+      this.child = new Node(opts.arg, opts.options).push(...opts.values);
+      this.parent.save(this.child);
+      // if child has args, use this as next child
+      if (this.child.hasArgs) {
+        nextChild = this.child;
+      }
+    }
     // if this child has args, switch it for next parse iteration
-    if (this.child.hasArgs) {
+    if (nextChild) {
       // since we're removing reference to parent, validate it now
       this.parent.validateRange();
-      this.parent = this.child;
+      this.parent = nextChild;
       this.child = null;
     }
   }
 
   private saveAliasArgs(list: string[][], values: string[] = []) {
-    // save values for last of list only
-    list.forEach((aliasArgs, index, array) => {
-      // save value for last arg
+    // get valid items from list first
+    const options: SaveOptions[] = [];
+    for (const aliasArgs of list) {
       if (aliasArgs.length > 0) {
         const arg = aliasArgs[0];
-        const options = this.parent.parse(arg, true);
-        const extras = aliasArgs
-          .slice(1)
-          .concat(index >= array.length - 1 ? values : []);
-        this.saveOptions(arg, options, extras);
+        options.push({
+          arg,
+          options: this.parent.parse(arg, true),
+          values: aliasArgs.slice(1)
+        });
       }
-    });
+    }
+    // save values for last item only
+    if (options.length > 0) {
+      options[options.length - 1].values.push(...values);
+    }
+    // finally, save options
+    this.saveOptions(options);
   }
 
   private saveValue(arg: string) {
