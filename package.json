@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Parse arguments into a tree structure.",
   "keywords": [
-    "tree",
     "args",
     "argv",
     "parser",
+    "tree",
     "cli",
     "command",
     "options"
@@ -43,12 +43,12 @@
   "devDependencies": {
     "@rollup/plugin-eslint": "^9.0.5",
     "@rollup/plugin-typescript": "^11.1.6",
-    "@types/chai": "^4.3.12",
+    "@types/chai": "^4.3.14",
     "@types/mocha": "^10.0.6",
-    "@types/node": "^20.11.27",
+    "@types/node": "^20.11.30",
     "@types/sinon": "^17.0.3",
-    "@typescript-eslint/eslint-plugin": "^7.2.0",
-    "@typescript-eslint/parser": "^7.2.0",
+    "@typescript-eslint/eslint-plugin": "^7.3.1",
+    "@typescript-eslint/parser": "^7.3.1",
     "chai": "^5.1.0",
     "concurrently": "^8.2.2",
     "eslint": "^8.57.0",
@@ -61,7 +61,7 @@
     "sinon": "^17.0.1",
     "tslib": "^2.6.2",
     "tsx": "^4.7.1",
-    "typescript": "^5.4.2"
+    "typescript": "^5.4.3"
   },
   "engines": {
     "node": ">=14"
