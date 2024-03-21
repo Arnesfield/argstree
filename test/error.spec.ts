@@ -54,7 +54,7 @@ describe('error', () => {
     });
     expect(error.toJSON()).to.deep.equal({
       name: 'ArgsTreeError',
-      cause: 'invalid-options',
+      cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
       message: 'foo',
       raw: 'arg',
       args: ['bar', 'baz'],
