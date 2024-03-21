@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ArgsTreeError, Options, argstree } from '../src';
+import { ArgsTreeError, Options, argstree } from '../src/index.js';
 
 function expectError(opts: {
   cause: string;

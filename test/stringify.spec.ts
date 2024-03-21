@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import argstree, { stringify } from '../src';
+import argstree, { stringify } from '../src/index.js';
 
 describe('stringify', () => {
   it('should be a function', () => {

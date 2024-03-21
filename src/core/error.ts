@@ -1,4 +1,4 @@
-import { Options } from './core.types';
+import { Options } from './core.types.js';
 
 /**
  * The ArgsTree error options.

@@ -1,6 +1,6 @@
-import { Options } from '../core/core.types';
-import { isAlias } from '../utils/arg.utils';
-import { splitAlias } from './split-alias';
+import { Options } from '../core/core.types.js';
+import { isAlias } from '../utils/arg.utils.js';
+import { splitAlias } from './split-alias.js';
 
 export class Alias {
   private readonly aliases: string[] = [];

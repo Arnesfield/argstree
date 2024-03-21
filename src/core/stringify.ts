@@ -1,6 +1,6 @@
-import * as PREFIX from '../utils/prefix';
-import { PrefixOptions } from '../utils/prefix';
-import { Node } from './core.types';
+import * as PREFIX from '../utils/prefix.js';
+import { PrefixOptions } from '../utils/prefix.js';
+import { Node } from './core.types.js';
 
 /**
  * The stringify options.

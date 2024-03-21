@@ -1,6 +1,6 @@
-import { Options } from '../core/core.types';
-import { isAlias, isOption } from '../utils/arg.utils';
-import { Node } from './node';
+import { Options } from '../core/core.types.js';
+import { isAlias, isOption } from '../utils/arg.utils.js';
+import { Node } from './node.js';
 
 interface SaveOptions {
   arg: string;

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ArgsTreeError, Options } from '../src';
+import { ArgsTreeError, Options } from '../src/index.js';
 
 describe('error', () => {
   it('should be a class (function)', () => {

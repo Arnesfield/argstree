@@ -1,8 +1,8 @@
-import { Node as INode, Options } from '../core/core.types';
-import { ArgsTreeError } from '../core/error';
-import { isAlias } from '../utils/arg.utils';
-import { ensureNumber } from '../utils/ensure-number';
-import { Alias } from './alias';
+import { Node as INode, Options } from '../core/core.types.js';
+import { ArgsTreeError } from '../core/error.js';
+import { isAlias } from '../utils/arg.utils.js';
+import { ensureNumber } from '../utils/ensure-number.js';
+import { Alias } from './alias.js';
 
 export class Node {
   readonly raw: string | null;

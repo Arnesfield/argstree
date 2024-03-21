@@ -21,7 +21,7 @@ export default defineConfig([
   {
     input,
     output: { file: pkg.module, format: 'esm', exports: 'named' },
-    plugins: [esbuild(), outputSize()]
+    plugins: [esbuild({ target: 'esnext' }), outputSize()]
   },
   {
     input,
@@ -31,6 +31,8 @@ export default defineConfig([
   !PROD && {
     input,
     watch: { skipWrite: true },
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     plugins: [eslint(), typescript()]
   }
 ]);
