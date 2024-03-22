@@ -13,7 +13,7 @@ export interface Options {
    */
   name?: string;
   /**
-   * Minimum number of arguments to read before the next parsed option or command.
+   * Required number of arguments to read before the next parsed option or command.
    *
    * An error is thrown if this option or command does not satisfy this condition.
    */
@@ -21,13 +21,17 @@ export interface Options {
   /**
    * Maximum number of arguments to read before the next parsed option or command.
    *
+   * Arguments over the maximum limit are saved as
+   * arguments for the parent option or command instead.
+   *
+   * Direct assignment with `=` will always read the
+   * assigned value as an argument for the option or command.
+   *
    * An error is thrown if this option or command does not satisfy this condition.
    */
   max?: number | null;
   /**
-   * Maximum number of arguments to read before the next parsed option or command.
-   *
-   * An error is **NOT** thrown if this option or command does not satisfy this condition.
+   * Similar to the {@linkcode max} option but does not throw an error.
    *
    * If not provided, the value for {@linkcode max} is used instead.
    */

@@ -7,6 +7,7 @@ export interface ArgsTreeErrorOptions {
   /**
    * The cause error string.
    *
+   * - {@linkcode ArgsTreeError.VALIDATE_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_OPTIONS_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_RANGE_ERROR}
    * - {@linkcode ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR}
@@ -72,6 +73,7 @@ export class ArgsTreeError extends Error {
   /**
    * The cause error string.
    *
+   * - {@linkcode ArgsTreeError.VALIDATE_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_OPTIONS_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_RANGE_ERROR}
    * - {@linkcode ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR}
