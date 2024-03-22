@@ -40,7 +40,7 @@ describe('argstree', () => {
   it('should not treat any arguments as an option or command unless specified', () => {
     const args = ['--test', 'foo', 'bar', 'baz'];
     let node = argstree(args);
-    expect(node.args).to.deep.equal(['--test', 'foo', 'bar', 'baz']);
+    expect(node.args).to.deep.equal(args);
 
     node = argstree(args, { args: { '--test': {} } });
     expect(node.args).to.have.length(0);
@@ -611,6 +611,128 @@ describe('argstree', () => {
     expect(node.children).to.have.length(1);
     expect(node.children[0].id).to.equal('--foo');
     expect(node.children[0].args).to.be.an('array').that.deep.equals(['bar']);
+  });
+
+  it('should handle `assign` option when parsing `=`', () => {
+    // options
+    let node = argstree(['--foo=bar', 'baz'], {
+      args: { '--foo': { assign: false } }
+    });
+    expect(node.args).to.deep.equal(['--foo=bar', 'baz']);
+    expect(node.children).to.have.length(0);
+
+    const args = ['foo=bar', 'baz'];
+    const nodes = [argstree(args), argstree(args, { args: { foo: {} } })];
+    for (const node of nodes) {
+      expect(node.args).to.deep.equal(args);
+      expect(node.children).to.have.length(0);
+    }
+
+    node = argstree(args, { args: { foo: { assign: true } } });
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('foo');
+    expect(node.children[0].args).to.deep.equal(['bar', 'baz']);
+  });
+
+  it('should not parse `=` for combined aliases if last option is not assignable', () => {
+    // force empty arrays
+    const options = {
+      alias: {
+        '-f': '--foo',
+        '-b': '--bar',
+        '-ba': '--baz',
+        '-z': [] as any,
+        '-zz': [[]] as any
+      },
+      args: { '--foo': {}, '--bar': { assign: false }, '--baz': {} }
+    } as Options;
+
+    let node = argstree(['-fbab=bar', 'baz'], options);
+    expect(node.args).to.deep.equal(['-fbab=bar', 'baz']);
+    expect(node.children).to.have.length(0);
+
+    node = argstree(['-fbabz=bar', 'baz'], options);
+    expect(node.args).to.deep.equal(['-fbabz=bar', 'baz']);
+    expect(node.children).to.have.length(0);
+
+    node = argstree(['-fbabzz=bar', 'baz'], options);
+    expect(node.args).to.deep.equal(['-fbabzz=bar', 'baz']);
+    expect(node.children).to.have.length(0);
+
+    node = argstree(['-zbazzbzzf=bar', 'baz'], options);
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(3);
+
+    expect(node.children[0].id).to.equal('--baz');
+    expect(node.children[0].args).to.have.length(0);
+
+    expect(node.children[1].id).to.equal('--bar');
+    expect(node.children[1].args).to.have.length(0);
+
+    expect(node.children[2].id).to.equal('--foo');
+    expect(node.children[2].args).to.deep.equal(['bar', 'baz']);
+  });
+
+  it('should run `validate` option', () => {
+    const called = { root: false, child: false };
+    const args = ['--foo', 'bar', 'baz'];
+    const options = {
+      id: 'root',
+      args: {
+        '--foo': {
+          id: 'foo',
+          max: 1,
+          validate(data) {
+            called.child = true;
+            expect(data).to.be.an('object');
+            expect(data.raw).to.equal('--foo');
+            expect(data.options).to.equal(options.args['--foo']);
+            expect(data.args).to.deep.equal(['bar']);
+            return true;
+          }
+        }
+      },
+      validate(data) {
+        called.root = true;
+        expect(data).to.be.an('object');
+        expect(data.raw).to.be.null;
+        expect(data.options).to.equal(options);
+        expect(data.args).to.deep.equal(['baz']);
+        return true;
+      }
+    } satisfies Options;
+    argstree(args, options);
+    expect(called.root).to.be.true;
+    expect(called.child).to.be.true;
+  });
+
+  it('should throw an error for validation', () => {
+    const called = { root: false, child: false };
+    expectError({
+      args: ['--foo'],
+      cause: ArgsTreeError.VALIDATE_ERROR,
+      options: {
+        args: { '--foo': { validate: () => (called.child = true) } },
+        validate: () => !(called.root = true)
+      }
+    });
+    expect(called.root).to.be.true;
+    expect(called.child).to.be.true;
+
+    called.root = called.child = false;
+    const options2 = {
+      args: { '--foo': { validate: () => !(called.child = true) } },
+      validate: () => (called.root = true)
+    } satisfies Options;
+    expectError({
+      args: ['--foo'],
+      cause: ArgsTreeError.VALIDATE_ERROR,
+      options: options2,
+      equal: options2.args['--foo']
+    });
+    expect(called.root).to.be.false;
+    expect(called.child).to.be.true;
   });
 
   it('should throw an error for invalid options', () => {
