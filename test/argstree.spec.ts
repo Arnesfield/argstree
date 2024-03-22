@@ -614,7 +614,6 @@ describe('argstree', () => {
   });
 
   it('should handle `assign` option when parsing `=`', () => {
-    // options
     let node = argstree(['--foo=bar', 'baz'], {
       args: { '--foo': { assign: false } }
     });
@@ -633,6 +632,12 @@ describe('argstree', () => {
     expect(node.children).to.have.length(1);
     expect(node.children[0].id).to.equal('foo');
     expect(node.children[0].args).to.deep.equal(['bar', 'baz']);
+
+    node = argstree(['--=foo', 'bar'], { args: { '--': { assign: true } } });
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('--');
+    expect(node.children[0].args).to.deep.equal(['foo', 'bar']);
   });
 
   it('should not parse `=` for combined aliases if last option is not assignable', () => {
