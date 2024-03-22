@@ -110,7 +110,26 @@ export class Node {
     };
   }
 
-  validateRange(): this {
+  validate() {
+    // validate assumes the node has lost reference
+    // so validate range here, too
+    this.validateRange();
+    // NOTE: no need to create copy of args since validation is done
+    // hence, allow mutation of args and options by consumer
+    const { validate } = this.options;
+    if (
+      typeof validate === 'function' &&
+      !validate({ raw: this.raw, args: this.args, options: this.options })
+    ) {
+      const name = this.displayName();
+      throw this.error(
+        ArgsTreeError.VALIDATE_ERROR,
+        name ? name + 'failed validation.' : 'Validation failed.'
+      );
+    }
+  }
+
+  validateRange() {
     const { min, max } = this.range;
     const satisfies = this.checkRange();
     const phrase: [string | number, number] | null =
@@ -136,7 +155,6 @@ export class Node {
           `xpected ${phrase[0]} ${label}, but got ${this.args.length}.`
       );
     }
-    return this;
   }
 
   validateAlias(arg: string): this {

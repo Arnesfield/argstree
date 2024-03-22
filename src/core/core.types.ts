@@ -33,6 +33,16 @@ export interface Options {
    */
   maxRead?: number | null;
   /**
+   * Enable assignment with equal sign (`=`) for this option or command and its aliases.
+   *
+   * This option does not apply for the root node.
+   *
+   * e.g. `--foo=value`, `foo=value`
+   *
+   * By default, this option is set to `true` if the parsed argument starts with a dash (`-`).
+   */
+  assign?: boolean;
+  /**
    * List of aliases mapped to {@linkcode args}.
    *
    * For multiple alias arguments, use a string array where
@@ -68,6 +78,26 @@ export interface Options {
   args?:
     | { [arg: string]: Options | null | undefined }
     | ((arg: string) => Options | null | undefined);
+  /**
+   * Validate arguments after they are saved for this option or command.
+   * Return a boolean or throw an error manually.
+   * @param data Node data.
+   * @return A validate error is thrown when `false` is returned.
+   */
+  validate?(data: {
+    /**
+     * The parsed argument.
+     */
+    raw: string | null;
+    /**
+     * The arguments for this node.
+     */
+    args: string[];
+    /**
+     * The options for this node.
+     */
+    options: Options;
+  }): boolean;
 }
 
 /**
