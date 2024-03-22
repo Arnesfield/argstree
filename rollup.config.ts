@@ -2,6 +2,7 @@ import eslint from '@rollup/plugin-eslint';
 import typescript from '@rollup/plugin-typescript';
 import { createRequire } from 'module';
 import { RollupOptions } from 'rollup';
+import cleanup from 'rollup-plugin-cleanup';
 import dts from 'rollup-plugin-dts';
 import esbuild from 'rollup-plugin-esbuild';
 import outputSize from 'rollup-plugin-output-size';
@@ -21,7 +22,14 @@ export default defineConfig([
   {
     input,
     output: { file: pkg.module, format: 'esm', exports: 'named' },
-    plugins: [esbuild({ target: 'esnext' }), outputSize()]
+    plugins: [
+      esbuild({ target: 'esnext' }),
+      cleanup({
+        comments: ['some', 'sources', /__PURE__/],
+        extensions: ['js', 'ts']
+      }),
+      outputSize()
+    ]
   },
   {
     input,
