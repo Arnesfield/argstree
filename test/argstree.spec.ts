@@ -577,6 +577,35 @@ describe('argstree', () => {
     }
   });
 
+  it('should handle errors from split aliases with args', () => {
+    const options = {
+      alias: { '-f': '--foo', '-b': '--baz', '-ba': '--bar' },
+      args: {
+        '--foo': { min: 1, args: { test: {} } },
+        '--bar': { min: 1, args: { test: {} } },
+        '--baz': { min: 1, args: { test: {} } }
+      }
+    } satisfies Options;
+    expectError({
+      args: ['-fbba=0'],
+      cause: ArgsTreeError.INVALID_RANGE_ERROR,
+      options,
+      equal: options.args['--foo']
+    });
+    expectError({
+      args: ['-bafb=0'],
+      cause: ArgsTreeError.INVALID_RANGE_ERROR,
+      options,
+      equal: options.args['--bar']
+    });
+    expectError({
+      args: ['-bfba=0'],
+      cause: ArgsTreeError.INVALID_RANGE_ERROR,
+      options,
+      equal: options.args['--baz']
+    });
+  });
+
   it('should handle possibly common case for `__proto__`', () => {
     expect(argstree(['__proto__']).args).to.deep.equal(['__proto__']);
     expect(argstree(['__proto__'], { args: {} }).args).to.deep.equal([
