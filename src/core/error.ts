@@ -57,7 +57,7 @@ export class ArgsTreeError extends Error {
    */
   static readonly INVALID_OPTIONS_ERROR = 'invalid-options';
   /**
-   * The Node did not satisfy the required number of arguments.
+   * The option or command did not satisfy the required number of arguments.
    */
   static readonly INVALID_RANGE_ERROR = 'invalid-range';
   /**
