@@ -50,7 +50,7 @@ export class Parser {
     const split = this.parent.alias.split(match);
     const check =
       split && hasAssigned
-        ? this.checkArgsList(match, split.argsList)
+        ? this.checkArgsList(split.argsList)
         : { assign: !!split, options: null };
     if (split && check.assign) {
       // treat left over from split as argument
@@ -65,17 +65,19 @@ export class Parser {
     }
   }
 
-  private checkArgsList(arg: string, argsList: [string, ...string[]][]) {
+  private checkArgsList(argsList: [string, ...string[]][]) {
     // e.g. -fb=value, cases:
     // -b is null -> error
     // -b is not assignable -> treat as value
     // -b is assignable -> continue split
-    const options =
-      argsList.length > 0
-        ? this.parent.parse(argsList[argsList.length - 1][0])
-        : null;
+    const arg = argsList.length > 0 ? argsList[argsList.length - 1][0] : null;
+    const hasArg = arg != null;
+    const options = hasArg ? this.parent.parse(arg) : null;
     // allow assign if no options or if assignable
-    return { options, assign: !options || isAssignable(arg, options) };
+    return {
+      options,
+      assign: !options || (hasArg && isAssignable(arg, options))
+    };
   }
 
   private saveArg(arg: string, assigned?: string) {
@@ -95,7 +97,7 @@ export class Parser {
     const aliasArgs = this.parent.alias.getArgs(arg);
     const check =
       aliasArgs && hasAssigned
-        ? this.checkArgsList(arg, aliasArgs)
+        ? this.checkArgsList(aliasArgs)
         : { assign: !!aliasArgs, options: null };
     const save = aliasArgs && check.assign;
     if (save) {

@@ -162,7 +162,7 @@ describe('stringify', () => {
         args: {
           foo: {},
           bar: {},
-          baz: { args: { test: { max: 0 }, '--': {} } }
+          baz: { assign: true, args: { test: { max: 0 }, '--': {} } }
         }
       }
     );

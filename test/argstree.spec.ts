@@ -669,6 +669,37 @@ describe('argstree', () => {
     expect(node.children[0].args).to.deep.equal(['foo', 'bar']);
   });
 
+  it('should handle `assign` option when parsing `=` for aliases', () => {
+    const node = argstree(
+      ['-f=0', 'f=0', '-b=0', 'b=0', '-f2=0', 'f2=0', '-b2=0', 'b2=0'],
+      {
+        alias: {
+          '-f': '--foo',
+          f: '--foo',
+          '-b': '--bar',
+          b: '--bar',
+          '-f2': 'foo',
+          f2: 'foo',
+          '-b2': 'bar',
+          b2: 'bar'
+        },
+        args: {
+          '--foo': { maxRead: 0 },
+          '--bar': { maxRead: 0, assign: false },
+          foo: { maxRead: 0 },
+          bar: { maxRead: 0, assign: true }
+        }
+      }
+    );
+    expect(node.args).to.deep.equal(['-b=0', 'b=0', '-f2=0', 'f2=0']);
+    expect(node.children).to.have.length(4);
+    const match = ['--foo', '--foo', 'bar', 'bar'];
+    node.children.forEach((child, index) => {
+      expect(child.id).to.equal(match[index]);
+      expect(child.args).to.deep.equal(['0']);
+    });
+  });
+
   it('should not parse `=` for combined aliases if last option is not assignable', () => {
     // force empty arrays
     const options = {
