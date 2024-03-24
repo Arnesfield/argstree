@@ -60,11 +60,11 @@ console.log(node.id, node.args);
 null [ '--hello', 'world' ]
 ```
 
-> [!TIP]
+> [!IMPORTANT]
 >
 > See [`src/core/core.types.ts`](src/core/core.types.ts) for `Options` and `Node` types.
 >
-> It also includes useful stuff not documented in this [README](README.md) for the sake of brevity.
+> It also includes useful properties not included in this document for the sake of brevity.
 
 ### Options and Commands
 
