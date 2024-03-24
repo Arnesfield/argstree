@@ -581,9 +581,9 @@ describe('argstree', () => {
     const options = {
       alias: { '-f': '--foo', '-b': '--baz', '-ba': '--bar' },
       args: {
-        '--foo': { min: 1, args: { test: {} } },
-        '--bar': { min: 1, args: { test: {} } },
-        '--baz': { min: 1, args: { test: {} } }
+        '--foo': { min: 2, args: { test: { min: 1 } } },
+        '--bar': { min: 1, args: {} },
+        '--baz': { args: {} }
       }
     } satisfies Options;
     expectError({
@@ -593,16 +593,16 @@ describe('argstree', () => {
       equal: options.args['--foo']
     });
     expectError({
-      args: ['-bafb=0'],
+      args: ['-bbaf=0'],
       cause: ArgsTreeError.INVALID_RANGE_ERROR,
       options,
       equal: options.args['--bar']
     });
     expectError({
-      args: ['-bfba=0'],
+      args: ['-bf=foo', 'bar', 'test'],
       cause: ArgsTreeError.INVALID_RANGE_ERROR,
       options,
-      equal: options.args['--baz']
+      equal: options.args['--foo'].args.test
     });
   });
 
