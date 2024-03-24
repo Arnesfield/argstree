@@ -4,6 +4,9 @@
 export interface Options {
   /**
    * Unique ID for this option or command.
+   *
+   * This is never used in any internal logic, but can
+   * be useful for finding the exact node after parsing.
    */
   id?: string;
   /**
