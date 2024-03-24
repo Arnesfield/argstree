@@ -70,13 +70,15 @@ export class Parser {
     // -b is null -> error
     // -b is not assignable -> treat as value
     // -b is assignable -> continue split
-    const arg = argsList.length > 0 ? argsList[argsList.length - 1][0] : null;
-    const hasArg = arg != null;
-    const options = hasArg ? this.parent.parse(arg) : null;
+    let arg: string | null = null;
+    const options =
+      argsList.length > 0
+        ? this.parent.parse((arg = argsList[argsList.length - 1][0]))
+        : null;
     // allow assign if no options or if assignable
     return {
       options,
-      assign: !options || (hasArg && isAssignable(arg, options))
+      assign: arg == null || !options || isAssignable(arg, options)
     };
   }
 
