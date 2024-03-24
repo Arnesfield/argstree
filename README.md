@@ -11,9 +11,8 @@ import argstree from 'argstree';
 // args: --hello world
 const args = process.argv.slice(2);
 const node = argstree(args, { args: { '--hello': {} } });
-for (const child of node.children) {
-  console.log(child.id, child.args);
-}
+const child = node.children[0];
+console.log(child.id, child.args);
 ```
 
 ```text
@@ -50,7 +49,7 @@ Import the module ([ESM only](https://gist.github.com/sindresorhus/a39789f98801d
 import argstree from 'argstree';
 ```
 
-The `argstree(args, options)` function accepts an array of strings (first argument) and an options object (second argument). It returns a `Node` object (root node).
+The `argstree(args, options)` function accepts an array of strings and an options object. It returns a `Node` object (root node).
 
 ```javascript
 const node = argstree(['--hello', 'world'], { min: 1 });
@@ -64,22 +63,18 @@ null [ '--hello', 'world' ]
 > [!TIP]
 >
 > See [`src/core/core.types.ts`](src/core/core.types.ts) for `Options` and `Node` types.
+>
+> It also includes useful stuff not documented in this [README](README.md) for the sake of brevity.
 
 ### Options and Commands
 
-You can configure options and commands using the `args` object or [function](#args-function) option.
+Configure options and commands using the `args` object or [function](#args-function) option.
 
-While they may be configured similarly, options start with a dash (`-` or `--`) while commands do not (e.g. options: `-foo`, `--bar`, commands: `foo`, `bar`).
+While they may be configured similarly, options start with a dash (e.g. `-foo`, `--bar`) while commands do not (e.g. `foo`, `bar`).
 
-When setting the `args` object:
+When setting the `args` object, the _properties_ are used to match the arguments while the _values_ are also options objects similar to the options from `argstree(args, options)`.
 
-- The properties are used to match the arguments.
-- The values are also options objects similar to the options from `argstree(args, options)`.
-
-Options and commands will capture arguments and stop when:
-
-- Another option or command is matched.
-- The configured [limit](#limits) is reached.
+Options and commands will capture arguments and stop when another option or command is matched or the configured [limit](#limits) is reached.
 
 ```javascript
 const node = argstree(['--foo', 'value', '--foo', 'bar', 'baz'], {
@@ -363,41 +358,9 @@ root {
 }
 ```
 
-### Other Options
-
-Some additional options that do not affect the internal parsing logic.
-
-#### id
-
-Type: `string | null`
-
-Unique ID for this option or command.
-
-This is never used in any internal logic, but can be useful for finding the exact node after parsing.
-
-#### name
-
-Type: `string | null`
-
-Display name of option or command for errors.
-
-If not provided, the raw argument is used as the display name when available.
-
 ### ArgsTreeError
 
-For errors related to parsing, an `ArgsTreeError` object is thrown which has properties including:
-
-- `cause` string
-  - `ArgsTreeError.VALIDATE_ERROR` - Validation failed from provided [`validate`](#validation) function.
-  - `ArgsTreeError.INVALID_OPTIONS_ERROR` - The options object provided is not valid (e.g. incorrect [`min`](#min) and [`max`](#max) range).
-  - `ArgsTreeError.INVALID_RANGE_ERROR` - The `Node` did not satisfy the required number of arguments.
-  - `ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR` - After alias is parsed, it is not recognized as an alias from [`alias`](#aliases) object option.
-  - `ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR` - After alias is parsed, it is not recognized as an option or command from [`args`](#options-and-commands) object option.
-- `raw` string argument
-- `args` string array
-- `options` object
-
-You can import the class to reference in catch blocks.
+For errors related to parsing, an `ArgsTreeError` is thrown. You can import this class to reference in catch blocks.
 
 ```javascript
 import argstree, { ArgsTreeError } from 'argstree';
@@ -430,13 +393,11 @@ try {
 
 > [!TIP]
 >
-> See [`src/core/error.ts`](src/core/error.ts) for `Error` types.
+> See [`src/core/error.ts`](src/core/error.ts) for more details.
 
 ### stringify
 
-This package includes a function to stringify the `Node` object.
-
-The `stringify` function returns a string. It also accepts an options object where you can specify what to show or hide from the tree string.
+The `stringify` function returns a stringified `Node` object. It also accepts an options object where you can specify what to show or hide from the generated tree string.
 
 ```javascript
 import argstree, { stringify } from 'argstree';
@@ -489,6 +450,10 @@ null (depth: 0)
   ├── --bar (depth: 2)
   └── --baz (depth: 2)
 ```
+
+> [!TIP]
+>
+> See [`src/core/stringify.ts`](src/core/stringify.ts) for more details.
 
 ## License
 
