@@ -35,7 +35,7 @@ export interface ArgsTreeErrorOptions {
 /**
  * The ArgsTree error object.
  */
-interface ArgsTreeErrorObject extends ArgsTreeErrorOptions {
+export interface ArgsTreeErrorObject extends ArgsTreeErrorOptions {
   /**
    * The Error name.
    */
