@@ -92,23 +92,28 @@ export interface Options {
   /**
    * Validate arguments after they are saved for this option or command.
    * Return a boolean or throw an error manually.
-   * @param data Node data.
+   * @param data Validate data.
    * @return A validate error is thrown when `false` is returned.
    */
-  validate?(data: {
-    /**
-     * The parsed argument.
-     */
-    raw: string | null;
-    /**
-     * The arguments for this node.
-     */
-    args: string[];
-    /**
-     * The options for this node.
-     */
-    options: Options;
-  }): boolean;
+  validate?(data: ValidateData): boolean;
+}
+
+/**
+ * Validate data.
+ */
+export interface ValidateData {
+  /**
+   * The parsed argument.
+   */
+  raw: string | null;
+  /**
+   * The arguments for this node.
+   */
+  args: string[];
+  /**
+   * The options for this node.
+   */
+  options: Options;
 }
 
 /**
