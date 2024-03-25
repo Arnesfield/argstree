@@ -37,6 +37,10 @@ export interface Options {
    * Similar to the {@linkcode max} option but does not throw an error.
    *
    * If not provided, the value for {@linkcode max} is used instead.
+   *
+   * This takes priority over the {@linkcode max} option
+   * when reading arguments, but the {@linkcode max} option
+   * is still used for validating the maximum number of arguments.
    */
   maxRead?: number | null;
   /**
