@@ -110,7 +110,7 @@ export class Node {
     };
   }
 
-  validate() {
+  validate(): void {
     // validate assumes the node has lost reference
     // so validate range here, too
     this.validateRange();
@@ -129,7 +129,7 @@ export class Node {
     }
   }
 
-  validateRange() {
+  private validateRange() {
     const { min, max } = this.range;
     const satisfies = this.checkRange();
     const phrase: [string | number, number] | null =
