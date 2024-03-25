@@ -28,7 +28,7 @@ console.log(child.id, child.args);
 - No options or commands are recognized by default.
 - No data types other than strings.
 - Automatically recognize and split configured aliases.
-- Recognize configured [assignment](#equal-assignment) (`=`) for aliases, options, and commands (e.g. `-f=bar`, `--foo=bar`, `foo=bar`).
+- Recognize configured [assignment](#assignment) (`=`) for aliases, options, and commands (e.g. `-f=bar`, `--foo=bar`, `foo=bar`).
 - Double-dash (`--`) is not treated as anything special and can be configured to be a subcommand.
 
 Note that **argstree** only parses arguments based on the configuration it has been given. It is still up to the consumers/developers to interpret the parsed arguments and decide how to use these inputs to suit their application's needs.
@@ -68,7 +68,7 @@ null [ '--hello', 'world' ]
 
 ### Options and Commands
 
-Configure options and commands using the `args` object or [function](#args-function) option.
+Configure options and commands by setting the `args` object or function option.
 
 While they may be configured similarly, options start with a dash (e.g. `-foo`, `--bar`) while commands do not (e.g. `foo`, `bar`).
 
@@ -94,16 +94,12 @@ for (const child of node.children) {
 bar [ 'baz' ]
 ```
 
-### Args Function
-
-You can pass a function to the `args` option and return an options object, `null`, or `undefined`.
+You can also pass a function to the `args` option. It has an `arg` string parameter (comes from the `args` array or from splitted alias) and it should return an options object, `null`, or `undefined`.
 
 ```javascript
 const args = ['--foo', 'bar', '--bar', '--baz', 'foo'];
 const node = argstree(args, {
   args: arg => {
-    // `arg` param is a string that can come
-    // from the `args` array or from splitted alias
     return arg.startsWith('--') ? {} : null;
   }
 });
@@ -138,7 +134,7 @@ for (const child of node.children) {
 > });
 > ```
 
-### Equal Assignment
+### Assignment
 
 Using `=`, options or commands will treat the assigned value as their own argument regardless of any matches.
 
@@ -207,37 +203,23 @@ In this example:
 
 Specify the required minimum and maximum number of arguments per option or command.
 
-#### min
+- `min` (type: `number | null`) - Required number of arguments to read before the next parsed option or command.
 
-Type: `number | null`
+  An error is thrown if the option or command does not satisfy this condition.
 
-Required number of arguments to read before the next parsed option or command.
+- `max` (type: `number | null`) - Maximum number of arguments to read before the next parsed option or command.
 
-An error is thrown if the option or command does not satisfy this condition.
+  Arguments over the maximum limit are saved as arguments for the parent option or command instead.
 
-#### max
+  Direct [assignment](#assignment) will always read the assigned value as an argument for the option or command.
 
-Type: `number | null`
+  An error is thrown if the option or command does not satisfy this condition.
 
-Maximum number of arguments to read before the next parsed option or command.
+- `maxRead` (type: `number | null`) - Similar to the `max` option but does not throw an error.
 
-Arguments over the maximum limit are saved as arguments for the parent option or command instead.
+  If not provided, the value for `max` is used instead.
 
-Direct assignment with `=` will always read the assigned value as an argument for the option or command.
-
-An error is thrown if the option or command does not satisfy this condition.
-
-#### maxRead
-
-Type: `number | null`
-
-Similar to the [`max`](#max) option but does not throw an error.
-
-If not provided, the value for [`max`](#max) is used instead.
-
----
-
-Example:
+  This takes priority over the `max` option when reading arguments, but the `max` option is still used for validating the maximum number of arguments.
 
 ```javascript
 const args =
@@ -266,15 +248,15 @@ root [ 'bar2', 'foo3', 'bar3', 'bar4' ]
 --max-read [ 'foo4' ]
 ```
 
-Note that while you can use both `max` and `maxRead` options together, the only time the `max` option can take effect is when applying additional arguments to an alias. And even then, those arguments are likely known and fixed in length.
-
 ### Aliases
 
-Configure aliases by specifying the `alias` object option.
+Configure aliases by setting the `alias` object option.
 
 It should include the list of aliases mapped to options or commands specified in the `args` object option. An error is thrown if the option or command is not valid.
 
 Only aliases that start with one dash (e.g. `-a`, `-bc`) can be combined together into one alias shorthand (e.g. `-abc`).
+
+Note that the [`assign`](#assignment) option applies to aliases of the options or commands and that [limits](#limits) also apply to their arguments.
 
 ```javascript
 const node = argstree(['-abacada=0', 'a=1', 'b=2'], {
@@ -311,21 +293,15 @@ for (const child of node.children) {
 --baz [ '1', 'b=2' ]
 ```
 
-Note that the [`assign`](#equal-assignment) option applies to aliases of the options or commands and that [limits](#limits) also apply to their arguments.
-
 ### Validation
 
-Set the `validate` function option to validate arguments after they are saved for this option or command. Return a boolean or throw an error manually. A validate error is thrown when `false` is returned.
+Set the `validate` function option to validate arguments after they are saved for the option or command. Return a boolean or throw an error manually. A validate error is thrown when `false` is returned.
 
 The `validate` function has a `data` object parameter with the following properties:
 
 - `raw` (type: `string | null`) - The parsed argument.
 - `args` (type: `string[]`) - The arguments for this node.
 - `options` (type: `Options`) - The options for this node.
-
----
-
-Example:
 
 ```javascript
 argstree(['--foo', 'bar', 'baz'], {
@@ -402,14 +378,10 @@ The `stringify` function returns a stringified `Node` object. It also accepts an
 ```javascript
 import argstree, { stringify } from 'argstree';
 
-const node = argstree(['--foo', 'bar', 'baz', '--bar', 'foo', '--baz'], {
+const node = argstree(['foo', 'bar', '--foo', '0', '--bar', '1'], {
   args: {
-    '--foo': {},
-    baz: {
-      args: {
-        '--bar': {},
-        '--baz': {}
-      }
+    foo: {
+      args: { '--foo': {}, '--bar': {} }
     }
   }
 });
@@ -423,32 +395,30 @@ console.log(tree);
 
 ```text
 null (depth: 0)
-├─┬ --foo (depth: 1)
+├─┬ foo (depth: 1)
 │ ├─┬ :args (total: 1)
 │ │ └── bar
-│ └─┬ :ancestors (total: 1)
-│   └── null (depth: 0)
-├─┬ baz (depth: 1)
+│ ├─┬ --foo (depth: 2)
+│ │ ├─┬ :args (total: 1)
+│ │ │ └── 0
+│ │ └─┬ :ancestors (total: 2)
+│ │   ├── null (depth: 0)
+│ │   └── foo (depth: 1)
 │ ├─┬ --bar (depth: 2)
 │ │ ├─┬ :args (total: 1)
-│ │ │ └── foo
+│ │ │ └── 1
 │ │ └─┬ :ancestors (total: 2)
 │ │   ├── null (depth: 0)
-│ │   └── baz (depth: 1)
-│ ├─┬ --baz (depth: 2)
-│ │ └─┬ :ancestors (total: 2)
-│ │   ├── null (depth: 0)
-│ │   └── baz (depth: 1)
+│ │   └── foo (depth: 1)
 │ ├─┬ :ancestors (total: 1)
 │ │ └── null (depth: 0)
 │ └─┬ :descendants (total: 2)
-│   ├── --bar (depth: 2)
-│   └── --baz (depth: 2)
-└─┬ :descendants (total: 4)
-  ├── --foo (depth: 1)
-  ├── baz (depth: 1)
-  ├── --bar (depth: 2)
-  └── --baz (depth: 2)
+│   ├── --foo (depth: 2)
+│   └── --bar (depth: 2)
+└─┬ :descendants (total: 3)
+  ├── foo (depth: 1)
+  ├── --foo (depth: 2)
+  └── --bar (depth: 2)
 ```
 
 > [!TIP]
