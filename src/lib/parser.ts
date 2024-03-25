@@ -38,9 +38,8 @@ export class Parser {
       equalIndex > -1
         ? [arg.slice(0, equalIndex), arg.slice(equalIndex + 1)]
         : [arg];
-    const hasAssigned = assigned != null;
     // skip the same saveArg call (assigned value not set)
-    if (hasAssigned && this.saveArg(match, assigned)) {
+    if (assigned != null && this.saveArg(match, assigned)) {
       return;
     }
 
@@ -48,67 +47,36 @@ export class Parser {
     // if not successful, save arg as value
     // only check assignable if assigned value exists
     const split = this.parent.alias.split(match);
-    const check =
-      split && hasAssigned
-        ? this.checkArgsList(split.argsList)
-        : { assign: !!split, options: null };
-    if (split && check.assign) {
-      // treat left over from split as argument
-      if (split.arg != null) {
-        // make sure to check if this can be accepted
-        this.parent.validateAlias(split.arg).push(split.arg);
-      }
-      this.saveAliasArgs(split.argsList, assigned, check.options);
-    } else {
+    if (!split || !this.saveAliasArgs(assigned, split.argsList, split.arg)) {
       // treat arg as value
-      this.saveValue(arg);
+      // if current node exists, check if it reached its max args, if not then save arg
+      // otherwise, treat this as an arg for the main node
+      if (this.child?.checkRange(1).maxRead) {
+        this.child.push(arg);
+      } else {
+        this.parent.push(arg);
+      }
     }
   }
 
-  private checkArgsList(argsList: [string, ...string[]][]) {
-    // e.g. -fb=value, cases:
-    // -b is null -> error
-    // -b is not assignable -> treat as value
-    // -b is assignable -> continue split
-    let arg: string | null = null;
-    const options =
-      argsList.length > 0
-        ? this.parent.parse((arg = argsList[argsList.length - 1][0]))
-        : null;
-    // allow assign if no options or if assignable
-    return {
-      options,
-      assign: arg == null || !options || isAssignable(arg, options)
-    };
-  }
-
   private saveArg(arg: string, assigned?: string) {
-    const hasAssigned = assigned != null;
     const options = this.parent.parse(arg);
     if (options) {
       // check if assignable
-      const save = !hasAssigned || isAssignable(arg, options);
+      const save = assigned == null || isAssignable(arg, options);
       if (save) {
         this.saveOptions([
-          { arg, options, values: hasAssigned ? [assigned] : [] }
+          { arg, options, values: assigned != null ? [assigned] : [] }
         ]);
       }
       return save;
     }
-
-    const aliasArgs = this.parent.alias.getArgs(arg);
-    const check =
-      aliasArgs && hasAssigned
-        ? this.checkArgsList(aliasArgs)
-        : { assign: !!aliasArgs, options: null };
-    const save = aliasArgs && check.assign;
-    if (save) {
-      this.saveAliasArgs(aliasArgs, assigned, check.options);
-    }
-    return save;
+    const list = this.parent.alias.getArgs(arg);
+    return list && this.saveAliasArgs(assigned, list);
   }
 
   private saveOptions(items: SaveOptions[]) {
+    // skipping does not mean saving failed
     if (items.length === 0) {
       return;
     }
@@ -147,13 +115,32 @@ export class Parser {
   }
 
   private saveAliasArgs(
+    assigned: string | undefined,
     list: [string, ...string[]][],
-    assigned?: string,
-    lastOptions?: Options | null
+    splitArg?: string | null
   ) {
-    const items = list.map((aliasArgs, index, array): SaveOptions => {
+    // e.g. -fb=value, cases:
+    // -b is null -> error
+    // -b is not assignable -> treat as value
+    // -b is assignable -> continue split
+    let arg: string | null = null;
+    const options =
+      assigned != null && list.length > 0
+        ? this.parent.parse((arg = list[list.length - 1][0]))
+        : null;
+    // allow assign if no options or if assignable
+    if (arg != null && options && !isAssignable(arg, options)) {
+      return;
+    }
+    // treat left over from split as argument
+    if (splitArg != null) {
+      // make sure to check if this can be accepted
+      this.parent.validateAlias(splitArg).push(splitArg);
+    }
+
+    const items = list.map((aliasArgs, index): SaveOptions => {
       const arg = aliasArgs[0];
-      const isLast = index === array.length - 1;
+      const isLast = index === list.length - 1;
       const values = aliasArgs.slice(1);
       // set assigned to last item only
       if (isLast && assigned != null) {
@@ -163,21 +150,12 @@ export class Parser {
       return {
         arg,
         values,
-        options:
-          isLast && lastOptions ? lastOptions : this.parent.parse(arg, true)
+        options: isLast && options ? options : this.parent.parse(arg, true)
       };
     });
     this.saveOptions(items);
-  }
 
-  private saveValue(arg: string) {
-    // if current node exists, check if it reached its max args, if not then save arg
-    // otherwise, treat this as an arg for the main node
-    if (this.child?.checkRange(1).maxRead) {
-      this.child.push(arg);
-    } else {
-      this.parent.push(arg);
-    }
+    return true;
   }
 
   parse(args: readonly string[]): Node {
