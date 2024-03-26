@@ -10,6 +10,7 @@ export interface ArgsTreeErrorOptions {
    * - {@linkcode ArgsTreeError.VALIDATE_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_OPTIONS_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_RANGE_ERROR}
+   * - {@linkcode ArgsTreeError.INVALID_SPEC_ERROR}
    * - {@linkcode ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR}
    * - {@linkcode ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR}
    */
@@ -45,7 +46,7 @@ export interface ArgsTreeErrorObject extends ArgsTreeErrorOptions {
 /**
  * ArgsTree error.
  */
-export class ArgsTreeError extends Error {
+export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
   /**
    * Validation failed from provided {@linkcode Options.validate} function.
    */
@@ -60,6 +61,10 @@ export class ArgsTreeError extends Error {
    * The option or command did not satisfy the required number of arguments.
    */
   static readonly INVALID_RANGE_ERROR = 'invalid-range';
+  /**
+   * Failed operation for spec builder.
+   */
+  static readonly INVALID_SPEC_ERROR = 'invalid-spec';
   /**
    * After alias is parsed, it is not recognized as an alias from {@linkcode Options.alias}.
    */
@@ -76,21 +81,13 @@ export class ArgsTreeError extends Error {
    * - {@linkcode ArgsTreeError.VALIDATE_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_OPTIONS_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_RANGE_ERROR}
+   * - {@linkcode ArgsTreeError.INVALID_SPEC_ERROR}
    * - {@linkcode ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR}
    * - {@linkcode ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR}
    */
   cause: string;
-  /**
-   * The parsed argument.
-   */
   raw: string | null;
-  /**
-   * The arguments for this node.
-   */
   args: string[];
-  /**
-   * The options object related to this error (same options object reference).
-   */
   options: Options;
 
   /**

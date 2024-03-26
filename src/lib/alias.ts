@@ -4,8 +4,7 @@ import { splitAlias } from './split-alias.js';
 
 export class Alias {
   private readonly aliases: string[] = [];
-  private readonly aliasMap: Exclude<Options['alias'], undefined> =
-    Object.create(null);
+  private readonly aliasMap: Required<Options>['alias'] = Object.create(null);
 
   constructor(alias: Options['alias']) {
     if (typeof alias === 'object' && alias !== null) {
