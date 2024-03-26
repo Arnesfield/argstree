@@ -2,6 +2,7 @@ import { Node as INode, Options } from '../core/core.types.js';
 import { ArgsTreeError } from '../core/error.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
+import { displayName, getId } from '../utils/options.utils.js';
 import { Alias } from './alias.js';
 
 export class Node {
@@ -51,9 +52,7 @@ export class Node {
   }
 
   private displayName() {
-    const name = this.options.name ?? this.raw ?? null;
-    const type = this.hasArgs ? 'Command' : 'Option';
-    return name === null ? '' : `${type} '${name}' `;
+    return displayName(this.raw, this.options, this.hasArgs);
   }
 
   private error(cause: string, message: string) {
@@ -175,7 +174,7 @@ export class Node {
 
   build(parent: INode | null = null, depth = 0): INode {
     const node: INode = {
-      id: this.options.id ?? this.raw ?? null,
+      id: getId(this.raw, this.options.id),
       name: this.options.name ?? null,
       raw: this.raw,
       depth,

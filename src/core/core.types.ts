@@ -8,7 +8,7 @@ export interface Options {
    * This is never used in any internal logic, but can
    * be useful for finding the exact node after parsing.
    */
-  id?: string;
+  id?: string | ((raw: string | null) => string | null | undefined);
   /**
    * Display name of option or command for errors.
    *
