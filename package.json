@@ -23,7 +23,10 @@
   "author": "Jefferson Rylee <rylee.jeff385@gmail.com>",
   "sideEffects": false,
   "type": "module",
-  "exports": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json"
+  },
   "main": "lib/index.js",
   "module": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -31,14 +34,16 @@
     "lib"
   ],
   "scripts": {
-    "prebuild": "rimraf lib",
-    "build": "rollup -c rollup.config.ts --configPlugin esbuild",
+    "all": "concurrently -r --kill-others-on-fail",
+    "build": "npm run all -- npm:bundle npm:check",
+    "prebundle": "rimraf lib",
+    "bundle": "rollup -c rollup.config.ts --configPlugin \"esbuild={target:'esnext'}\"",
+    "check": "npm run all -- \"npm:lint -- --max-warnings 0\" \"tsc --skipLibCheck\"",
     "lint": "eslint . --ext .js,.ts",
-    "lint:strict": "npm run lint -- --max-warnings 0",
-    "start": "npm run build -- -w --no-watch.clearScreen",
-    "test": "concurrently -r --kill-others-on-fail npm:test:mocha npm:lint:strict \"tsc --skipLibCheck\"",
-    "test:mocha": "mocha -r tsx **/*.spec.ts",
-    "test:watch": "npm run test:mocha -- --watch --watch-files src,test"
+    "start": "npm run watch -- --environment NODE_ENV:development",
+    "test": "npm run all -- mocha npm:check",
+    "test:watch": "mocha -w",
+    "watch": "npm run bundle -- -w --no-watch.clearScreen"
   },
   "devDependencies": {
     "@rollup/plugin-eslint": "^9.0.5",
