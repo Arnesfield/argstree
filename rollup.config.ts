@@ -1,18 +1,19 @@
-import eslint from '@rollup/plugin-eslint';
-import typescript from '@rollup/plugin-typescript';
-import { createRequire } from 'module';
+import _eslint from '@rollup/plugin-eslint';
+import _typescript from '@rollup/plugin-typescript';
 import { RollupOptions } from 'rollup';
 import cleanup from 'rollup-plugin-cleanup';
 import dts from 'rollup-plugin-dts';
 import esbuild from 'rollup-plugin-esbuild';
 import outputSize from 'rollup-plugin-output-size';
-import type Pkg from './package.json';
+import pkg from './package.json' with { type: 'json' };
 
-const require = createRequire(import.meta.url);
-const pkg: typeof Pkg = require('./package.json');
-const input = 'src/index.ts';
+// NOTE: remove once import errors are fixed for their respective packages
+const eslint = _eslint as unknown as typeof _eslint.default;
+const typescript = _typescript as unknown as typeof _typescript.default;
+
+// const PROD = process.env.NODE_ENV !== 'development';
 const WATCH = process.env.ROLLUP_WATCH === 'true';
-const PROD = !WATCH || process.env.NODE_ENV === 'production';
+const input = 'src/index.ts';
 
 function defineConfig(options: (false | RollupOptions)[]) {
   return options.filter((options): options is RollupOptions => !!options);
@@ -36,11 +37,9 @@ export default defineConfig([
     output: { file: pkg.types, format: 'esm' },
     plugins: [dts(), outputSize()]
   },
-  !PROD && {
+  WATCH && {
     input,
     watch: { skipWrite: true },
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     plugins: [eslint(), typescript()]
   }
 ]);
