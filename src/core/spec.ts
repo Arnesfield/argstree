@@ -11,7 +11,7 @@ import { Spec, SpecOptions } from './spec.types.js';
  * @returns The Spec object.
  */
 export function spec(options?: SpecOptions): Spec {
-  return _spec(null, normalize(options));
+  return _spec(normalize(options));
 }
 
 function normalize(options: SpecOptions | undefined) {
@@ -39,7 +39,7 @@ function normalize(options: SpecOptions | undefined) {
 
 // NOTE: always keep reference to _options
 // direct mutation should be safe since this is internal
-function _spec(raw: string | null, _options: Options): Spec {
+function _spec(_options: Options, raw: string | null = null): Spec {
   const _args: { [arg: string]: Options | null | undefined } =
     Object.create(null);
   let _curr: { arg: string; options: Options; spec?: Spec } | undefined;
@@ -58,7 +58,9 @@ function _spec(raw: string | null, _options: Options): Spec {
 
   function current(context: string) {
     if (!_curr) {
-      throw error(`Missing \`add()\` call before \`${context}\` call.`);
+      throw error(
+        `Requires \`option()\` or \`command()\` call before \`${context}\`.`
+      );
     }
     return _curr;
   }
@@ -109,7 +111,7 @@ function _spec(raw: string | null, _options: Options): Spec {
     spec(setup) {
       // cache spec to curr to reuse for multiple spec calls
       const curr = current('spec()');
-      setup((curr.spec ||= _spec(curr.arg, curr.options)));
+      setup((curr.spec ||= _spec(curr.options, curr.arg)));
       return spec;
     },
     aliases(alias) {
