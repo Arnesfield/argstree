@@ -39,6 +39,7 @@
     "prebundle": "rimraf lib",
     "bundle": "rollup -c rollup.config.ts --configPlugin \"esbuild={target:'esnext'}\"",
     "check": "npm run all -- \"npm:lint -- --max-warnings 0\" \"tsc --skipLibCheck\"",
+    "format": "npm run lint -- --fix && prettier -cw .",
     "lint": "eslint . --ext .js,.ts",
     "start": "npm run watch -- --environment NODE_ENV:development",
     "test": "npm run all -- mocha npm:check",
