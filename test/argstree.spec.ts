@@ -1,5 +1,18 @@
 import { expect } from 'chai';
-import { ArgsTreeError, Options, argstree } from '../src/index.js';
+import { ArgsTreeError, Node, Options, argstree } from '../src/index.js';
+
+export function expectNode(node: Node): void {
+  expect(node).to.be.an('object');
+  expect(node).to.have.property('id').that.is.null;
+  expect(node).to.have.property('raw').that.is.null;
+  expect(node).to.have.property('alias').that.is.null;
+  expect(node).to.have.property('args').that.is.an('array');
+  expect(node).to.have.property('depth').that.is.a('number').equal(0);
+  expect(node).to.have.property('parent').that.is.null;
+  expect(node).to.have.property('children').that.is.an('array');
+  expect(node).to.have.property('ancestors').that.is.an('array');
+  expect(node).to.have.property('descendants').that.is.an('array');
+}
 
 function expectError(opts: {
   cause: string;
@@ -26,17 +39,7 @@ describe('argstree', () => {
   });
 
   it('should return a node object (root)', () => {
-    const node = argstree([], {});
-    expect(node).to.be.an('object');
-    expect(node).to.have.property('id').that.is.null;
-    expect(node).to.have.property('raw').that.is.null;
-    expect(node).to.have.property('alias').that.is.null;
-    expect(node).to.have.property('args').that.is.an('array');
-    expect(node).to.have.property('depth').that.is.a('number').equal(0);
-    expect(node).to.have.property('parent').that.is.null;
-    expect(node).to.have.property('children').that.is.an('array');
-    expect(node).to.have.property('ancestors').that.is.an('array');
-    expect(node).to.have.property('descendants').that.is.an('array');
+    expectNode(argstree([], {}));
   });
 
   it('should not treat any arguments as an option or command unless specified', () => {
