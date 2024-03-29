@@ -56,7 +56,7 @@ describe('spec', () => {
         .alias(`--no-${bool}`, '0');
     }
     cmd
-      .option('--baz', { max: 2, maxRead: 0 })
+      .option('--baz', { max: 2, maxRead: 0, assign: false })
       .alias('-ba')
       .alias('--no-baz', '0');
     // setup detailed aliases
@@ -75,7 +75,7 @@ describe('spec', () => {
       .spec(endSpec)
       .spec(commandSpec)
       // foo
-      .command('bar', { min: 1 })
+      .command('bar', { min: 1, assign: true })
       .alias('b')
       .spec(endSpec)
       .spec(commandSpec);
@@ -86,7 +86,7 @@ describe('spec', () => {
       args: {
         '--foo': { maxRead: 0 },
         '--bar': { maxRead: 0 },
-        '--baz': { max: 2, maxRead: 0 },
+        '--baz': { max: 2, maxRead: 0, assign: false },
         foo: {
           min: 1,
           args: { '--': { args: {} }, '--help': { maxRead: 0 } },
@@ -94,6 +94,7 @@ describe('spec', () => {
         },
         bar: {
           min: 1,
+          assign: true,
           args: { '--': { args: {} }, '--help': { maxRead: 0 } },
           alias: { '-h': '--help' }
         },

@@ -13,10 +13,10 @@ function normalize(options: SpecOptions | undefined) {
   const props: (keyof SpecOptions)[] = [
     'id',
     'name',
-    'assign',
     'min',
     'max',
     'maxRead',
+    'assign',
     'validate'
   ];
   for (const prop of props) {
