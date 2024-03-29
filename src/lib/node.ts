@@ -1,35 +1,57 @@
-import { Node as INode, Options } from '../core/core.types.js';
+import { Node as INode, NodeData, Options } from '../core/core.types.js';
 import { ArgsTreeError } from '../core/error.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
 import { displayName, getId } from '../utils/options.utils.js';
 import { Alias } from './alias.js';
 
+export interface NodeOptions {
+  options: Options;
+  raw?: string | null;
+  alias?: string | null;
+  args?: string[];
+}
+
 export class Node {
-  readonly raw: string | null;
-  readonly args: string[] = [];
   private _alias: Alias | undefined;
+  private readonly args: string[];
+  private readonly data: NodeData;
+  private readonly options: Options;
   private readonly children: Node[] = [];
   private readonly range: {
     min: number | null;
     max: number | null;
     maxRead: number | null;
   };
-  private readonly _parse: ((arg: string) => Options | null | undefined) | null;
+  private readonly _parse:
+    | ((arg: string, data: NodeData) => Options | null | undefined)
+    | null;
 
-  constructor(raw: string | null, private readonly options: Options) {
-    this.raw = raw;
+  constructor(opts: NodeOptions) {
+    const { raw = null, alias = null, options } = opts;
+    this.options = options;
+    this.args = opts.args ? opts.args.slice() : [];
+    this.data = { raw, alias, args: this.args, options };
+
     const min = ensureNumber(options.min);
     const max = ensureNumber(options.max);
-    this.range = { min, max, maxRead: ensureNumber(options.maxRead) ?? max };
+    const maxRead = ensureNumber(options.maxRead) ?? max;
+    this.range = { min, max, maxRead };
 
-    // validate min and max
+    // validate range
     if (min != null && max != null && min > max) {
       const name = this.displayName();
       throw this.error(
         ArgsTreeError.INVALID_OPTIONS_ERROR,
         (name ? name + 'has i' : 'I') +
           `nvalid min and max range: ${min}-${max}.`
+      );
+    } else if (max != null && maxRead != null && max < maxRead) {
+      const name = this.displayName();
+      throw this.error(
+        ArgsTreeError.INVALID_OPTIONS_ERROR,
+        (name ? name + 'has i' : 'I') +
+          `nvalid max and maxRead range: ${max} < ${maxRead}.`
       );
     }
 
@@ -38,8 +60,8 @@ export class Node {
       typeof args === 'function'
         ? args
         : args && typeof args === 'object' && !Array.isArray(args)
-        ? arg => args[arg]
-        : null;
+          ? arg => args[arg]
+          : null;
   }
 
   get hasArgs(): boolean {
@@ -52,22 +74,22 @@ export class Node {
   }
 
   private displayName() {
-    return displayName(this.raw, this.options, this.hasArgs);
+    return displayName(this.data.raw, this.options, this.hasArgs);
   }
 
   private error(cause: string, message: string) {
     return new ArgsTreeError({
       cause,
       message,
-      raw: this.raw,
+      raw: this.data.raw,
+      alias: this.data.alias,
       args: this.args,
       options: this.options
     });
   }
 
-  push(...args: string[]): this {
-    this.args.push(...args);
-    return this;
+  push(arg: string): void {
+    this.args.push(arg);
   }
 
   save(node: Node): void {
@@ -80,7 +102,8 @@ export class Node {
     // make sure parse result is a valid object
     // and handle possibly common case for __proto__
     // NOTE: does not handle other cases for __proto__ / prototype
-    const options = typeof this._parse === 'function' ? this._parse(arg) : null;
+    const options =
+      typeof this._parse === 'function' ? this._parse(arg, this.data) : null;
     const value =
       typeof options === 'object' &&
       options !== null &&
@@ -116,10 +139,7 @@ export class Node {
     // NOTE: no need to create copy of args since validation is done
     // hence, allow mutation of args and options by consumer
     const { validate } = this.options;
-    if (
-      typeof validate === 'function' &&
-      !validate({ raw: this.raw, args: this.args, options: this.options })
-    ) {
+    if (typeof validate === 'function' && !validate(this.data)) {
       const name = this.displayName();
       throw this.error(
         ArgsTreeError.VALIDATE_ERROR,
@@ -135,16 +155,16 @@ export class Node {
       satisfies.min && satisfies.max
         ? null
         : min != null && max != null
-        ? min === max
-          ? [min, min]
-          : [`${min}-${max}`, 2]
-        : min != null
-        ? [`at least ${min}`, min]
-        : max != null
-        ? max <= 0
-          ? ['no', max]
-          : [`up to ${max}`, max]
-        : null;
+          ? min === max
+            ? [min, min]
+            : [`${min}-${max}`, 2]
+          : min != null
+            ? [`at least ${min}`, min]
+            : max != null
+              ? max <= 0
+                ? ['no', max]
+                : [`up to ${max}`, max]
+              : null;
     if (phrase != null) {
       const name = this.displayName();
       const label = 'argument' + (phrase[1] === 1 ? '' : 's');
@@ -174,9 +194,10 @@ export class Node {
 
   build(parent: INode | null = null, depth = 0): INode {
     const node: INode = {
-      id: getId(this.raw, this.options.id),
+      id: getId(this.data.raw, this.options.id),
       name: this.options.name ?? null,
-      raw: this.raw,
+      raw: this.data.raw,
+      alias: this.data.alias,
       depth,
       args: this.args,
       parent,

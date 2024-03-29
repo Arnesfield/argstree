@@ -1,12 +1,6 @@
-import { Options } from '../core/core.types.js';
 import { isAssignable } from '../utils/arg.utils.js';
-import { Node } from './node.js';
-
-interface SaveOptions {
-  arg: string;
-  options: Options;
-  values: string[];
-}
+import { ResolvedAlias } from './alias.js';
+import { Node, NodeOptions } from './node.js';
 
 export class Parser {
   private parent: Node;
@@ -47,35 +41,31 @@ export class Parser {
     // if not successful, save arg as value
     // only check assignable if assigned value exists
     const split = this.parent.alias.split(match);
-    if (!split || !this.saveAliasArgs(assigned, split.argsList, split.arg)) {
+    if (!split || !this.saveAliasArgs(assigned, split.list, split.arg)) {
       // treat arg as value
       // if current node exists, check if it reached its max args, if not then save arg
       // otherwise, treat this as an arg for the main node
-      if (this.child?.checkRange(1).maxRead) {
-        this.child.push(arg);
-      } else {
-        this.parent.push(arg);
-      }
+      const node = this.child?.checkRange(1).maxRead ? this.child : this.parent;
+      node.push(arg);
     }
   }
 
-  private saveArg(arg: string, assigned?: string) {
-    const options = this.parent.parse(arg);
+  private saveArg(raw: string, assigned?: string) {
+    const options = this.parent.parse(raw);
     if (options) {
       // check if assignable
-      const save = assigned == null || isAssignable(arg, options);
+      const save = assigned == null || isAssignable(raw, options);
       if (save) {
-        this.saveOptions([
-          { arg, options, values: assigned != null ? [assigned] : [] }
-        ]);
+        this.save([{ raw, options, args: assigned != null ? [assigned] : [] }]);
       }
       return save;
     }
-    const list = this.parent.alias.getArgs(arg);
-    return list && this.saveAliasArgs(assigned, list);
+    // raw arg is alias
+    const resolved = this.parent.alias.resolve([raw]);
+    return resolved && this.saveAliasArgs(assigned, resolved);
   }
 
-  private saveOptions(items: SaveOptions[]) {
+  private save(items: NodeOptions[]) {
     // skipping does not mean saving failed
     if (items.length === 0) {
       return;
@@ -88,8 +78,7 @@ export class Parser {
       // make new child and save values
       // probably don't need to validate now since it will be
       // validated when changing child node or at the end of parse
-      this.child = new Node(item.arg, item.options).push(...item.values);
-      this.parent.save(this.child);
+      this.parent.save((this.child = new Node(item)));
       // if child has args, use this as next child
       if (this.child.hasArgs) {
         nextChild = this.child;
@@ -116,7 +105,7 @@ export class Parser {
 
   private saveAliasArgs(
     assigned: string | undefined,
-    list: [string, ...string[]][],
+    list: ResolvedAlias[],
     splitArg?: string | null
   ) {
     // e.g. -fb=value, cases:
@@ -126,7 +115,7 @@ export class Parser {
     let arg: string | null = null;
     const options =
       assigned != null && list.length > 0
-        ? this.parent.parse((arg = list[list.length - 1][0]))
+        ? this.parent.parse((arg = list[list.length - 1].args[0]))
         : null;
     // allow assign if no options or if assignable
     if (arg != null && options && !isAssignable(arg, options)) {
@@ -138,22 +127,23 @@ export class Parser {
       this.parent.validateAlias(splitArg).push(splitArg);
     }
 
-    const items = list.map((aliasArgs, index): SaveOptions => {
-      const arg = aliasArgs[0];
+    const items = list.map((item, index): NodeOptions => {
+      const raw = item.args[0];
       const isLast = index === list.length - 1;
-      const values = aliasArgs.slice(1);
+      const args = item.args.slice(1);
       // set assigned to last item only
       if (isLast && assigned != null) {
-        values.push(assigned);
+        args.push(assigned);
       }
       // reuse last options when available
       return {
-        arg,
-        values,
-        options: isLast && options ? options : this.parent.parse(arg, true)
+        raw,
+        alias: item.alias,
+        args,
+        options: isLast && options ? options : this.parent.parse(raw, true)
       };
     });
-    this.saveOptions(items);
+    this.save(items);
 
     return true;
   }

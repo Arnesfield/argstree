@@ -1,7 +1,7 @@
 import { isAlias, isOption } from '../utils/arg.utils.js';
 import { displayName } from '../utils/options.utils.js';
 import { argstree } from './argstree.js';
-import { Options } from './core.types.js';
+import { NodeData, Options } from './core.types.js';
 import { ArgsTreeError } from './error.js';
 import { Spec, SpecOptions } from './spec.types.js';
 
@@ -50,6 +50,7 @@ function _spec(raw: string | null, _options: Options): Spec {
       cause: ArgsTreeError.INVALID_SPEC_ERROR,
       message: (name && name + 'spec error: ') + message,
       raw,
+      alias: null,
       args: [],
       options: _options
     });
@@ -117,12 +118,14 @@ function _spec(raw: string | null, _options: Options): Spec {
       }
       return spec;
     },
-    args(handler?: (arg: string) => Options | null | undefined) {
+    args(
+      handler?: (arg: string, data: NodeData) => Options | null | undefined
+    ) {
       // if called, assume args is always set (even empty)
       _options.args ||= _args;
       if (typeof handler === 'function') {
         // when a callback is set, use that instead
-        _options.args = (arg: string) => _args[arg] || handler(arg);
+        _options.args = (arg, data) => _args[arg] || handler(arg, data);
       }
       return spec;
     },

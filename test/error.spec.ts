@@ -12,11 +12,17 @@ describe('error', () => {
 
   it('should contain cause strings as static members', () => {
     expect(ArgsTreeError)
+      .to.have.property('VALIDATE_ERROR')
+      .that.equals('validate');
+    expect(ArgsTreeError)
       .to.have.property('INVALID_OPTIONS_ERROR')
       .that.equals('invalid-options');
     expect(ArgsTreeError)
       .to.have.property('INVALID_RANGE_ERROR')
       .that.equals('invalid-range');
+    expect(ArgsTreeError)
+      .to.have.property('INVALID_SPEC_ERROR')
+      .that.equals('invalid-spec');
     expect(ArgsTreeError)
       .to.have.property('UNRECOGNIZED_ALIAS_ERROR')
       .that.equals('unrecognized-alias');
@@ -32,6 +38,7 @@ describe('error', () => {
       cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
       message: 'foo',
       raw: 'arg',
+      alias: null,
       args,
       options
     });
@@ -40,6 +47,7 @@ describe('error', () => {
     expect(error.cause).to.equal(ArgsTreeError.INVALID_OPTIONS_ERROR);
     expect(error.message).to.equal('foo');
     expect(error.raw).to.equal('arg');
+    expect(error.alias).to.be.null;
     expect(error.args).to.equal(args);
     expect(error.options).to.equal(options);
   });
@@ -49,6 +57,7 @@ describe('error', () => {
       cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
       message: 'foo',
       raw: 'arg',
+      alias: '-a',
       args: ['bar', 'baz'],
       options: { max: 2 }
     });
@@ -57,6 +66,7 @@ describe('error', () => {
       cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
       message: 'foo',
       raw: 'arg',
+      alias: '-a',
       args: ['bar', 'baz'],
       options: { max: 2 }
     });

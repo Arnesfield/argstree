@@ -2,6 +2,11 @@ import { Options } from '../core/core.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { splitAlias } from './split-alias.js';
 
+export interface ResolvedAlias {
+  alias: string;
+  args: [string, ...string[]];
+}
+
 export class Alias {
   private readonly aliases: string[] = [];
   private readonly aliasMap: Required<Options>['alias'] = Object.create(null);
@@ -51,9 +56,26 @@ export class Alias {
     return list;
   }
 
+  resolve(aliases: string[], prefix = ''): ResolvedAlias[] | undefined {
+    let hasArgs = false;
+    const list: ResolvedAlias[] = [];
+    for (let alias of aliases) {
+      alias = prefix + alias;
+      const argsList = this.getArgs(alias);
+      if (argsList) {
+        hasArgs = true;
+        // assume args contains at least one element (thanks, getArgs!)
+        for (const args of argsList) {
+          list.push({ alias, args });
+        }
+      }
+    }
+    return hasArgs ? list : undefined;
+  }
+
   split(
     arg: string
-  ): { arg: string | null; argsList: [string, ...string[]][] } | undefined {
+  ): { arg: string | null; list: ResolvedAlias[] } | undefined {
     // only accept aliases
     if (!isAlias(arg)) {
       return;
@@ -67,17 +89,9 @@ export class Alias {
       return;
     }
     // get args per alias
-    let hasArgs = false;
-    const argsList: [string, ...string[]][] = [];
-    for (const alias of split.aliases) {
-      // note that split.aliases does not have `-` prefix
-      const list = this.getArgs('-' + alias);
-      if (list) {
-        hasArgs = true;
-        argsList.push(...list);
-      }
-    }
+    // note that split.aliases does not have `-` prefix
+    const list = this.resolve(split.aliases, '-');
     // considered as split only if alias args were found
-    return hasArgs ? { arg: value, argsList } : undefined;
+    return list && { arg: value, list };
   }
 }

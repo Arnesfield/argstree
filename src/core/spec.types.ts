@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { argstree } from './argstree.js';
-import { Node, Options } from './core.types.js';
+import { Node, NodeData, Options } from './core.types.js';
 
 /**
  * The spec options.
@@ -64,9 +64,12 @@ export interface Spec {
    * Add an {@linkcode Options.args} function.
    * Additional calls will replace the existing {@linkcode handler}.
    * @param handler The handler function.
+   * @param data The Node data.
    * @returns `this` for chaining.
    */
-  args(handler: (arg: string) => Options | null | undefined): this;
+  args(
+    handler: (arg: string, data: NodeData) => Options | null | undefined
+  ): this;
   /**
    * Get the {@linkcode Options} object for this spec.
    * @returns The {@linkcode Options} object.

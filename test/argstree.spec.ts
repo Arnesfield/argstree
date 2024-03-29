@@ -29,8 +29,10 @@ describe('argstree', () => {
     const node = argstree([], {});
     expect(node).to.be.an('object');
     expect(node).to.have.property('id').that.is.null;
-    expect(node).to.have.property('depth').that.is.a('number').equal(0);
+    expect(node).to.have.property('raw').that.is.null;
+    expect(node).to.have.property('alias').that.is.null;
     expect(node).to.have.property('args').that.is.an('array');
+    expect(node).to.have.property('depth').that.is.a('number').equal(0);
     expect(node).to.have.property('parent').that.is.null;
     expect(node).to.have.property('children').that.is.an('array');
     expect(node).to.have.property('ancestors').that.is.an('array');
@@ -77,12 +79,34 @@ describe('argstree', () => {
 
   it('should accept args function', () => {
     let called = false;
-    const node = argstree(['--foo'], {
-      args: arg => {
-        called = true;
-        return arg === '--foo' ? {} : null;
+    const options: Options = {
+      alias: { '-f': '--foo' },
+      args: (arg, data) => {
+        expect(data).to.be.an('object');
+        expect(data).to.have.property('raw').that.is.null;
+        expect(data).to.have.property('alias').that.is.null;
+        expect(data).to.have.property('args').that.is.an('array');
+        expect(data).to.have.property('options').to.equal(options);
+        const subOptions = {
+          args(_, data) {
+            expect(data).to.be.an('object');
+            expect(data).to.have.property('raw').that.equals('--foo');
+            if (called) {
+              expect(data).to.have.property('alias').that.equals('-f');
+            } else {
+              expect(data).to.have.property('alias').that.is.null;
+            }
+            expect(data).to.have.property('args').that.is.an('array');
+            expect(data).to.have.property('options').to.equal(subOptions);
+            called = true;
+            return null;
+          }
+        } satisfies Options;
+        return arg === '--foo' ? subOptions : null;
       }
-    });
+    };
+    expect(called).to.be.false;
+    const node = argstree(['--foo', '-f'], options);
     expect(called).to.be.true;
     expect(node.children).to.have.length(1);
     expect(node.children[0].id).to.equal('--foo');
@@ -271,6 +295,7 @@ describe('argstree', () => {
     });
     expect(node.children).to.have.length(1);
     expect(node.children[0].id).to.equal('--tree');
+    expect(node.children[0].alias).to.equal('-t');
 
     node = argstree(['-t']);
     expect(node.args).to.deep.equal(['-t']);
@@ -288,6 +313,7 @@ describe('argstree', () => {
     expect(node.args).to.have.length(0);
     expect(node.children).to.have.length(1);
     expect(node.children[0].id).to.equal('test');
+    expect(node.children[0].alias).to.equal('t');
   });
 
   it('should not split non-option aliases', () => {
@@ -387,8 +413,10 @@ describe('argstree', () => {
     });
     expect(node.children).to.have.length(4);
     let ids = ['test', 'bar', 'baz', 'test'];
-    ids.forEach((id, index) => {
-      expect(node.children[index].id).to.equal(id);
+    let aliases = ['-a', '-b', '-ba', '-a'];
+    node.children.forEach((child, index) => {
+      expect(child.id).to.equal(ids[index]);
+      expect(child.alias).to.equal(aliases[index]);
     });
 
     node = argstree(['-abbaa'], {
@@ -397,8 +425,10 @@ describe('argstree', () => {
     });
     expect(node.children).to.have.length(4);
     ids = ['test', 'bar', 'bar', 'foo'];
-    ids.forEach((id, index) => {
-      expect(node.children[index].id).to.equal(id);
+    aliases = ['-a', '-b', '-b', '-aa'];
+    node.children.forEach((child, index) => {
+      expect(child.id).to.equal(ids[index]);
+      expect(child.alias).to.equal(aliases[index]);
     });
   });
 
@@ -612,7 +642,7 @@ describe('argstree', () => {
       '__proto__'
     ]);
     expect(
-      argstree(['__proto__'], { args: arg => ({}[arg]) }).args
+      argstree(['__proto__'], { args: arg => ({})[arg] }).args
     ).to.deep.equal(['__proto__']);
   });
 
@@ -812,6 +842,16 @@ describe('argstree', () => {
       cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
       options,
       equal: options.args.test
+    });
+
+    const options2 = {
+      args: { test: { max: 1, maxRead: 2 } }
+    } satisfies Options;
+    expectError({
+      args: ['test'],
+      cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
+      options: options2,
+      equal: options2.args.test
     });
   });
 

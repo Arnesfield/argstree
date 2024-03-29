@@ -1,9 +1,9 @@
-import { Options } from './core.types.js';
+import { NodeData, Options } from './core.types.js';
 
 /**
  * The ArgsTree error options.
  */
-export interface ArgsTreeErrorOptions {
+export interface ArgsTreeErrorOptions extends NodeData {
   /**
    * The cause error string.
    *
@@ -19,18 +19,6 @@ export interface ArgsTreeErrorOptions {
    * The error message.
    */
   message: string;
-  /**
-   * The parsed argument.
-   */
-  raw: string | null;
-  /**
-   * The arguments for this node.
-   */
-  args: string[];
-  /**
-   * The options object related to this error (same options object reference).
-   */
-  options: Options;
 }
 
 /**
@@ -87,6 +75,7 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
    */
   cause: string;
   raw: string | null;
+  alias: string | null;
   args: string[];
   options: Options;
 
@@ -99,6 +88,7 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
     this.name = this.constructor.name;
     this.cause = options.cause;
     this.raw = options.raw;
+    this.alias = options.alias;
     this.args = options.args;
     this.options = options.options;
   }
@@ -109,6 +99,7 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
       cause: this.cause,
       message: this.message,
       raw: this.raw,
+      alias: this.alias,
       args: this.args,
       options: this.options
     };

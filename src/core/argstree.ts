@@ -9,5 +9,5 @@ import { Node, Options } from './core.types.js';
  * @returns The {@linkcode Node} object.
  */
 export function argstree(args: readonly string[], options: Options = {}): Node {
-  return new Parser(new Tree(null, options)).parse(args).build();
+  return new Parser(new Tree({ options })).parse(args).build();
 }

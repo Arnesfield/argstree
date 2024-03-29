@@ -1,9 +1,35 @@
 /**
+ * The Node data.
+ */
+export interface NodeData {
+  /**
+   * The parsed argument.
+   */
+  raw: string | null;
+  /**
+   * The alias used to parse the options for this Node.
+   * Otherwise, this value is `null`.
+   */
+  alias: string | null;
+  /**
+   * The arguments for this node.
+   */
+  args: string[];
+  /**
+   * The options for this node.
+   */
+  options: Options;
+}
+
+/**
  * ArgsTree options.
  */
 export interface Options {
   /**
    * Unique ID for this option or command.
+   *
+   * Pass a function to transform the raw argument and
+   * use the return value as the ID (e.g. transform to camelCase).
    *
    * This is never used in any internal logic, but can
    * be useful for finding the exact node after parsing.
@@ -88,38 +114,20 @@ export interface Options {
    */
   args?:
     | { [arg: string]: Options | null | undefined }
-    | ((arg: string) => Options | null | undefined);
+    | ((arg: string, data: NodeData) => Options | null | undefined);
   /**
    * Validate arguments after they are saved for this option or command.
    * Return a boolean or throw an error manually.
-   * @param data Validate data.
+   * @param data The Node data.
    * @return A validate error is thrown when `false` is returned.
    */
-  validate?(data: ValidateData): boolean;
-}
-
-/**
- * Validate data.
- */
-export interface ValidateData {
-  /**
-   * The parsed argument.
-   */
-  raw: string | null;
-  /**
-   * The arguments for this node.
-   */
-  args: string[];
-  /**
-   * The options for this node.
-   */
-  options: Options;
+  validate?(data: NodeData): boolean;
 }
 
 /**
  * The Node object.
  */
-export interface Node {
+export interface Node extends Omit<NodeData, 'options'> {
   /**
    * The provided {@linkcode Options.id} or the parsed argument.
    */
@@ -129,17 +137,9 @@ export interface Node {
    */
   name: string | null;
   /**
-   * The parsed argument.
-   */
-  raw: string | null;
-  /**
    * Depth of node.
    */
   depth: number;
-  /**
-   * The arguments for this node.
-   */
-  args: string[];
   /**
    * The parent node. If `null`, then this node is the root node.
    */

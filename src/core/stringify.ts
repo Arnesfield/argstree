@@ -61,6 +61,9 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
     if (node.raw != null && node.raw !== id) {
       labels.push(`raw: ${node.raw}`);
     }
+    if (node.alias != null) {
+      labels.push(`alias: ${node.alias}`);
+    }
     if (node.name != null && node.name !== id) {
       labels.push(`name: ${node.name}`);
     }

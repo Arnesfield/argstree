@@ -378,9 +378,10 @@ The `stringify` function returns a stringified `Node` object. It also accepts an
 ```javascript
 import argstree, { stringify } from 'argstree';
 
-const node = argstree(['foo', 'bar', '--foo', '0', '--bar', '1'], {
+const node = argstree(['foo', 'bar', '-f', '0', '--bar', '1'], {
   args: {
     foo: {
+      alias: { '-f': '--foo', '-b': '--bar' },
       args: { '--foo': {}, '--bar': {} }
     }
   }
@@ -398,7 +399,7 @@ null (depth: 0)
 ├─┬ foo (depth: 1)
 │ ├─┬ :args (total: 1)
 │ │ └── bar
-│ ├─┬ --foo (depth: 2)
+│ ├─┬ --foo (depth: 2, alias: -f)
 │ │ ├─┬ :args (total: 1)
 │ │ │ └── 0
 │ │ └─┬ :ancestors (total: 2)
@@ -413,11 +414,11 @@ null (depth: 0)
 │ ├─┬ :ancestors (total: 1)
 │ │ └── null (depth: 0)
 │ └─┬ :descendants (total: 2)
-│   ├── --foo (depth: 2)
+│   ├── --foo (depth: 2, alias: -f)
 │   └── --bar (depth: 2)
 └─┬ :descendants (total: 3)
   ├── foo (depth: 1)
-  ├── --foo (depth: 2)
+  ├── --foo (depth: 2, alias: -f)
   └── --bar (depth: 2)
 ```
 

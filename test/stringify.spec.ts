@@ -160,7 +160,7 @@ describe('stringify', () => {
         name: 'test',
         alias: { '-a': 'foo', '-b': 'bar', '-c': 'baz' },
         args: {
-          foo: {},
+          foo: { name: 'foo-name' },
           bar: {},
           baz: { assign: true, args: { test: { max: 0 }, '--': {} } }
         }
@@ -172,20 +172,20 @@ describe('stringify', () => {
       descendants: true
     });
     expect(str).to.equal(`root (depth: 0, name: test)
-├─┬ foo (depth: 1)
+├─┬ foo (depth: 1, alias: -a, name: foo-name)
 │ └─┬ :ancestors (total: 1)
 │   └── root (depth: 0, name: test)
-├─┬ bar (depth: 1)
+├─┬ bar (depth: 1, alias: -b)
 │ └─┬ :ancestors (total: 1)
 │   └── root (depth: 0, name: test)
-├─┬ baz (depth: 1)
+├─┬ baz (depth: 1, alias: -c)
 │ ├─┬ :args (total: 2)
 │ │ ├── 0
 │ │ └── foo
 │ ├─┬ test (depth: 2)
 │ │ └─┬ :ancestors (total: 2)
 │ │   ├── root (depth: 0, name: test)
-│ │   └── baz (depth: 1)
+│ │   └── baz (depth: 1, alias: -c)
 │ ├─┬ -- (depth: 2)
 │ │ ├─┬ :args (total: 3)
 │ │ │ ├── foo
@@ -193,16 +193,16 @@ describe('stringify', () => {
 │ │ │ └── baz
 │ │ └─┬ :ancestors (total: 2)
 │ │   ├── root (depth: 0, name: test)
-│ │   └── baz (depth: 1)
+│ │   └── baz (depth: 1, alias: -c)
 │ ├─┬ :ancestors (total: 1)
 │ │ └── root (depth: 0, name: test)
 │ └─┬ :descendants (total: 2)
 │   ├── test (depth: 2)
 │   └── -- (depth: 2)
 └─┬ :descendants (total: 5)
-  ├── foo (depth: 1)
-  ├── bar (depth: 1)
-  ├── baz (depth: 1)
+  ├── foo (depth: 1, alias: -a, name: foo-name)
+  ├── bar (depth: 1, alias: -b)
+  ├── baz (depth: 1, alias: -c)
   ├── test (depth: 2)
   └── -- (depth: 2)`);
   });
