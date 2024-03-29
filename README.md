@@ -10,12 +10,13 @@ Parse arguments into a tree structure.
 **argstree** is meant to be a minimal and _less_ opinionated argument parser with the following goals and features:
 
 - Preserve the structure of the provided arguments.
-- Variadic arguments by default unless [limits](#limits) are configured.
 - No data types other than strings.
+- Variadic arguments by default unless [limits](#limits) are configured.
 - All arguments are treated as normal parameters unless configured to be an [option or command](#options-and-commands).
-- Recognize and split combined [aliases](#aliases) (e.g. from `-abaa` to `-a`, `-ba`, `-a`).
-- Recognize configured [assignment](#assignment) (`=`) for aliases, options, and commands (e.g. `-f=bar`, `--foo=bar`, `foo=bar`).
-- No errors for unrecognized options or commands (except for misconfigured aliases and unknown aliases from a combined alias).
+- [Aliases](#aliases) are not restricted to single characters and can be expanded to multiple options or commands with additional arguments.
+- Recognize and [split](#split) combined aliases (e.g. from `-abaa` to `-a`, `-ba`, `-a`).
+- Recognize configured [assignment](#assignment) (`=`) for options and commands (e.g. `--foo=bar`, `foo=bar`).
+- No [errors](#argstreeerror) for unrecognized options or commands (except for misconfigured aliases and unknown aliases from a combined alias).
 - Double-dash (`--`) is not treated as anything special but can be configured to be a subcommand.
 
 Note that **argstree** only parses arguments based on the configuration it has been given. It is still up to the consumers/developers to interpret the parsed arguments and decide how to use these inputs to suit their application's needs.
@@ -63,7 +64,7 @@ The `spec(options)` function can also be used to parse arguments while also bein
 
 Configure options and commands by setting the `args` object or function option.
 
-While they may be configured similarly, options start with a dash (e.g. `-foo`, `--bar`) while commands do not (e.g. `foo`, `bar`).
+While they may be configured similarly, options start with a hyphen (e.g. `-foo`, `--bar`) while commands do not (e.g. `foo`, `bar`).
 
 When setting the `args` object, the _properties_ are used to match the arguments while the _values_ are also options objects similar to the options from `argstree(args, options)`.
 
@@ -72,8 +73,8 @@ Options and commands will capture arguments and stop when another option or comm
 ```javascript
 const node = argstree(['--foo', 'value', '--foo', 'bar', 'baz'], {
   args: {
-    '--foo': {}, // Options object
-    bar: {} // Options object
+    '--foo': {}, // options object
+    bar: { initial: ['foo'] } // options object with initial arguments
   }
 });
 for (const child of node.children) {
@@ -84,15 +85,15 @@ for (const child of node.children) {
 ```text
 --foo [ 'value' ]
 --foo []
-bar [ 'baz' ]
+bar [ 'foo', 'baz' ]
 ```
 
-You can also pass a function to the `args` option. It has two parameters: the `arg` string (comes from the `args` array or from a splitted combined alias) and the `NodeData` object. It should return an options object, `null`, or `undefined`.
+You can also pass a function to the `args` option. It has two parameters: the `arg` string (comes from the `args` array or from a split combined alias) and the `NodeData` object. It should return an options object, `null`, or `undefined`.
 
 ```javascript
 const args = ['--foo', 'bar', '--bar', '--baz', 'foo'];
 const node = argstree(args, {
-  args: (arg, data) => {
+  args(arg, data) {
     return arg.startsWith('--') ? {} : null;
   }
 });
@@ -121,7 +122,7 @@ for (const child of node.children) {
 > });
 >
 > argstree(['__proto__'], {
->   args: arg => {
+>   args(arg) {
 >     return { __proto__: null, '--foo': {} }[arg];
 >   }
 > });
@@ -131,7 +132,7 @@ for (const child of node.children) {
 
 Using `=`, options or commands will treat the assigned value as their own argument regardless of any matches.
 
-By default, this behavior is enabled for aliases and options but not for commands. To change this behavior, you can set the `assign` boolean option.
+By default, this behavior is enabled for options but not for commands. To change this behavior, you can set the `assign` boolean option.
 
 ```javascript
 const node = argstree(['--foo=bar', 'foo=bar', '--bar=foo', 'bar=foo'], {
@@ -247,7 +248,7 @@ Configure aliases by setting the `alias` object option.
 
 It should include the list of aliases mapped to options or commands specified in the `args` object option. An error is thrown if the option or command is not valid.
 
-Only aliases that start with one dash (e.g. `-a`, `-bc`) can be combined together into one alias shorthand (e.g. `-abc`).
+Only aliases that start with one hyphen (e.g. `-a`, `-bc`) can be combined together into one alias shorthand (e.g. `-abc`).
 
 Note that the [`assign`](#assignment) option applies to aliases of the options or commands and that [limits](#limits) also apply to their arguments.
 
@@ -318,7 +319,7 @@ root null [ 'bar' ]
 
 ### ArgsTreeError
 
-For errors related to parsing, an `ArgsTreeError` is thrown. You can import this class to reference in catch blocks.
+For errors related to parsing and misconfiguration, an `ArgsTreeError` is thrown. You can import this class to reference in catch blocks.
 
 ```javascript
 import argstree, { ArgsTreeError } from 'argstree';
@@ -353,6 +354,24 @@ try {
 > [!TIP]
 >
 > See [`src/core/error.ts`](src/core/error.ts) for more details.
+
+### split
+
+The `split` function is used to split the combined value string based on the provided matches. It returns an object with the split values and the remaining values that were not split. Note that longer match strings take priority and are split first.
+
+```javascript
+import { split } from 'argstree';
+
+console.log(split('foobar', ['foo', 'bar']));
+console.log(split('foobarfoobaz', ['fo', 'foo', 'oba']));
+console.log(split('foobarfoobaz', ['fo', 'oba', 'foo']));
+```
+
+```text
+{ values: [ 'foo', 'bar' ], remainder: [] }
+{ values: [ 'foo', 'foo' ], remainder: [ 'bar', 'baz' ] }
+{ values: [ 'fo', 'oba', 'fo', 'oba' ], remainder: [ 'r', 'z' ] }
+```
 
 ### stringify
 
