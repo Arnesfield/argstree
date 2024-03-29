@@ -7,7 +7,7 @@ export interface NodeData {
    */
   raw: string | null;
   /**
-   * The alias used to parse the options for this Node.
+   * The alias used to parse the options for this node.
    * Otherwise, this value is `null`.
    */
   alias: string | null;
@@ -22,7 +22,7 @@ export interface NodeData {
 }
 
 /**
- * ArgsTree options.
+ * The ArgsTree options.
  */
 export interface Options {
   /**
@@ -54,7 +54,7 @@ export interface Options {
    * arguments for the parent option or command instead.
    *
    * Direct assignment with `=` will always read the
-   * assigned value as an argument for the option or command.
+   * assigned value as an argument for this option or command.
    *
    * An error is thrown if this option or command does not satisfy this condition.
    */
@@ -76,7 +76,8 @@ export interface Options {
    *
    * e.g. `--foo=value`, `foo=value`
    *
-   * By default, this option is set to `true` if the parsed argument starts with a dash (`-`).
+   * By default, this option is set to `true` if the parsed argument
+   * is an alias or an option (e.g. `-f`, `--foo`).
    */
   assign?: boolean;
   /**
@@ -95,7 +96,7 @@ export interface Options {
    *
    * ```javascript
    * [
-   *   ['--foo', 'arg1', 'arg2', ...],
+   *   ['--option', 'arg1', 'arg2', ...],
    *   ['command', 'arg1', 'arg2', ...],
    *   ...
    * ]

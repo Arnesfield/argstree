@@ -5,7 +5,7 @@ import { Node, Options } from './core.types.js';
 /**
  * Parse arguments into a tree structure.
  * @param args The arguments to parse.
- * @param options The options object.
+ * @param options The {@linkcode Options} object.
  * @returns The {@linkcode Node} object.
  */
 export function argstree(args: readonly string[], options: Options = {}): Node {

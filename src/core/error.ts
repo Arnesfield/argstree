@@ -6,7 +6,6 @@ import { NodeData, Options } from './core.types.js';
 export interface ArgsTreeErrorOptions extends NodeData {
   /**
    * The cause error string.
-   *
    * - {@linkcode ArgsTreeError.VALIDATE_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_OPTIONS_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_RANGE_ERROR}
@@ -26,13 +25,13 @@ export interface ArgsTreeErrorOptions extends NodeData {
  */
 export interface ArgsTreeErrorObject extends ArgsTreeErrorOptions {
   /**
-   * The Error name.
+   * The error name.
    */
   name: string;
 }
 
 /**
- * ArgsTree error.
+ * The ArgsTree error.
  */
 export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
   /**
@@ -40,7 +39,7 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
    */
   static readonly VALIDATE_ERROR = 'validate';
   /**
-   * The options object provided is not valid.
+   * The {@linkcode Options} object provided is not valid.
    *
    * e.g. Incorrect {@linkcode Options.min min} and {@linkcode Options.max max} range.
    */
@@ -62,10 +61,8 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
    * an option or command from {@linkcode Options.args}.
    */
   static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
-
   /**
    * The cause error string.
-   *
    * - {@linkcode ArgsTreeError.VALIDATE_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_OPTIONS_ERROR}
    * - {@linkcode ArgsTreeError.INVALID_RANGE_ERROR}
@@ -80,7 +77,7 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
   options: Options;
 
   /**
-   * ArgsTree error.
+   * The ArgsTree error.
    * @param options The error options.
    */
   constructor(options: ArgsTreeErrorOptions) {

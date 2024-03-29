@@ -5,6 +5,15 @@ import { NodeData, Options } from './core.types.js';
 import { ArgsTreeError } from './error.js';
 import { Spec, SpecOptions } from './spec.types.js';
 
+/**
+ * Build the parse spec {@linkcode Options options} for {@linkcode argstree}.
+ * @param options The Spec options.
+ * @returns The Spec object.
+ */
+export function spec(options?: SpecOptions): Spec {
+  return _spec(null, normalize(options));
+}
+
 function normalize(options: SpecOptions | undefined) {
   const opts: Options = {};
   if (!options) {
@@ -26,15 +35,6 @@ function normalize(options: SpecOptions | undefined) {
     }
   }
   return opts;
-}
-
-/**
- * Build {@linkcode Options options} for {@linkcode argstree}.
- * @param options The spec options.
- * @returns The spec object.
- */
-export function spec(options?: SpecOptions): Spec {
-  return _spec(null, normalize(options));
 }
 
 // NOTE: always keep reference to _options
