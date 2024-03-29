@@ -39,7 +39,7 @@ export interface Spec {
    * @param args The alias arguments.
    * @returns `this` for chaining.
    */
-  alias(alias: string | string[], args?: string | readonly string[]): this;
+  alias(alias: string | string[], args?: string | string[]): this;
   /**
    * Setup the options for the current option or command.
    *
