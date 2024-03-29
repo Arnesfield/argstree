@@ -5,31 +5,18 @@
 
 Parse arguments into a tree structure.
 
-```javascript
-import argstree from 'argstree';
-
-// args: --hello world
-const args = process.argv.slice(2);
-const node = argstree(args, { args: { '--hello': {} } });
-const child = node.children[0];
-console.log(child.id, child.args);
-```
-
-```text
---hello [ 'world' ]
-```
-
 ## Features
 
-**argstree** is meant to be a _less_ opinionated argument parser with the following goals:
+**argstree** is meant to be a minimal and _less_ opinionated argument parser with the following goals and features:
 
 - Preserve the structure of the provided arguments.
-- Variadic arguments by default.
-- No options or commands are recognized by default.
+- Variadic arguments by default unless [limits](#limits) are configured.
 - No data types other than strings.
-- Automatically recognize and split configured aliases.
+- All arguments are treated as normal parameters unless configured to be an [option or command](#options-and-commands).
+- Recognize and split combined [aliases](#aliases) (e.g. from `-abaa` to `-a`, `-ba`, `-a`).
 - Recognize configured [assignment](#assignment) (`=`) for aliases, options, and commands (e.g. `-f=bar`, `--foo=bar`, `foo=bar`).
-- Double-dash (`--`) is not treated as anything special and can be configured to be a subcommand.
+- No errors for unrecognized options or commands (except for misconfigured aliases and unknown aliases from a combined alias).
+- Double-dash (`--`) is not treated as anything special but can be configured to be a subcommand.
 
 Note that **argstree** only parses arguments based on the configuration it has been given. It is still up to the consumers/developers to interpret the parsed arguments and decide how to use these inputs to suit their application's needs.
 
@@ -60,11 +47,17 @@ console.log(node.id, node.args);
 null [ '--hello', 'world' ]
 ```
 
+> [!TIP]
+>
+> See [`src/core/core.types.ts`](src/core/core.types.ts) for `Node`, `NodeData`, and `Options` types.
+
+The `spec(options)` function can also be used to parse arguments while also being an options builder. See the [Spec API](#spec-api) section for more details.
+
 > [!IMPORTANT]
 >
-> See [`src/core/core.types.ts`](src/core/core.types.ts) for `Options` and `Node` types.
+> While the sections ahead use the core `argstree()` function to show examples explaining the configuration setup, **it is recommended to use the [Spec API](#spec-api)** instead for the ease of building your parsing spec as it grows with more options and commands.
 >
-> It also includes useful properties not included in this document for the sake of brevity.
+> Also, for the sake of brevity, not all features/properties are included in this document and it is advised to view the referenced types to learn more.
 
 ### Options and Commands
 
@@ -94,12 +87,12 @@ for (const child of node.children) {
 bar [ 'baz' ]
 ```
 
-You can also pass a function to the `args` option. It has an `arg` string parameter (comes from the `args` array or from splitted alias) and it should return an options object, `null`, or `undefined`.
+You can also pass a function to the `args` option. It has two parameters: the `arg` string (comes from the `args` array or from splitted alias) and the `NodeData` object. It should return an options object, `null`, or `undefined`.
 
 ```javascript
 const args = ['--foo', 'bar', '--bar', '--baz', 'foo'];
 const node = argstree(args, {
-  args: arg => {
+  args: (arg, data) => {
     return arg.startsWith('--') ? {} : null;
   }
 });
@@ -295,43 +288,32 @@ for (const child of node.children) {
 
 ### Validation
 
-Set the `validate` function option to validate arguments after they are saved for the option or command. Return a boolean or throw an error manually. A validate error is thrown when `false` is returned.
+Set the `validate` function option to validate the arguments after they are saved for the option or command. It has a `NodeData` object parameter and it should either return a boolean or throw an error manually. A validate error is thrown when `false` is returned.
 
-The `validate` function has a `data` object parameter with the following properties:
-
-- `raw` (type: `string | null`) - The parsed argument.
-- `args` (type: `string[]`) - The arguments for this node.
-- `options` (type: `Options`) - The options for this node.
+Note that a call to `validate` means that the `Node` has already parsed all of its arguments and that it has passed all [validation checks](#limits) beforehand.
 
 ```javascript
-argstree(['--foo', 'bar', 'baz'], {
+function validate(data) {
+  console.log(data.raw, data.alias, data.args);
+  return true;
+}
+argstree(['--foo', '-b', 'foo', 'bar'], {
+  alias: { '-f': '--foo', '-b': '--bar' },
   args: {
-    '--foo': {
-      max: 1,
-      validate(data) {
-        console.log('--foo', data);
-        return true;
-      }
-    }
+    '--foo': { max: 1, validate },
+    '--bar': { max: 1, validate }
   },
   validate(data) {
-    console.log('root', data);
+    console.log('root', data.alias, data.args);
     return true;
   }
 });
 ```
 
 ```text
---foo {
-  raw: '--foo',
-  args: [ 'bar' ],
-  options: { max: 1, validate: [Function: validate] }
-}
-root {
-  raw: null,
-  args: [ 'baz' ],
-  options: { args: { '--foo': [Object] }, validate: [Function: validate] }
-}
+--foo null []
+--bar -b [ 'foo' ]
+root null [ 'bar' ]
 ```
 
 ### ArgsTreeError
@@ -425,6 +407,133 @@ null (depth: 0)
 > [!TIP]
 >
 > See [`src/core/stringify.ts`](src/core/stringify.ts) for more details.
+
+### Spec API
+
+The `spec(options)` function returns an options builder. Calling `parse(args)` uses the `argstree` core function to parse the arguments and it also returns a `Node` object (root node). To get the options object, use the `options()` method.
+
+```javascript
+import { spec } from 'argstree';
+
+// create command spec
+const cmd = spec({ min: 1 });
+cmd.option('--foo').alias('-f').alias('--no-foo', '0');
+cmd.option('--bar').alias('-b').alias('--no-bar', ['0']);
+
+// get the options object with <spec>.options()
+const options = cmd.options();
+console.log(options);
+
+// parse arguments with <spec>.parse(args)
+const node = cmd.parse(['foo', '--foo', 'bar', '-b', 'baz']);
+console.log('root', node.args);
+for (const child of node.children) {
+  console.log(child.id, child.args);
+}
+```
+
+```text
+{
+  min: 1,
+  args: [Object: null prototype] { '--foo': {}, '--bar': {} },
+  alias: [Object: null prototype] {
+    '-f': '--foo',
+    '--no-foo': [ '--foo', '0' ],
+    '-b': '--bar',
+    '--no-bar': [ '--bar', '0' ]
+  }
+}
+root [ 'foo' ]
+--foo [ 'bar' ]
+--bar [ 'baz' ]
+```
+
+The options object passed to `spec(options)` is similar to the options from `argstree(args, options)` but the `alias` and `args` options are omitted.
+
+> [!TIP]
+>
+> See [`src/core/spec.types.ts`](src/core/spec.types.ts) for more details.
+
+#### Spec Options and Commands
+
+- Use the `option(arg, options)` and `command(arg, options)` methods to add options and commands to the `args` object option.
+- Use the `args()` method to add an empty object to the `args` option.
+- Use the `args(handler)` method to use a function for the `args` option and use the `handler` callback as a fallback.
+
+```javascript
+const cmd = spec();
+
+// add option
+cmd.option('--foo');
+
+// add command
+cmd.command('foo');
+
+// <spec>.command() is an alias for thw following:
+// cmd.option('foo').spec(fooCmd => fooCmd.args());
+
+// add an empty args object
+cmd.args();
+
+// or add args function (string and NodeData)
+cmd.args((arg, data) => {
+  // will try to match '--foo' and 'foo' first
+  // before this callback is fired
+  return arg === '--baz' ? {} : null;
+});
+```
+
+#### Spec Aliases
+
+- Use the `aliases` method to assign a detailed alias not bound to the current option or command.
+- Use the `alias` method to assign an alias to the current option or command. An error is thrown if the current option or command does not exist.
+
+```javascript
+const cmd = spec();
+
+// set aliases similar to argstree options alias
+cmd.aliases({ '-A': [['--foo'], ['--bar']] });
+
+// set alias/es to current option or command
+// spec object method chaining (applies to all methods)
+cmd.option('--foo', { maxRead: 0 }).alias('-f').alias('--no-foo', '0');
+
+// multiple aliases (array) and multiple arguments (array)
+cmd.option('--bar', { maxRead: 0 }).alias(['-b', '-ba'], ['1', '2']);
+```
+
+#### Spec Suboptions and Subcommands
+
+Use the `spec` method that accepts a setup callback. This callback contains a spec object parameter (subspec) to modify the options of the current option or command. This can be called multiple times for the same option or command.
+
+```javascript
+function commonSpec(spec) {
+  spec.option('--help', { maxRead: 0 }).alias('-h');
+}
+const cmd = spec()
+  .command('foo')
+  .alias(['f', 'fo'])
+  .spec(commonSpec)
+  .spec(foo => foo.option('--bar').alias('-b'));
+commonSpec(cmd);
+console.log('%o', cmd.options());
+```
+
+```javascript
+{
+  args: [Object: null prototype] {
+    foo: {
+      args: [Object: null prototype] {
+        '--help': { maxRead: 0 },
+        '--bar': {}
+      },
+      alias: [Object: null prototype] { '-h': '--help', '-b': '--bar' }
+    },
+    '--help': { maxRead: 0 }
+  },
+  alias: [Object: null prototype] { f: 'foo', fo: 'foo', '-h': '--help' }
+}
+```
 
 ## License
 
