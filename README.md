@@ -87,7 +87,7 @@ for (const child of node.children) {
 bar [ 'baz' ]
 ```
 
-You can also pass a function to the `args` option. It has two parameters: the `arg` string (comes from the `args` array or from splitted alias) and the `NodeData` object. It should return an options object, `null`, or `undefined`.
+You can also pass a function to the `args` option. It has two parameters: the `arg` string (comes from the `args` array or from a splitted combined alias) and the `NodeData` object. It should return an options object, `null`, or `undefined`.
 
 ```javascript
 const args = ['--foo', 'bar', '--bar', '--baz', 'foo'];
@@ -136,11 +136,11 @@ By default, this behavior is enabled for aliases and options but not for command
 ```javascript
 const node = argstree(['--foo=bar', 'foo=bar', '--bar=foo', 'bar=foo'], {
   args: {
-    // assign enabled by default for options
+    // assign enabled for options by default
     '--foo': {},
     // change behavior
     '--bar': { assign: false },
-    // assign disabled by default for commands
+    // assign disabled for commands by default
     foo: {},
     // change behavior
     bar: { assign: true }
@@ -158,7 +158,7 @@ bar [ 'foo' ]
 
 ### Suboptions and Subcommands
 
-Matching a suboption or a subcommand means that its parent option or command will stop receiving arguments.
+Matching a suboption or subcommand means that its parent option or command will stop receiving arguments.
 
 ```javascript
 const node = argstree(['--foo', 'bar', '--foo', 'baz'], {
@@ -340,6 +340,7 @@ try {
   "cause": "invalid-range",
   "message": "Option '--foo' expected at least 2 arguments, but got 1.",
   "raw": "--foo",
+  "alias": null,
   "args": [
     "bar"
   ],
@@ -408,9 +409,9 @@ null (depth: 0)
 >
 > See [`src/core/stringify.ts`](src/core/stringify.ts) for more details.
 
-### Spec API
+## Spec API
 
-The `spec(options)` function returns an options builder. Calling `parse(args)` uses the `argstree` core function to parse the arguments and it also returns a `Node` object (root node). To get the options object, use the `options()` method.
+The `spec(options)` function returns a `Spec` object (options builder). Calling `parse(args)` uses the `argstree` core function to parse the arguments and it also returns a `Node` object (root node). To get the options object, use the `options()` method.
 
 ```javascript
 import { spec } from 'argstree';
@@ -454,9 +455,9 @@ The options object passed to `spec(options)` is similar to the options from `arg
 >
 > See [`src/core/spec.types.ts`](src/core/spec.types.ts) for more details.
 
-#### Spec Options and Commands
+### Spec Options and Commands
 
-- Use the `option(arg, options)` and `command(arg, options)` methods to add options and commands to the `args` object option.
+- Use the `option(arg, options)` and `command(arg, options)` methods to add options and commands to the `args` object option respectively.
 - Use the `args()` method to add an empty object to the `args` option.
 - Use the `args(handler)` method to use a function for the `args` option and use the `handler` callback as a fallback.
 
@@ -469,7 +470,7 @@ cmd.option('--foo');
 // add command
 cmd.command('foo');
 
-// <spec>.command() is an alias for thw following:
+// <spec>.command() is an alias for the following:
 // cmd.option('foo').spec(fooCmd => fooCmd.args());
 
 // add an empty args object
@@ -477,15 +478,14 @@ cmd.args();
 
 // or add args function (string and NodeData)
 cmd.args((arg, data) => {
-  // will try to match '--foo' and 'foo' first
-  // before this callback is fired
+  // will match '--foo' and 'foo' first before this callback is fired
   return arg === '--baz' ? {} : null;
 });
 ```
 
-#### Spec Aliases
+### Spec Aliases
 
-- Use the `aliases` method to assign a detailed alias not bound to the current option or command.
+- Use the `aliases` method to assign [aliases](#aliases) not bound to the current option or command.
 - Use the `alias` method to assign an alias to the current option or command. An error is thrown if the current option or command does not exist.
 
 ```javascript
@@ -502,19 +502,20 @@ cmd.option('--foo', { maxRead: 0 }).alias('-f').alias('--no-foo', '0');
 cmd.option('--bar', { maxRead: 0 }).alias(['-b', '-ba'], ['1', '2']);
 ```
 
-#### Spec Suboptions and Subcommands
+### Spec Suboptions and Subcommands
 
-Use the `spec` method that accepts a setup callback. This callback contains a spec object parameter (subspec) to modify the options of the current option or command. This can be called multiple times for the same option or command.
+Use the `spec` method that accepts a setup callback. This callback contains a `Spec` object parameter (subspec) to modify the options of the current option or command. This can be called multiple times for the same option or command.
 
 ```javascript
 function commonSpec(spec) {
   spec.option('--help', { maxRead: 0 }).alias('-h');
+  spec.command('--');
 }
 const cmd = spec()
   .command('foo')
   .alias(['f', 'fo'])
-  .spec(commonSpec)
-  .spec(foo => foo.option('--bar').alias('-b'));
+  .spec(foo => foo.option('--bar').alias('-b'))
+  .spec(commonSpec);
 commonSpec(cmd);
 console.log('%o', cmd.options());
 ```
@@ -524,12 +525,14 @@ console.log('%o', cmd.options());
   args: [Object: null prototype] {
     foo: {
       args: [Object: null prototype] {
+        '--bar': {},
         '--help': { maxRead: 0 },
-        '--bar': {}
+        '--': { args: [Object: null prototype] {} }
       },
-      alias: [Object: null prototype] { '-h': '--help', '-b': '--bar' }
+      alias: [Object: null prototype] { '-b': '--bar', '-h': '--help' }
     },
-    '--help': { maxRead: 0 }
+    '--help': { maxRead: 0 },
+    '--': { args: [Object: null prototype] {} }
   },
   alias: [Object: null prototype] { f: 'foo', fo: 'foo', '-h': '--help' }
 }
