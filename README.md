@@ -486,7 +486,7 @@ cmd.args((arg, data) => {
 ### Spec Aliases
 
 - Use the `aliases` method to assign [aliases](#aliases) not bound to the current option or command.
-- Use the `alias` method to assign an alias to the current option or command. An error is thrown if the current option or command does not exist.
+- Use the `alias` method to assign aliases to the current option or command. An error is thrown if the current option or command does not exist.
 
 ```javascript
 const cmd = spec();
@@ -499,7 +499,7 @@ cmd.aliases({ '-A': [['--foo'], ['--bar']] });
 cmd.option('--foo', { maxRead: 0 }).alias('-f').alias('--no-foo', '0');
 
 // multiple aliases (array) and multiple arguments (array)
-cmd.option('--bar', { maxRead: 0 }).alias(['-b', '-ba'], ['1', '2']);
+cmd.option('--bar', { maxRead: 0 }).alias(['-b', '-ba'], ['1', '2', '3']);
 ```
 
 ### Spec Suboptions and Subcommands
