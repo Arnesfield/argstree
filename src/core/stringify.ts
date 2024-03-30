@@ -2,24 +2,16 @@ import * as PREFIX from '../utils/prefix.js';
 import { PrefixOptions } from '../utils/prefix.js';
 import { Node } from './core.types.js';
 
-/**
- * The stringify options.
- */
+/** The stringify options. */
 export interface StringifyOptions {
   /**
    * Include node arguments.
    * @default true
    */
   args?: boolean;
-  /**
-   * Include node ancestors.
-   * @default false
-   */
+  /** Include node ancestors. */
   ancestors?: boolean;
-  /**
-   * Include node descendants.
-   * @default false
-   */
+  /** Include node descendants. */
   descendants?: boolean;
 }
 

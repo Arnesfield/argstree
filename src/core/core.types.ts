@@ -1,29 +1,16 @@
-/**
- * The Node data.
- */
+/** The Node data. */
 export interface NodeData {
-  /**
-   * The parsed argument.
-   */
+  /** The parsed argument. */
   raw: string | null;
-  /**
-   * The alias used to parse the options for this node.
-   * Otherwise, this value is `null`.
-   */
+  /** The alias used to parse the options for this node. Otherwise, this value is `null`. */
   alias: string | null;
-  /**
-   * The arguments for this node.
-   */
+  /** The arguments for this node. */
   args: string[];
-  /**
-   * The options for this node.
-   */
+  /** The options for this node. */
   options: Options;
 }
 
-/**
- * The ArgsTree options.
- */
+/** The ArgsTree options. */
 export interface Options {
   /**
    * Unique ID for this option or command.
@@ -119,9 +106,7 @@ export interface Options {
       | null
       | undefined;
   };
-  /**
-   * The arguments to match that will be parsed as options or commands.
-   */
+  /** The arguments to match that will be parsed as options or commands. */
   args?:
     | { [arg: string]: Options | null | undefined }
     | ((arg: string, data: NodeData) => Options | null | undefined);
@@ -134,36 +119,20 @@ export interface Options {
   validate?(data: NodeData): boolean;
 }
 
-/**
- * The Node object.
- */
+/** The Node object. */
 export interface Node extends Omit<NodeData, 'options'> {
-  /**
-   * The provided {@linkcode Options.id} or the parsed argument.
-   */
+  /** The provided {@linkcode Options.id} or the parsed argument. */
   id: string | null;
-  /**
-   * The provided {@linkcode Options.name}.
-   */
+  /** The provided {@linkcode Options.name}. */
   name: string | null;
-  /**
-   * Depth of node.
-   */
+  /** Depth of node. */
   depth: number;
-  /**
-   * The parent node. If `null`, then this node is the root node.
-   */
+  /** The parent node. If `null`, then this node is the root node. */
   parent: Node | null;
-  /**
-   * The direct children nodes.
-   */
+  /** The direct children nodes. */
   children: Node[];
-  /**
-   * The ancestor nodes starting from the root node to the parent node.
-   */
+  /** The ancestor nodes starting from the root node to the parent node. */
   ancestors: Node[];
-  /**
-   * The descendant nodes starting from the children nodes down to the leaf nodes.
-   */
+  /** The descendant nodes starting from the children nodes down to the leaf nodes. */
   descendants: Node[];
 }

@@ -1,8 +1,6 @@
 import { NodeData, Options } from './core.types.js';
 
-/**
- * The ArgsTree error options.
- */
+/** The ArgsTree error options. */
 export interface ArgsTreeErrorOptions extends NodeData {
   /**
    * The cause error string.
@@ -14,29 +12,19 @@ export interface ArgsTreeErrorOptions extends NodeData {
    * - {@linkcode ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR}
    */
   cause: string;
-  /**
-   * The error message.
-   */
+  /** The error message. */
   message: string;
 }
 
-/**
- * The ArgsTree error object.
- */
+/** The ArgsTree error object. */
 export interface ArgsTreeErrorObject extends ArgsTreeErrorOptions {
-  /**
-   * The error name.
-   */
+  /** The error name. */
   name: string;
 }
 
-/**
- * The ArgsTree error.
- */
+/** The ArgsTree error. */
 export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
-  /**
-   * Validation failed from provided {@linkcode Options.validate} function.
-   */
+  /** Validation failed from provided {@linkcode Options.validate} function. */
   static readonly VALIDATE_ERROR = 'validate';
   /**
    * The {@linkcode Options} object provided is not valid.
@@ -44,21 +32,15 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
    * e.g. Incorrect {@linkcode Options.min min} and {@linkcode Options.max max} range.
    */
   static readonly INVALID_OPTIONS_ERROR = 'invalid-options';
-  /**
-   * The option or command did not satisfy the required number of arguments.
-   */
+  /** The option or command did not satisfy the required number of arguments. */
   static readonly INVALID_RANGE_ERROR = 'invalid-range';
-  /**
-   * Failed operation for spec builder.
-   */
+  /** Failed operation for spec builder. */
   static readonly INVALID_SPEC_ERROR = 'invalid-spec';
-  /**
-   * After alias is parsed, it is not recognized as an alias from {@linkcode Options.alias}.
-   */
+  /** After an alias is parsed, it is not recognized as part of {@linkcode Options.alias}. */
   static readonly UNRECOGNIZED_ALIAS_ERROR = 'unrecognized-alias';
   /**
-   * After alias is parsed, it is not recognized as
-   * an option or command from {@linkcode Options.args}.
+   * After an alias is parsed, its expanded option or command
+   * is not recognized as part of {@linkcode Options.args}.
    */
   static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
   /**

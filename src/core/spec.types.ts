@@ -2,14 +2,10 @@
 import { argstree } from './argstree.js';
 import { Node, NodeData, Options } from './core.types.js';
 
-/**
- * The Spec options.
- */
+/** The Spec options. */
 export interface SpecOptions extends Omit<Options, 'alias' | 'args'> {}
 
-/**
- * The Spec object.
- */
+/** The Spec object. */
 export interface Spec {
   /**
    * Add an option or command.
