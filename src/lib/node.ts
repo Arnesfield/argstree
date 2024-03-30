@@ -73,7 +73,7 @@ export class Node {
   }
 
   private displayName() {
-    return displayName(this.data.raw, this.options, this.hasArgs);
+    return displayName(this.data.raw, this.options.name);
   }
 
   private error(cause: string, message: string) {

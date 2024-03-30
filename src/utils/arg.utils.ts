@@ -5,12 +5,12 @@ export function isAlias(arg: string): boolean {
 }
 
 export function isOption(arg: string): boolean {
-  return arg.length >= 3 && arg.startsWith('--');
+  return isAlias(arg) || (arg.length >= 3 && arg.startsWith('--'));
 }
 
 export function isAssignable(
   arg: string,
   options: Pick<Options, 'assign'>
 ): boolean {
-  return options.assign ?? (isAlias(arg) || isOption(arg));
+  return options.assign ?? isOption(arg);
 }

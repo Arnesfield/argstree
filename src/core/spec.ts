@@ -1,5 +1,4 @@
-import { isAlias, isOption } from '../utils/arg.utils.js';
-import { displayName } from '../utils/options.utils.js';
+import { displayName, getType } from '../utils/options.utils.js';
 import { argstree } from './argstree.js';
 import { NodeData, Options } from './core.types.js';
 import { ArgsTreeError } from './error.js';
@@ -45,7 +44,7 @@ function _spec(_options: Options, raw: string | null = null): Spec {
   let _curr: { arg: string; options: Options; spec?: Spec } | undefined;
 
   function error(message: string) {
-    const name = displayName(raw, _options);
+    const name = displayName(raw, _options.name);
     return new ArgsTreeError({
       cause: ArgsTreeError.INVALID_SPEC_ERROR,
       message: (name && name + 'spec error: ') + message,
@@ -67,8 +66,7 @@ function _spec(_options: Options, raw: string | null = null): Spec {
 
   function assignArg(arg: string, options: Options) {
     if (arg in _args) {
-      const type = isAlias(arg) || isOption(arg) ? 'Option' : 'Command';
-      throw error(`${type} '${arg}' already exists.`);
+      throw error(`${getType(arg)} '${arg}' already exists.`);
     }
     return (_args[arg] = options);
   }
