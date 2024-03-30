@@ -839,28 +839,28 @@ describe('argstree', () => {
       options: { min: 1, max: 0 }
     });
 
-    const options = { args: { test: { min: 2, max: 1 } } } satisfies Options;
+    const options = { args: { foo: { min: 2, max: 1 } } } satisfies Options;
     expectError({
-      args: ['test'],
+      args: ['foo'],
       cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
       options,
-      equal: options.args.test
+      equal: options.args.foo
     });
 
     const options2 = {
-      args: { test: { max: 1, maxRead: 2 } }
+      args: { foo: { max: 1, maxRead: 2 } }
     } satisfies Options;
     expectError({
-      args: ['test'],
+      args: ['foo'],
       cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
       options: options2,
-      equal: options2.args.test
+      equal: options2.args.foo
     });
   });
 
   it('should throw an error for invalid range', () => {
     expect(() => argstree([], { max: 1 })).to.not.throw(ArgsTreeError);
-    expect(() => argstree([], { args: { test: { max: 1 } } })).to.not.throw(
+    expect(() => argstree([], { args: { foo: { max: 1 } } })).to.not.throw(
       ArgsTreeError
     );
     expectError({
@@ -868,23 +868,23 @@ describe('argstree', () => {
       options: { min: 1 }
     });
 
-    const options = { args: { test: { min: 1, max: 2 } } } satisfies Options;
+    const options = { args: { foo: { min: 1, max: 2 } } } satisfies Options;
     expectError({
-      args: ['test'],
+      args: ['foo'],
       cause: ArgsTreeError.INVALID_RANGE_ERROR,
       options,
-      equal: options.args.test
+      equal: options.args.foo
     });
   });
 
   it('should throw an error for unrecognized alias', () => {
     const options = {
-      alias: { '-t': '--test' },
+      alias: { '-f': '--foo' },
       args: {
-        '--test': {},
-        test: {
-          alias: { '-T': '--subtest', '-y': '--y' },
-          args: { '--subtest': {}, '--y': {} }
+        '--foo': {},
+        foo: {
+          alias: { '-F': '--subfoo', '-b': '--bar' },
+          args: { '--subfoo': {}, '--bar': {} }
         }
       }
     } satisfies Options;
@@ -894,17 +894,17 @@ describe('argstree', () => {
       options,
       equal: options as Options
     };
-    expect(() => argstree(['-t'], options)).to.not.throw(ArgsTreeError);
-    expectError({ ...errOpts, args: ['-tx'] });
-    expectError({ ...errOpts, args: ['-xt'] });
-    expectError({ ...errOpts, args: ['-xty'] });
+    expect(() => argstree(['-f'], options)).to.not.throw(ArgsTreeError);
+    expectError({ ...errOpts, args: ['-fx'] });
+    expectError({ ...errOpts, args: ['-xfa'] });
+    expectError({ ...errOpts, args: ['-xfab'] });
 
-    errOpts.equal = options.args.test;
-    expect(() => argstree(['test', '-T', '-Ty', '-yT'], options)).to.not.throw(
+    errOpts.equal = options.args.foo;
+    expect(() => argstree(['foo', '-F', '-Fb', '-bF'], options)).to.not.throw(
       ArgsTreeError
     );
-    expectError({ ...errOpts, args: ['test', '-Tx'] });
-    expectError({ ...errOpts, args: ['test', '-xT'] });
-    expectError({ ...errOpts, args: ['test', '-xTy'] });
+    expectError({ ...errOpts, args: ['foo', '-Fx'] });
+    expectError({ ...errOpts, args: ['foo', '-xFy'] });
+    expectError({ ...errOpts, args: ['foo', '-xFyzbx'] });
   });
 });
