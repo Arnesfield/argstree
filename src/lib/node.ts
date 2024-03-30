@@ -1,7 +1,7 @@
 import { Node as INode, NodeData, Options } from '../core/core.types.js';
 import { ArgsTreeError } from '../core/error.js';
 import { ensureNumber } from '../utils/ensure-number.js';
-import { displayName, getId } from '../utils/options.utils.js';
+import { displayName } from '../utils/options.utils.js';
 import { Alias } from './alias.js';
 
 export interface NodeOptions {
@@ -194,11 +194,13 @@ export class Node {
   }
 
   build(parent: INode | null = null, depth = 0): INode {
+    const { id } = this.options;
+    const { raw, alias } = this.data;
     const node: INode = {
-      id: getId(this.data.raw, this.options.id),
+      id: (typeof id === 'function' ? id(raw, this.data) : id) ?? raw ?? null,
       name: this.options.name ?? null,
-      raw: this.data.raw,
-      alias: this.data.alias,
+      raw,
+      alias,
       depth,
       args: this.args,
       parent,

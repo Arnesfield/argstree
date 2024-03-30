@@ -1,5 +1,11 @@
 import { expect } from 'chai';
-import { ArgsTreeError, Node, Options, argstree } from '../src/index.js';
+import {
+  ArgsTreeError,
+  Node,
+  NodeData,
+  Options,
+  argstree
+} from '../src/index.js';
 
 export function expectNode(node: Node): void {
   expect(node).to.be.an('object');
@@ -12,6 +18,14 @@ export function expectNode(node: Node): void {
   expect(node).to.have.property('children').that.is.an('array');
   expect(node).to.have.property('ancestors').that.is.an('array');
   expect(node).to.have.property('descendants').that.is.an('array');
+}
+
+function expectNodeData(data: NodeData): void {
+  expect(data).to.be.an('object');
+  expect(data).to.have.property('raw');
+  expect(data).to.have.property('alias');
+  expect(data).to.have.property('args').that.is.an('array');
+  expect(data).to.have.property('options').that.is.an('object');
 }
 
 function expectError(opts: {
@@ -40,6 +54,44 @@ describe('argstree', () => {
 
   it('should return a node object (root)', () => {
     expectNode(argstree([], {}));
+  });
+
+  it('should handle id option', () => {
+    let node = argstree([], {});
+    expect(node.id).to.be.null;
+    node = argstree([], { id: 'root' });
+    expect(node.id).to.equal('root');
+
+    let called = false;
+    node = argstree([], {
+      id(raw, data) {
+        called = true;
+        expectNodeData(data);
+        expect(raw).to.be.null;
+        return 'root';
+      }
+    });
+    expect(called).to.be.true;
+    expect(node.id).to.equal('root');
+
+    called = false;
+    node = argstree(['foo'], {
+      id: () => null,
+      args: {
+        foo: {
+          id(raw, data) {
+            called = true;
+            expectNodeData(data);
+            expect(raw).to.equal('foo');
+            return 'bar';
+          }
+        }
+      }
+    });
+    expect(called).to.be.true;
+    expect(node.id).to.be.null;
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal('bar');
   });
 
   it('should not treat any arguments as an option or command unless specified', () => {
@@ -102,22 +154,17 @@ describe('argstree', () => {
     const options: Options = {
       alias: { '-f': '--foo' },
       args: (arg, data) => {
-        expect(data).to.be.an('object');
-        expect(data).to.have.property('raw').that.is.null;
-        expect(data).to.have.property('alias').that.is.null;
-        expect(data).to.have.property('args').that.is.an('array');
-        expect(data).to.have.property('options').to.equal(options);
+        expectNodeData(data);
+        expect(data.raw).to.be.null;
+        expect(data.alias).to.be.null;
+        expect(data.options).to.equal(options);
         const subOptions = {
           args(_, data) {
+            expectNodeData(data);
             expect(data).to.be.an('object');
-            expect(data).to.have.property('raw').that.equals('--foo');
-            if (called) {
-              expect(data).to.have.property('alias').that.equals('-f');
-            } else {
-              expect(data).to.have.property('alias').that.is.null;
-            }
-            expect(data).to.have.property('args').that.is.an('array');
-            expect(data).to.have.property('options').to.equal(subOptions);
+            expect(data.raw).to.equal('--foo');
+            expect(data.alias).to.equal(called ? '-f' : null);
+            expect(data.options).to.equal(subOptions);
             called = true;
             return null;
           }
@@ -800,7 +847,7 @@ describe('argstree', () => {
           max: 1,
           validate(data) {
             called.child = true;
-            expect(data).to.be.an('object');
+            expectNodeData(data);
             expect(data.raw).to.equal('--foo');
             expect(data.options).to.equal(options.args['--foo']);
             expect(data.args).to.deep.equal(['bar']);
@@ -810,7 +857,7 @@ describe('argstree', () => {
       },
       validate(data) {
         called.root = true;
-        expect(data).to.be.an('object');
+        expectNodeData(data);
         expect(data.raw).to.be.null;
         expect(data.options).to.equal(options);
         expect(data.args).to.deep.equal(['baz']);
