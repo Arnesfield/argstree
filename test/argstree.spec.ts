@@ -80,6 +80,23 @@ describe('argstree', () => {
     }
   });
 
+  it('should save initial arguments', () => {
+    const initial = ['foo', 'bar'];
+    const node = argstree(['foo', 'baz', 'f'], {
+      initial,
+      alias: { f: 'foo' },
+      args: { foo: { max: 1, initial: ['bar'] } }
+    });
+    // make sure initial is not modified
+    expect(initial).to.deep.equal(['foo', 'bar']);
+    expect(node.args).to.deep.equal(['foo', 'bar', 'baz']);
+    expect(node.children).to.have.length(2);
+    expect(node.children[0].id).to.equal('foo');
+    expect(node.children[0].args).to.deep.equal(['bar']);
+    expect(node.children[1].id).to.equal('foo');
+    expect(node.children[1].args).to.deep.equal(['bar']);
+  });
+
   it('should accept args function', () => {
     let called = false;
     const options: Options = {

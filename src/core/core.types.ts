@@ -81,6 +81,13 @@ export interface Options {
    */
   assign?: boolean;
   /**
+   * Initial arguments for this option or command.
+   *
+   * Note that this is not a default value.
+   * Additional arguments will be added on top of this initial list.
+   */
+  initial?: string[];
+  /**
    * List of aliases mapped to {@linkcode args}.
    *
    * For multiple alias arguments, use a string array where

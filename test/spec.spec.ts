@@ -75,7 +75,7 @@ describe('spec', () => {
       .spec(endSpec)
       .spec(commandSpec)
       // foo
-      .command('bar', { min: 1, assign: true })
+      .command('bar', { min: 1, assign: true, initial: ['1', '2'] })
       .alias('b')
       .spec(endSpec)
       .spec(commandSpec);
@@ -95,6 +95,7 @@ describe('spec', () => {
         bar: {
           min: 1,
           assign: true,
+          initial: ['1', '2'],
           args: { '--': { args: {} }, '--help': { maxRead: 0 } },
           alias: { '-h': '--help' }
         },
@@ -115,7 +116,7 @@ describe('spec', () => {
         f: 'foo',
         b: 'bar'
       }
-    });
+    } satisfies Options);
   });
 
   it('should handle setting `args` function', () => {

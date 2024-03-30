@@ -18,6 +18,7 @@ function normalize(options: SpecOptions | undefined) {
   if (!options) {
     return opts;
   }
+  // NOTE: make sure to add to props for new Options properties
   const props: (keyof SpecOptions)[] = [
     'id',
     'name',
@@ -25,6 +26,7 @@ function normalize(options: SpecOptions | undefined) {
     'max',
     'maxRead',
     'assign',
+    'initial',
     'validate'
   ];
   for (const prop of props) {

@@ -29,7 +29,10 @@ export class Node {
   constructor(opts: NodeOptions) {
     const { raw = null, alias = null, options } = opts;
     this.options = options;
-    this.args = opts.args ? opts.args.slice() : [];
+    // make sure to change reference
+    this.args = (Array.isArray(options.initial) ? options.initial : []).concat(
+      opts.args || []
+    );
     this.data = { raw, alias, args: this.args, options };
 
     const min = ensureNumber(options.min);
