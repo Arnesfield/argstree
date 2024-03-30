@@ -1,6 +1,5 @@
 import { Node as INode, NodeData, Options } from '../core/core.types.js';
 import { ArgsTreeError } from '../core/error.js';
-import { isAlias } from '../utils/arg.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
 import { displayName, getId } from '../utils/options.utils.js';
 import { Alias } from './alias.js';
@@ -176,20 +175,19 @@ export class Node {
     }
   }
 
-  validateAlias(arg: string): this {
-    // only validate for left over alias split arg
-    if (isAlias(arg)) {
-      const aliases = Array.from(new Set(arg.slice(1).split('')));
-      const label = 'alias' + (aliases.length === 1 ? '' : 'es');
-      const list = aliases.map(alias => '-' + alias).join(', ');
-      const name = this.displayName();
-      throw this.error(
-        ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
-        (name ? name + 'does not recognize the' : 'Unrecognized') +
-          ` ${label}: ${list}`
-      );
+  validateAlias(aliases: string[] | undefined): void {
+    if (!aliases || aliases.length === 0) {
+      return;
     }
-    return this;
+    // assume that this is a valid alias
+    const label = 'alias' + (aliases.length === 1 ? '' : 'es');
+    const list = aliases.map(alias => '-' + alias).join(', ');
+    const name = this.displayName();
+    throw this.error(
+      ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
+      (name ? name + 'does not recognize the' : 'Unrecognized') +
+        ` ${label}: ${list}`
+    );
   }
 
   build(parent: INode | null = null, depth = 0): INode {

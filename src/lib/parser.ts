@@ -41,7 +41,7 @@ export class Parser {
     // if not successful, save arg as value
     // only check assignable if assigned value exists
     const split = this.parent.alias.split(match);
-    if (!split || !this.saveAliasArgs(assigned, split.list, split.arg)) {
+    if (!split || !this.saveAliasArgs(assigned, split.list, split.remainder)) {
       // treat arg as value
       // if current node exists, check if it reached its max args, if not then save arg
       // otherwise, treat this as an arg for the main node
@@ -106,7 +106,7 @@ export class Parser {
   private saveAliasArgs(
     assigned: string | undefined,
     list: ResolvedAlias[],
-    splitArg?: string | null
+    remainder?: string[]
   ) {
     // e.g. -fb=value, cases:
     // -b is null -> error
@@ -122,10 +122,7 @@ export class Parser {
       return;
     }
     // treat left over from split as argument
-    if (splitArg != null) {
-      // make sure to check if this can be accepted
-      this.parent.validateAlias(splitArg).push(splitArg);
-    }
+    this.parent.validateAlias(remainder);
 
     const items = list.map((item, index): NodeOptions => {
       const raw = item.args[0];
