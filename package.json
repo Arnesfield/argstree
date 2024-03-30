@@ -1,6 +1,6 @@
 {
   "name": "argstree",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Parse arguments into a tree structure.",
   "keywords": [
     "args",
