@@ -8,6 +8,13 @@ export interface SpecOptions extends Omit<Options, 'alias' | 'args'> {}
 /** The Spec object. */
 export interface Spec {
   /**
+   * The raw argument to parse. This is the `arg` value
+   * from the {@linkcode option} or {@linkcode command} call.
+   */
+  readonly id: string | null;
+  /** Depth of spec. */
+  readonly depth: number;
+  /**
    * Add an option or command.
    * @param arg The option or command to match.
    * @param options The spec options.
@@ -82,4 +89,24 @@ export interface Spec {
    * @returns The {@linkcode Node} object.
    */
   parse(args: readonly string[]): Node;
+  /**
+   * Get the parent spec object. If `null`, then this is the root spec.
+   * @returns The parent spec object.
+   */
+  parent(): Spec | null;
+  /**
+   * Get the children spec objects.
+   * @returns The children spec objects.
+   */
+  children(): Spec[];
+  /**
+   * Get the ancestor spec objects starting from the root spec to the parent spec.
+   * @returns The descendant spec objects.
+   */
+  ancestors(): Spec[];
+  /**
+   * Get the descendant spec objects.
+   * @returns The descendant spec objects.
+   */
+  descendants(): Spec[];
 }

@@ -2,6 +2,17 @@ import { expect } from 'chai';
 import { ArgsTreeError, Options, Spec, spec } from '../src/index.js';
 import { expectNode } from './argstree.spec.js';
 
+function relationSpec() {
+  const cmd = spec();
+  const matches = ['foo', 'bar', 'baz'];
+  for (const match of matches) {
+    cmd.command(match).spec(cmd => {
+      cmd.command(`sub${match}`).spec(cmd => cmd.option(`--${match}`));
+    });
+  }
+  return { cmd, matches };
+}
+
 function expectError(options: Options, handler: () => void) {
   expect(() => {
     try {
@@ -22,9 +33,11 @@ describe('spec', () => {
     expect(spec).to.be.a('function');
   });
 
-  it('should return a spec object', () => {
+  it('should return a spec object (root spec)', () => {
     const cmd = spec({});
     expect(cmd).to.be.an('object');
+    expect(cmd).to.have.property('id').to.be.null;
+    expect(cmd).to.have.property('depth').to.equal(0);
     expect(cmd).to.have.property('option').that.is.a('function');
     expect(cmd).to.have.property('command').that.is.a('function');
     expect(cmd).to.have.property('alias').that.is.a('function');
@@ -33,6 +46,10 @@ describe('spec', () => {
     expect(cmd).to.have.property('args').that.is.a('function');
     expect(cmd).to.have.property('options').that.is.a('function');
     expect(cmd).to.have.property('parse').that.is.a('function');
+    expect(cmd).to.have.property('parent').that.is.a('function');
+    expect(cmd).to.have.property('children').that.is.a('function');
+    expect(cmd).to.have.property('ancestors').that.is.a('function');
+    expect(cmd).to.have.property('descendants').that.is.a('function');
   });
 
   it('should return a node object for parse', () => {
@@ -159,6 +176,61 @@ describe('spec', () => {
     expect(node.children[3].id).to.equal('--baz');
     expect(node.children[3].args).to.deep.equal(['foo']);
     expect(count).to.equal(2);
+  });
+
+  it('should get the parent spec object', () => {
+    const { cmd } = relationSpec();
+    expect(cmd.parent()).to.be.null;
+    expect(cmd.depth).to.equal(0);
+
+    const [child, descendant] = cmd.descendants();
+    expect(child.id).to.equal('foo');
+    expect(child.depth).to.equal(1);
+    expect(child.parent()).to.equal(cmd);
+
+    expect(descendant.id).to.equal('subfoo');
+    expect(descendant.depth).to.equal(2);
+    expect(descendant.parent()).to.equal(child);
+  });
+
+  it('should list all children spec objects', () => {
+    const { cmd, matches } = relationSpec();
+    const children = cmd.children();
+    expect(children).to.be.an('array').that.has.length(3);
+    children.forEach((child, index) => {
+      expect(child.id).to.equal(matches[index]);
+      expect(child.depth).to.equal(cmd.depth + 1);
+    });
+  });
+
+  it('should list all ancestor spec objects', () => {
+    const { cmd } = relationSpec();
+    expect(cmd.ancestors()).to.be.an('array').that.has.length(0);
+
+    const descendant = cmd.descendants()[2];
+    expect(descendant.id).to.equal('--foo');
+    expect(descendant.depth).to.equal(3);
+
+    const ancestors = descendant.ancestors();
+    expect(ancestors).to.be.an('array').that.has.length(3);
+    [null, 'foo', 'subfoo'].forEach((match, index) => {
+      expect(ancestors[index].id).to.equal(match);
+      expect(ancestors[index].depth).to.equal(index);
+    });
+  });
+
+  it('should list all descendant spec objects', () => {
+    const { cmd, matches } = relationSpec();
+    const descendants = cmd.descendants();
+    expect(descendants).to.be.an('array').that.has.length(9);
+    const all: string[] = [];
+    for (const match of matches) {
+      all.push(match, `sub${match}`, `--${match}`);
+    }
+    descendants.forEach((child, index) => {
+      expect(child.id).to.equal(all[index]);
+      expect(child.depth).to.equal((child.parent() || cmd).depth + 1);
+    });
   });
 
   it('should throw an error for no current option or command', () => {
