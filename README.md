@@ -15,9 +15,9 @@ Parse arguments into a tree structure.
 - All arguments are treated as normal parameters unless configured to be an [option or command](#options-and-commands).
 - [Aliases](#aliases) are not restricted to single characters and can be expanded to multiple options or commands with additional arguments.
 - Recognize and [split](#split) combined aliases (e.g. from `-abaa` to `-a`, `-ba`, `-a`).
-- Recognize configured [assignment](#assignment) (`=`) for options and commands (e.g. `--foo=bar`, `foo=bar`).
-- No [errors](#argstreeerror) for unrecognized options or commands (except for misconfigured aliases and unknown aliases from a combined alias).
-- Double-dash (`--`) is not treated as anything special but can be configured to be a subcommand.
+- Recognize configured [assignment](#assignment) (`=`) for options and commands (e.g. `--flag=value`, `command=value`).
+- No [errors](#argstreeerror) for unrecognized options or commands [by default](#strict-mode) (except for misconfigured aliases and unrecognized aliases from a combined alias).
+- Double-dash (`--`) is not treated as anything special but can be configured to be a non-strict subcommand.
 
 Note that **argstree** only parses arguments based on the configuration it has been given. It is still up to the consumers/developers to interpret the parsed arguments and decide how to use these inputs to suit their application's needs.
 
@@ -64,17 +64,17 @@ The `spec(options)` function can also be used to parse arguments while also bein
 
 Configure options and commands by setting the `args` object or function option.
 
-While they may be configured similarly, options start with a hyphen (e.g. `-foo`, `--bar`) while commands do not (e.g. `foo`, `bar`).
+While they may be configured similarly, options start with a hyphen (e.g. `-a`, `--add`) while commands do not (e.g. `run`, `start`).
 
 When setting the `args` object, the _properties_ are used to match the arguments while the _values_ are also options objects similar to the options from `argstree(args, options)`.
 
 Options and commands will capture arguments and stop when another option or command is matched or the configured [limit](#limits) is reached.
 
 ```javascript
-const node = argstree(['--foo', 'value', '--foo', 'bar', 'baz'], {
+const node = argstree(['--add', 'foo', '--add', 'run', 'baz'], {
   args: {
-    '--foo': {}, // options object
-    bar: { initial: ['foo'] } // options object with initial arguments
+    '--add': {}, // options object
+    run: { initial: ['bar'] } // options object with initial arguments
   }
 });
 for (const child of node.children) {
@@ -83,15 +83,15 @@ for (const child of node.children) {
 ```
 
 ```text
---foo [ 'value' ]
---foo []
-bar [ 'foo', 'baz' ]
+--add [ 'foo' ]
+--add []
+run [ 'bar', 'baz' ]
 ```
 
 You can also pass a function to the `args` option. It has two parameters: the `arg` string (comes from the `args` array or from a split combined alias) and the `NodeData` object. It should return an options object, `null`, or `undefined`.
 
 ```javascript
-const args = ['--foo', 'bar', '--bar', '--baz', 'foo'];
+const args = ['--save', 'foo', '--create', '--add', 'bar'];
 const node = argstree(args, {
   args(arg, data) {
     return arg.startsWith('--') ? {} : null;
@@ -103,30 +103,53 @@ for (const child of node.children) {
 ```
 
 ```text
---foo [ 'bar' ]
---bar []
---baz [ 'foo' ]
+--save [ 'foo' ]
+--create []
+--add [ 'bar' ]
 ```
 
 > [!WARNING]
 >
 > Be aware that there may be cases where `__proto__` and other hidden object properties are used as arguments.
 >
-> By default, **argstree** checks if the provided options object is a valid object that does not equal the default object prototype (`options !== Object.prototype`).
+> By default, **argstree** reassigns the `args` object to another with a `null` prototype to remove these properties. But this does not apply to the `args` function where you _might_ use a predefined object that maps to options objects.
 >
-> If this seems to be insufficient for your case, you can handle it yourself (e.g. setting `__proto__: null` and such).
+> Make sure to check for `__proto__` and other related properties. Remove it by setting `__proto__: null` and such, or use a [`Map`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map) object instead.
 >
 > ```javascript
-> argstree(['__proto__'], {
->   args: { __proto__: null, '--foo': {} }
+> const optionsMap = {
+>   __proto__: null, // <-- set null prototype
+>   '--add': {},
+>   '--save': {}
+> };
+> const node = argstree(['__proto__', 'constructor'], {
+>   args: arg => optionsMap[arg] // should be safe, probably
 > });
->
-> argstree(['__proto__'], {
->   args(arg) {
->     return { __proto__: null, '--foo': {} }[arg];
->   }
-> });
+> console.log(node.args); // [ '__proto__', 'constructor' ]
 > ```
+
+### Strict Mode
+
+Set the `strict` boolean option to throw an error for unrecognized options that are not provided in the `args` option.
+
+By default, this is set to `false` for the root node. If not explicitly provided, this option is inherited from the parent option or command.
+
+```javascript
+try {
+  argstree(['run', 'build', '--if-preset'], {
+    strict: true,
+    args: {
+      run: { args: { '--if-present': {} } }
+    }
+  });
+} catch (error) {
+  console.error(error + ''); // example only to log error
+}
+```
+
+```text
+ArgsTreeError: Command 'run' does not recognize the option: --if-preset
+```
 
 ### Assignment
 
@@ -135,16 +158,16 @@ Using `=`, options or commands will treat the assigned value as their own argume
 By default, this behavior is enabled for options but not for commands. To change this behavior, you can set the `assign` boolean option.
 
 ```javascript
-const node = argstree(['--foo=bar', 'foo=bar', '--bar=foo', 'bar=foo'], {
+const node = argstree(['--add=foo', 'copy=foo', '--save=bar', 'move=bar'], {
   args: {
     // assign enabled for options by default
-    '--foo': {},
+    '--add': {},
     // change behavior
-    '--bar': { assign: false },
+    '--save': { assign: false },
     // assign disabled for commands by default
-    foo: {},
+    copy: {},
     // change behavior
-    bar: { assign: true }
+    move: { assign: true }
   }
 });
 for (const child of node.children) {
@@ -153,8 +176,8 @@ for (const child of node.children) {
 ```
 
 ```text
---foo [ 'bar', 'foo=bar', '--bar=foo' ]
-bar [ 'foo' ]
+--add [ 'foo', 'copy=foo', '--save=bar' ]
+move [ 'bar' ]
 ```
 
 ### Suboptions and Subcommands
@@ -162,36 +185,36 @@ bar [ 'foo' ]
 Matching a suboption or subcommand means that its parent option or command will stop receiving arguments.
 
 ```javascript
-const node = argstree(['--foo', 'bar', '--foo', 'baz'], {
+const node = argstree(['--add', 'run', '--add', 'build'], {
   args: {
-    '--foo': {},
-    bar: {
+    '--add': {},
+    run: {
       // setting the `args` object (even empty)
-      // will treat `bar` as a suboption/subcommand
+      // will treat `run` as a suboption/subcommand
       args: {
         // can also set `args` object for this option or command
       }
     }
   }
 });
-const foo = node.children[0];
-const bar = node.children[1];
+const add = node.children[0];
+const run = node.children[1];
 console.log('root', node.args);
-console.log(foo.id, foo.args);
-console.log(bar.id, bar.args, bar.parent === node);
+console.log(add.id, add.args);
+console.log(run.id, run.args, run.parent === node);
 ```
 
 ```text
 root []
---foo []
-bar [ '--foo', 'baz' ] true
+--add []
+run [ '--add', 'build' ] true
 ```
 
 In this example:
 
-- The parent command of the `bar` subcommand is the root node.
-- Once the `bar` subcommand was matched, its options are used for parsing the proceeding arguments.
-- The second `--foo` argument was not recognized as an option by `bar` (not in its `args` object) and is treated as a normal argument.
+- The parent command of the `run` subcommand is the root node.
+- Once the `run` subcommand was matched, its options are used for parsing the proceeding arguments.
+- The second `--add` argument was not recognized as an option by `run` (not in its `args` option) and is treated as a normal argument.
 
 ### Limits
 
@@ -256,35 +279,36 @@ Note that the [`assign`](#assignment) option applies to aliases of the options o
 const node = argstree(['-abacada=0', 'a=1', 'b=2'], {
   alias: {
     // alias -> option/command
-    '-a': '--foo',
+    '-a': '--add',
     // alias -> option/command + arguments
-    '-ba': ['--foo', 'bar', 'baz'],
+    '-ba': ['--add', 'bar', 'baz'],
     // alias -> multiple options/commands
-    '-ca': [['--foo'], ['--bar']],
+    '-ca': [['--add'], ['--save']],
     // alias -> multiple options/commands + arguments
     '-da': [
-      ['--foo', 'multi', 'bar', 'baz'],
-      ['--bar', 'multi', 'foo', 'baz']
+      ['--add', 'multi', 'bar', 'baz'],
+      ['--save', 'multi', 'foo', 'baz']
     ],
     // non-combinable alias (example only, above usage can also apply)
-    a: '--baz',
-    b: 'baz'
+    a: '--create', // assign enabled by default (option)
+    b: 'start' // assign disabled by default (command)
   },
-  args: { '--foo': {}, '--bar': {}, '--baz': {}, baz: {} }
+  args: { '--add': {}, '--save': {}, '--create': {}, start: {} }
 });
 for (const child of node.children) {
-  console.log(child.id, child.args);
+  // node.alias is set to the alias string used to parse the node
+  console.log(child.id, child.alias, child.args);
 }
 ```
 
 ```text
---foo []
---foo [ 'bar', 'baz' ]
---foo []
---bar []
---foo [ 'multi', 'bar', 'baz' ]
---bar [ 'multi', 'foo', 'baz', '0' ]
---baz [ '1', 'b=2' ]
+--add -a []
+--add -ba [ 'bar', 'baz' ]
+--add -ca []
+--save -ca []
+--add -da [ 'multi', 'bar', 'baz' ]
+--save -da [ 'multi', 'foo', 'baz', '0' ]
+--create a [ '1', 'b=2' ]
 ```
 
 ### Validation
@@ -298,11 +322,11 @@ function validate(data) {
   console.log(data.raw, data.alias, data.args);
   return true;
 }
-argstree(['--foo', '-b', 'foo', 'bar'], {
-  alias: { '-f': '--foo', '-b': '--bar' },
+argstree(['--add', '-s', 'foo', 'bar'], {
+  alias: { '-s': '--add', '-s': '--save' },
   args: {
-    '--foo': { max: 1, validate },
-    '--bar': { max: 1, validate }
+    '--add': { max: 1, validate },
+    '--save': { max: 1, validate }
   },
   validate(data) {
     console.log('root', data.alias, data.args);
@@ -312,8 +336,8 @@ argstree(['--foo', '-b', 'foo', 'bar'], {
 ```
 
 ```text
---foo null []
---bar -b [ 'foo' ]
+--add null []
+--save -s [ 'foo' ]
 root null [ 'bar' ]
 ```
 
@@ -325,8 +349,8 @@ For errors related to parsing and misconfiguration, an `ArgsTreeError` is thrown
 import argstree, { ArgsTreeError } from 'argstree';
 
 try {
-  argstree(['--foo', 'bar'], {
-    args: { '--foo': { min: 2 } }
+  argstree(['--add', 'foo'], {
+    args: { '--add': { min: 2 } }
   });
 } catch (error) {
   if (error instanceof ArgsTreeError) {
@@ -339,11 +363,11 @@ try {
 {
   "name": "ArgsTreeError",
   "cause": "invalid-range",
-  "message": "Option '--foo' expected at least 2 arguments, but got 1.",
-  "raw": "--foo",
+  "message": "Option '--add' expected at least 2 arguments, but got 1.",
+  "raw": "--add",
   "alias": null,
   "args": [
-    "bar"
+    "foo"
   ],
   "options": {
     "min": 2
@@ -380,11 +404,11 @@ The `stringify` function returns a stringified `Node` object. It also accepts an
 ```javascript
 import argstree, { stringify } from 'argstree';
 
-const node = argstree(['foo', 'bar', '-f', '0', '--bar', '1'], {
+const node = argstree(['start', 'foo', '-a', 'bar', '--save', 'baz'], {
   args: {
-    foo: {
-      alias: { '-f': '--foo', '-b': '--bar' },
-      args: { '--foo': {}, '--bar': {} }
+    start: {
+      alias: { '-a': '--add', '-s': '--save' },
+      args: { '--add': {}, '--save': {} }
     }
   }
 });
@@ -398,30 +422,30 @@ console.log(tree);
 
 ```text
 null (depth: 0)
-├─┬ foo (depth: 1)
+├─┬ start (depth: 1)
 │ ├─┬ :args (total: 1)
-│ │ └── bar
-│ ├─┬ --foo (depth: 2, alias: -f)
+│ │ └── foo
+│ ├─┬ --add (depth: 2, alias: -a)
 │ │ ├─┬ :args (total: 1)
-│ │ │ └── 0
+│ │ │ └── bar
 │ │ └─┬ :ancestors (total: 2)
 │ │   ├── null (depth: 0)
-│ │   └── foo (depth: 1)
-│ ├─┬ --bar (depth: 2)
+│ │   └── start (depth: 1)
+│ ├─┬ --save (depth: 2)
 │ │ ├─┬ :args (total: 1)
-│ │ │ └── 1
+│ │ │ └── baz
 │ │ └─┬ :ancestors (total: 2)
 │ │   ├── null (depth: 0)
-│ │   └── foo (depth: 1)
+│ │   └── start (depth: 1)
 │ ├─┬ :ancestors (total: 1)
 │ │ └── null (depth: 0)
 │ └─┬ :descendants (total: 2)
-│   ├── --foo (depth: 2, alias: -f)
-│   └── --bar (depth: 2)
+│   ├── --add (depth: 2, alias: -a)
+│   └── --save (depth: 2)
 └─┬ :descendants (total: 3)
-  ├── foo (depth: 1)
-  ├── --foo (depth: 2, alias: -f)
-  └── --bar (depth: 2)
+  ├── start (depth: 1)
+  ├── --add (depth: 2, alias: -a)
+  └── --save (depth: 2)
 ```
 
 > [!TIP]
@@ -437,15 +461,17 @@ import { spec } from 'argstree';
 
 // create command spec
 const cmd = spec({ min: 1 });
-cmd.option('--foo').alias('-f').alias('--no-foo', '0');
-cmd.option('--bar').alias('-b').alias('--no-bar', ['0']);
+
+// add option or command with aliases (and with alias arguments)
+cmd.option('--add').alias('-a').alias('--no-add', '0');
+cmd.option('--save').alias('-s').alias('--no-save', ['0']);
 
 // get the options object with <spec>.options()
 const options = cmd.options();
 console.log(options);
 
 // parse arguments with <spec>.parse(args)
-const node = cmd.parse(['foo', '--foo', 'bar', '-b', 'baz']);
+const node = cmd.parse(['foo', '--add', 'bar', '-s', 'baz']);
 console.log('root', node.args);
 for (const child of node.children) {
   console.log(child.id, child.args);
@@ -455,17 +481,17 @@ for (const child of node.children) {
 ```text
 {
   min: 1,
-  args: [Object: null prototype] { '--foo': {}, '--bar': {} },
+  args: [Object: null prototype] { '--add': {}, '--save': {} },
   alias: [Object: null prototype] {
-    '-f': '--foo',
-    '--no-foo': [ '--foo', '0' ],
-    '-b': '--bar',
-    '--no-bar': [ '--bar', '0' ]
+    '-a': '--add',
+    '--no-add': [ '--add', '0' ],
+    '-s': '--save',
+    '--no-save': [ '--save', '0' ]
   }
 }
 root [ 'foo' ]
---foo [ 'bar' ]
---bar [ 'baz' ]
+--add [ 'bar' ]
+--save [ 'baz' ]
 ```
 
 The options object passed to `spec(options)` is similar to the options from `argstree(args, options)` but the `alias` and `args` options are omitted.
@@ -484,21 +510,21 @@ The options object passed to `spec(options)` is similar to the options from `arg
 const cmd = spec();
 
 // add option
-cmd.option('--foo');
+cmd.option('--add');
 
 // add command
-cmd.command('foo');
+cmd.command('start');
 
 // <spec>.command() is an alias for the following:
-// cmd.option('foo').spec(fooCmd => fooCmd.args());
+// cmd.option('start').spec(startCmd => startCmd.args());
 
 // add an empty args object
 cmd.args();
 
 // or add args function (string and NodeData)
 cmd.args((arg, data) => {
-  // will match '--foo' and 'foo' first before this callback is fired
-  return arg === '--baz' ? {} : null;
+  // callback not fired for added options/commands: '--add' and 'start'
+  return arg === '--save' ? {} : null;
 });
 ```
 
@@ -511,14 +537,14 @@ cmd.args((arg, data) => {
 const cmd = spec();
 
 // set aliases similar to argstree options alias
-cmd.aliases({ '-A': [['--foo'], ['--bar']] });
+cmd.aliases({ '-A': [['--add'], ['--save']] });
 
 // set alias/es to current option or command
 // spec object method chaining (applies to all methods)
-cmd.option('--foo', { maxRead: 0 }).alias('-f').alias('--no-foo', '0');
+cmd.option('--add', { maxRead: 0 }).alias('-a').alias('--no-add', '0');
 
 // multiple aliases (array) and multiple arguments (array)
-cmd.option('--bar', { maxRead: 0 }).alias(['-b', '-ba'], ['1', '2', '3']);
+cmd.option('--save', { maxRead: 0 }).alias(['-s', '-sa'], ['1', '2', '3']);
 ```
 
 ### Spec Suboptions and Subcommands
@@ -528,12 +554,12 @@ Use the `spec` method that accepts a setup callback. This callback contains a `S
 ```javascript
 function commonSpec(spec) {
   spec.option('--help', { maxRead: 0 }).alias('-h');
-  spec.command('--');
+  spec.command('--', { strict: false });
 }
-const cmd = spec()
-  .command('foo')
-  .alias(['f', 'fo'])
-  .spec(foo => foo.option('--bar').alias('-b'))
+const cmd = spec({ strict: true })
+  .command('run-script')
+  .alias(['run', 'rum', 'urn'])
+  .spec(run => run.option('--workspace', { min: 1, max: 1 }).alias('-w'))
   .spec(commonSpec);
 commonSpec(cmd);
 console.log('%o', cmd.options());
@@ -541,19 +567,25 @@ console.log('%o', cmd.options());
 
 ```javascript
 {
+  strict: true,
   args: [Object: null prototype] {
-    foo: {
+    'run-script': {
       args: [Object: null prototype] {
-        '--bar': {},
+        '--workspace': { min: 1, max: 1 },
         '--help': { maxRead: 0 },
-        '--': { args: [Object: null prototype] {} }
+        '--': { strict: false, args: [Object: null prototype] {} }
       },
-      alias: [Object: null prototype] { '-b': '--bar', '-h': '--help' }
+      alias: [Object: null prototype] { '-w': '--workspace', '-h': '--help' }
     },
     '--help': { maxRead: 0 },
-    '--': { args: [Object: null prototype] {} }
+    '--': { strict: false, args: [Object: null prototype] {} }
   },
-  alias: [Object: null prototype] { f: 'foo', fo: 'foo', '-h': '--help' }
+  alias: [Object: null prototype] {
+    run: 'run-script',
+    rum: 'run-script',
+    urn: 'run-script',
+    '-h': '--help'
+  }
 }
 ```
 
