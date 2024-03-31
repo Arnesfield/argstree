@@ -251,7 +251,7 @@ describe('spec', () => {
 
     const fooOptions = (cmd.options().args as Record<string, Options>)['--foo'];
     expectError(fooOptions, () => {
-      cmd.spec(foo => foo.option('--foo').option('--foo'));
+      cmd.spec(foo => foo.option('--bar').option('--bar'));
     });
   });
 

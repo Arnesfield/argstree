@@ -714,13 +714,15 @@ describe('argstree', () => {
   });
 
   it('should not split equal sign for `--` (special case)', () => {
-    let node = argstree(['foo', '--', 'bar', 'baz'], { args: { '--': {} } });
+    let node = argstree(['foo', '--', 'bar', 'baz'], {
+      args: { '--': { args: {} } }
+    });
     expect(node.args).to.be.an('array').that.deep.equals(['foo']);
     expect(node.children[0].args)
       .to.be.an('array')
       .that.deep.equals(['bar', 'baz']);
 
-    node = argstree(['foo', '--=bar', 'baz'], { args: { '--': {} } });
+    node = argstree(['foo', '--=bar', 'baz'], { args: { '--': { args: {} } } });
     expect(node.args)
       .to.be.an('array')
       .that.deep.equals(['foo', '--=bar', 'baz']);
@@ -759,7 +761,9 @@ describe('argstree', () => {
     expect(node.children[0].id).to.equal('foo');
     expect(node.children[0].args).to.deep.equal(['bar', 'baz']);
 
-    node = argstree(['--=foo', 'bar'], { args: { '--': { assign: true } } });
+    node = argstree(['--=foo', 'bar'], {
+      args: { '--': { assign: true, args: {} } }
+    });
     expect(node.args).to.have.length(0);
     expect(node.children).to.have.length(1);
     expect(node.children[0].id).to.equal('--');
