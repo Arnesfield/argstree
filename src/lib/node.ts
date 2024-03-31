@@ -1,7 +1,7 @@
 import { Node as INode, NodeData, Options } from '../core/core.types.js';
 import { ArgsTreeError } from '../core/error.js';
 import { ensureNumber } from '../utils/ensure-number.js';
-import { displayName } from '../utils/options.utils.js';
+import { displayName, getType } from '../utils/options.utils.js';
 import { Alias } from './alias.js';
 
 export interface NodeOptions {
@@ -12,11 +12,11 @@ export interface NodeOptions {
 }
 
 export class Node {
+  readonly args: string[];
+  readonly children: Node[] = [];
   private _alias: Alias | undefined;
-  private readonly args: string[];
   private readonly data: NodeData;
   private readonly options: Options;
-  private readonly children: Node[] = [];
   private readonly range: {
     min: number | null;
     max: number | null;
@@ -26,9 +26,15 @@ export class Node {
     | ((arg: string, data: NodeData) => Options | null | undefined)
     | null;
 
-  constructor(opts: NodeOptions) {
+  constructor(
+    opts: NodeOptions,
+    /** Overridable strict option. */
+    readonly strict = false
+  ) {
     const { raw = null, alias = null, options } = opts;
     this.options = options;
+    // set parent.strict to constructor param, but override using provided options.strict
+    this.strict = typeof options.strict === 'boolean' ? options.strict : strict;
     // make sure to change reference
     this.args = (Array.isArray(options.initial) ? options.initial : []).concat(
       opts.args || []
@@ -90,14 +96,6 @@ export class Node {
     });
   }
 
-  push(arg: string): void {
-    this.args.push(arg);
-  }
-
-  save(node: Node): void {
-    this.children.push(node);
-  }
-
   parse(arg: string, strict?: false): Options | null;
   parse(arg: string, strict: true): Options;
   parse(arg: string, strict = false): Options | null {
@@ -114,12 +112,7 @@ export class Node {
         ? options
         : null;
     if (strict && !value) {
-      const name = this.displayName();
-      throw this.error(
-        ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
-        (name ? name + 'does not recognize the' : 'Unrecognized') +
-          ` option or command: ${arg}`
-      );
+      throw this.unrecognized(arg);
     }
     return value;
   }
@@ -148,6 +141,15 @@ export class Node {
         name ? name + 'failed validation.' : 'Validation failed.'
       );
     }
+  }
+
+  unrecognized(arg: string): ArgsTreeError {
+    const name = this.displayName();
+    return this.error(
+      ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+      (name ? name + 'does not recognize the' : 'Unrecognized') +
+        ` ${getType(arg).toLowerCase()}: ${arg}`
+    );
   }
 
   private validateRange() {

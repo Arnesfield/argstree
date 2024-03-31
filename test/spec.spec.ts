@@ -58,13 +58,13 @@ describe('spec', () => {
 
   it('should build options object', () => {
     function endSpec(spec: Spec) {
-      spec.command('--');
+      spec.command('--', { strict: false });
     }
     function commandSpec(spec: Spec) {
       spec.option('--help', { maxRead: 0 }).alias('-h');
     }
 
-    const cmd = spec({ max: 0 });
+    const cmd = spec({ max: 0, strict: true });
     const bools = ['foo', 'bar'];
     for (const bool of bools) {
       cmd
@@ -91,8 +91,13 @@ describe('spec', () => {
       .alias('f')
       .spec(endSpec)
       .spec(commandSpec)
-      // foo
-      .command('bar', { min: 1, assign: true, initial: ['1', '2'] })
+      // bar
+      .command('bar', {
+        min: 1,
+        strict: false,
+        assign: true,
+        initial: ['1', '2']
+      })
       .alias('b')
       .spec(endSpec)
       .spec(commandSpec);
@@ -100,23 +105,25 @@ describe('spec', () => {
 
     expect(cmd.options()).to.deep.equal({
       max: 0,
+      strict: true,
       args: {
         '--foo': { maxRead: 0 },
         '--bar': { maxRead: 0 },
         '--baz': { max: 2, maxRead: 0, assign: false },
         foo: {
           min: 1,
-          args: { '--': { args: {} }, '--help': { maxRead: 0 } },
+          args: { '--': { strict: false, args: {} }, '--help': { maxRead: 0 } },
           alias: { '-h': '--help' }
         },
         bar: {
           min: 1,
+          strict: false,
           assign: true,
           initial: ['1', '2'],
-          args: { '--': { args: {} }, '--help': { maxRead: 0 } },
+          args: { '--': { strict: false, args: {} }, '--help': { maxRead: 0 } },
           alias: { '-h': '--help' }
         },
-        '--': { args: {} }
+        '--': { strict: false, args: {} }
       },
       alias: {
         '-f': '--foo',

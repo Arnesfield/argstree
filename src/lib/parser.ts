@@ -1,4 +1,4 @@
-import { isAssignable } from '../utils/arg.utils.js';
+import { isAssignable, isOption } from '../utils/arg.utils.js';
 import { ResolvedAlias } from './alias.js';
 import { Node, NodeOptions } from './node.js';
 
@@ -46,7 +46,11 @@ export class Parser {
       // if current node exists, check if it reached its max args, if not then save arg
       // otherwise, treat this as an arg for the main node
       const node = this.child?.checkRange(1).maxRead ? this.child : this.parent;
-      node.push(arg);
+      // strict mode: throw error if arg is an option-like
+      if (node.strict && isOption(arg)) {
+        throw node.unrecognized(arg);
+      }
+      node.args.push(arg);
     }
   }
 
@@ -78,7 +82,9 @@ export class Parser {
       // make new child and save values
       // probably don't need to validate now since it will be
       // validated when changing child node or at the end of parse
-      this.parent.save((this.child = new Node(item)));
+      this.parent.children.push(
+        (this.child = new Node(item, this.parent.strict))
+      );
       // if child has args, use this as next child
       if (this.child.hasArgs) {
         nextChild = this.child;

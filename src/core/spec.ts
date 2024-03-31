@@ -26,6 +26,7 @@ __check__<keyof SpecOptions>()([
   'min',
   'max',
   'maxRead',
+  'strict',
   'assign',
   'initial',
   'validate'
@@ -43,6 +44,7 @@ function normalize(options: SpecOptions | undefined) {
     'min',
     'max',
     'maxRead',
+    'strict',
     'assign',
     'initial',
     'validate'

@@ -94,6 +94,45 @@ describe('argstree', () => {
     expect(node.children[0].id).to.equal('bar');
   });
 
+  it('should not be strict by default', () => {
+    const node = argstree(['--foo'], {});
+    expect(node.args).to.deep.equal(['--foo']);
+    expectError({
+      cause: ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+      args: ['--foo'],
+      options: { strict: true }
+    });
+    expectError({
+      cause: ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+      args: ['-f'],
+      options: { strict: true }
+    });
+  });
+
+  it('should inherit the strict option', () => {
+    const options = {
+      strict: true,
+      args: { foo: {}, bar: { strict: false, args: { baz: {} } } }
+    } satisfies Options;
+    expectError({
+      cause: ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+      args: ['foo', '-f', '--foo'],
+      options,
+      equal: options.args.foo
+    });
+
+    const node = argstree(['bar', '-f', '--foo', 'baz', '--foo'], options);
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(1);
+
+    const child = node.children[0];
+    expect(child.id).to.equal('bar');
+    expect(child.args).to.deep.equal(['-f', '--foo']);
+    expect(child.children).to.have.length(1);
+    expect(child.children[0].id).to.equal('baz');
+    expect(child.children[0].args).to.deep.equal(['--foo']);
+  });
+
   it('should not treat any arguments as an option or command unless specified', () => {
     const args = ['--test', 'foo', 'bar', 'baz'];
     let node = argstree(args);

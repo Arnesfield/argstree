@@ -59,6 +59,14 @@ export interface Options {
    */
   maxRead?: number | null;
   /**
+   * When enabled, an error is thrown for unrecognized options
+   * that are not provided in {@linkcode args}.
+   *
+   * By default, this is set to `false` for the root node. If not explicitly
+   * provided, this option is inherited from the parent option or command.
+   */
+  strict?: boolean;
+  /**
    * Enable assignment with equal sign (`=`) for this option or command and its aliases.
    *
    * This option does not apply for the root node.
