@@ -6,8 +6,8 @@ import { Spec as ISpec, SpecOptions } from './spec.types.js';
 
 /**
  * Build the parse spec {@linkcode Options options} for {@linkcode argstree}.
- * @param options The Spec options.
- * @returns The Spec object.
+ * @param options The spec options.
+ * @returns The spec object.
  */
 export function spec(options?: SpecOptions): ISpec {
   return new Spec(normalize(options));

@@ -26,11 +26,7 @@ export interface ArgsTreeErrorObject extends ArgsTreeErrorOptions {
 export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
   /** Validation failed from provided {@linkcode Options.validate} function. */
   static readonly VALIDATE_ERROR = 'validate';
-  /**
-   * The {@linkcode Options} object provided is not valid.
-   *
-   * e.g. Incorrect {@linkcode Options.min min} and {@linkcode Options.max max} range.
-   */
+  /** The {@linkcode Options} object provided is not valid (e.g. incorrect range). */
   static readonly INVALID_OPTIONS_ERROR = 'invalid-options';
   /** The option or command did not satisfy the required number of arguments. */
   static readonly INVALID_RANGE_ERROR = 'invalid-range';

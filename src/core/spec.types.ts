@@ -2,10 +2,10 @@
 import { argstree } from './argstree.js';
 import { Node, NodeData, Options } from './core.types.js';
 
-/** The Spec options. */
+/** The spec options. */
 export interface SpecOptions extends Omit<Options, 'alias' | 'args'> {}
 
-/** The Spec object. */
+/** The spec object. */
 export interface Spec {
   /**
    * The raw argument to parse. This is the `arg` value
@@ -67,15 +67,15 @@ export interface Spec {
    * Add an {@linkcode Options.args} function.
    * Additional calls will replace the existing {@linkcode handler}.
    * @param handler The `args` function.
-   * @param data The Node data.
+   * @param data The node data.
    * @returns `this` for chaining.
    */
   args(
     handler: (arg: string, data: NodeData) => Options | null | undefined
   ): this;
   /**
-   * Get the {@linkcode Options} object for this spec.
-   * @returns The {@linkcode Options} object.
+   * Get the parse options for this spec.
+   * @returns The parse options.
    */
   options(): Options;
   /**
@@ -86,7 +86,7 @@ export interface Spec {
    * argstree(args, spec.options());
    * ```
    * @param args The arguments to parse.
-   * @returns The {@linkcode Node} object.
+   * @returns The node object.
    */
   parse(args: readonly string[]): Node;
   /**

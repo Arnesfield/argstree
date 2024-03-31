@@ -1,4 +1,4 @@
-/** The Node data. */
+/** The node data. */
 export interface NodeData {
   /** The parsed argument. */
   raw: string | null;
@@ -63,10 +63,10 @@ export interface Options {
    *
    * This option does not apply for the root node.
    *
-   * e.g. `--foo=value`, `foo=value`
+   * e.g. `--flag=value`, `command=value`
    *
    * By default, this option is set to `true` if the parsed argument
-   * is an alias or an option (e.g. `-f`, `--foo`).
+   * is an alias or an option (e.g. `-f`, `--flag`).
    */
   assign?: boolean;
   /**
@@ -84,7 +84,7 @@ export interface Options {
    * and the rest are arguments for the said option or command.
    *
    * ```javascript
-   * ['--foo', 'arg1', 'arg2', ...]
+   * ['--flag', 'arg1', 'arg2', ...]
    * ```
    *
    * For multiple options or commands with their own arguments,
@@ -92,7 +92,7 @@ export interface Options {
    *
    * ```javascript
    * [
-   *   ['--option', 'arg1', 'arg2', ...],
+   *   ['--flag', 'arg1', 'arg2', ...],
    *   ['command', 'arg1', 'arg2', ...],
    *   ...
    * ]
@@ -113,13 +113,13 @@ export interface Options {
   /**
    * Validate arguments after they are saved for this option or command.
    * Return a boolean or throw an error manually.
-   * @param data The Node data.
+   * @param data The node data.
    * @return A validate error is thrown when `false` is returned.
    */
   validate?(data: NodeData): boolean;
 }
 
-/** The Node object. */
+/** The node object. */
 export interface Node extends Omit<NodeData, 'options'> {
   /** The provided {@linkcode Options.id} or the parsed argument. */
   id: string | null;
@@ -127,7 +127,7 @@ export interface Node extends Omit<NodeData, 'options'> {
   name: string | null;
   /** Depth of node. */
   depth: number;
-  /** The parent node. If `null`, then this node is the root node. */
+  /** The parent node. If `null`, then this is the root node. */
   parent: Node | null;
   /** The direct children nodes. */
   children: Node[];

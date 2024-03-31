@@ -16,8 +16,8 @@ export interface StringifyOptions {
 }
 
 /**
- * Create a tree structure string from the provided {@linkcode node}.
- * @param node The {@linkcode Node} object.
+ * Create a tree structure string from the provided node object.
+ * @param node The node object.
  * @param options The stringify options.
  * @returns The tree string.
  */
