@@ -33,6 +33,7 @@ __check__<keyof SpecOptions>()([
 ]);
 
 function normalize(options: SpecOptions | undefined) {
+  // properties are fixed, so no need for deproto
   const opts: Options = {};
   if (!options) {
     return opts;

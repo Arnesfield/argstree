@@ -1,10 +1,9 @@
 import { expect } from 'chai';
-import {
+import argstree, {
   ArgsTreeError,
   Node,
   NodeData,
-  Options,
-  argstree
+  Options
 } from '../src/index.js';
 
 export function expectNode(node: Node): void {
@@ -742,14 +741,27 @@ describe('argstree', () => {
     });
   });
 
-  it('should handle possibly common case for `__proto__`', () => {
-    expect(argstree(['__proto__']).args).to.deep.equal(['__proto__']);
-    expect(argstree(['__proto__'], { args: {} }).args).to.deep.equal([
-      '__proto__'
-    ]);
-    expect(
-      argstree(['__proto__'], { args: arg => ({})[arg] }).args
-    ).to.deep.equal(['__proto__']);
+  it("should handle '__proto__' argument", () => {
+    const args = ['__proto__', 'constructor'];
+    expect(argstree(args).args).to.deep.equal(args);
+    expect(argstree(args, { args: {} }).args).to.deep.equal(args);
+
+    // NOTE: args function can fall for __proto__ when a
+    // predefined object with options is used for matching.
+    // make sure to manually remove
+    let node = argstree(args, {
+      args: arg => ({ __proto__: null })[arg]
+    });
+    expect(node.args).to.deep.equal(args);
+
+    // probably safe to assume that __proto__ is a valid options object
+    const options: { [arg: string]: Options } = Object.create(null);
+    options.__proto__ = {};
+    node = argstree(args, { args: arg => options[arg] });
+    expect(node.args).to.have.length(0);
+    expect(node.children).to.have.length(1);
+    expect(node.children[0].id).to.equal(args[0]);
+    expect(node.children[0].args).to.deep.equal([args[1]]);
   });
 
   it('should not split equal sign for `--` (special case)', () => {

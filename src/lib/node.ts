@@ -64,11 +64,13 @@ export class Node {
     }
 
     const { args } = options;
+    let _args: { [arg: string]: Options | null | undefined };
     this._parse =
       typeof args === 'function'
         ? args
         : args && typeof args === 'object' && !Array.isArray(args)
-          ? arg => args[arg]
+          ? ((_args = Object.assign(Object.create(null), args)),
+            arg => _args[arg])
           : null;
   }
 
@@ -100,15 +102,10 @@ export class Node {
   parse(arg: string, strict: true): Options;
   parse(arg: string, strict = false): Options | null {
     // make sure parse result is a valid object
-    // and handle possibly common case for __proto__
-    // NOTE: does not handle other cases for __proto__ / prototype
     const options =
       typeof this._parse === 'function' ? this._parse(arg, this.data) : null;
     const value =
-      typeof options === 'object' &&
-      options !== null &&
-      options !== Object.prototype &&
-      !Array.isArray(options)
+      typeof options === 'object' && options !== null && !Array.isArray(options)
         ? options
         : null;
     if (strict && !value) {
