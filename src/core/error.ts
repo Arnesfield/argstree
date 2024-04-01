@@ -34,10 +34,7 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
   static readonly INVALID_SPEC_ERROR = 'invalid-spec';
   /** After an alias is parsed, it is not recognized as part of {@linkcode Options.alias}. */
   static readonly UNRECOGNIZED_ALIAS_ERROR = 'unrecognized-alias';
-  /**
-   * After an alias is parsed, its expanded option or command
-   * is not recognized as part of {@linkcode Options.args}.
-   */
+  /** The option or command is not recognized as part of {@linkcode Options.args}. */
   static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
   /**
    * The cause error string.
