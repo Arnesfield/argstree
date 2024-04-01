@@ -1,7 +1,12 @@
+[npm-img]: https://img.shields.io/npm/v/argstree.svg
+[npm-url]: https://www.npmjs.com/package/argstree
+[ci-img]: https://github.com/Arnesfield/argstree/workflows/Node.js%20CI/badge.svg
+[ci-url]: https://github.com/Arnesfield/argstree/actions?query=workflow%3A"Node.js+CI"
+
 # argstree
 
-[![npm](https://img.shields.io/npm/v/argstree.svg)](https://www.npmjs.com/package/argstree)
-[![Node.js CI](https://github.com/Arnesfield/argstree/workflows/Node.js%20CI/badge.svg)](https://github.com/Arnesfield/argstree/actions?query=workflow%3A"Node.js+CI")
+[![npm][npm-img]][npm-url]
+[![Node.js CI][ci-img]][ci-url]
 
 Parse arguments into a tree structure.
 
@@ -110,22 +115,30 @@ for (const child of node.children) {
 
 > [!WARNING]
 >
-> Be aware that there may be cases where `__proto__` and other hidden object properties are used as arguments.
+> Be aware that there may be cases where `__proto__` and other hidden object properties are used as arguments. **argstree** does not block these possibly unsafe arguments, but it has some checks in place such as:
 >
-> By default, **argstree** reassigns the `args` object to another with a `null` prototype to remove these properties. But this does not apply to the `args` function where you _might_ use a predefined object that maps to options objects.
+> - The options object should be a valid object that does not equal the default object prototype (`options !== Object.prototype`).
+> - Both options and `args` objects are reassigned to another object with a `null` prototype before being used internally.
 >
-> Make sure to check for `__proto__` and other related properties. Remove it by setting `__proto__: null` and such, or use a [`Map`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map) object instead.
+> This may not apply to the `args` function where you _might_ use a predefined object that maps to options objects. Make sure to check for `__proto__` and other related properties. Remove it by setting `__proto__: null` and such, or use a [`Map`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map) object instead.
 >
 > ```javascript
 > const optionsMap = {
->   __proto__: null, // <-- set null prototype
 >   '--add': {},
->   '--save': {}
+>   '--save': {},
+>   // this can happen somehow
+>   __proto__: {
+>     validate(data) {
+>       console.log('evil validate!', data.args);
+>       return true;
+>     }
+>   }
 > };
-> const node = argstree(['__proto__', 'constructor'], {
->   args: arg => optionsMap[arg] // should be safe, probably
-> });
-> console.log(node.args); // [ '__proto__', 'constructor' ]
+>
+> // remove evil proto!
+> Object.setPrototypeOf(optionsMap, null);
+>
+> argstree(['__proto__', 'constructor'], { args: arg => optionsMap[arg] });
 > ```
 
 ### Strict Mode
