@@ -93,7 +93,7 @@ for (const child of node.children) {
 run [ 'bar', 'baz' ]
 ```
 
-You can also pass a function to the `args` option. It has two parameters: the `arg` string (comes from the `args` array or from a split combined alias) and the `NodeData` object. It should return an options object, `null`, or `undefined`.
+You can also pass a function to the `args` option. It has two parameters: the `arg` string (comes from the `args` array or from the split aliases of a combined alias) and the `NodeData` object. It should return an options object, `null`, or `undefined`.
 
 ```javascript
 const args = ['--save', 'foo', '--create', '--add', 'bar'];
@@ -328,30 +328,30 @@ for (const child of node.children) {
 
 Set the `validate` function option to validate the arguments after they are saved for the option or command. It has a `NodeData` object parameter and it should either return a boolean or throw an error manually. A validate error is thrown when `false` is returned.
 
-Note that a call to `validate` means that the `Node` has already parsed all of its arguments and that it has passed all [validation checks](#limits) beforehand.
+Note that a call to `validate` means that the `Node` has already parsed all of its arguments and that it has passed all [validation checks](#limits) beforehand. It is also safe to directly mutate the `data.args` array in `validate`, but you can always choose to transform and validate arguments after parsing.
 
 ```javascript
-function validate(data) {
-  console.log(data.raw, data.alias, data.args);
-  return true;
-}
-argstree(['--add', '-s', 'foo', 'bar'], {
-  alias: { '-s': '--add', '-s': '--save' },
+const node = argstree(['--list', 'a,b,c'], {
   args: {
-    '--add': { max: 1, validate },
-    '--save': { max: 1, validate }
-  },
-  validate(data) {
-    console.log('root', data.alias, data.args);
-    return true;
+    '--list': {
+      min: 1,
+      max: 1,
+      validate(data) {
+        // safely assume data.args has 1 length (min-max range: 1-1)
+        const args = data.args[0].split(',');
+        // you can validate split args here, then mutate and replace data.args
+        data.args.splice(0, data.args.length, ...args);
+        return true;
+      }
+    }
   }
 });
+const list = node.children[0];
+console.log(list.id, list.args);
 ```
 
 ```text
---add null []
---save -s [ 'foo' ]
-root null [ 'bar' ]
+--list [ 'a', 'b', 'c' ]
 ```
 
 ### ArgsTreeError
@@ -475,7 +475,7 @@ import { spec } from 'argstree';
 // create command spec
 const cmd = spec({ min: 1 });
 
-// add option or command with aliases (and with alias arguments)
+// add options or commands with aliases (and with alias arguments)
 cmd.option('--add').alias('-a').alias('--no-add', '0');
 cmd.option('--save').alias('-s').alias('--no-save', ['0']);
 
