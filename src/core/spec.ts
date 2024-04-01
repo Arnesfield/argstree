@@ -1,3 +1,4 @@
+import { deproto } from '../utils/deproto.js';
 import { displayName, getType } from '../utils/options.utils.js';
 import { argstree } from './argstree.js';
 import { NodeData, Options } from './core.types.js';
@@ -33,11 +34,13 @@ __check__<keyof SpecOptions>()([
 ]);
 
 function normalize(options: SpecOptions | undefined) {
-  // properties are fixed, so no need for deproto
-  const opts: Options = {};
+  // clean since we are accessing properties of options
+  const target: Options = deproto();
   if (!options) {
-    return opts;
+    return target;
   }
+  // clean since properties of unsafe options is accessed and set to real options
+  const source = deproto(options);
   // NOTE: make sure to add to props for new Options properties
   const props: (keyof SpecOptions)[] = [
     'id',
@@ -51,12 +54,12 @@ function normalize(options: SpecOptions | undefined) {
     'validate'
   ];
   for (const prop of props) {
-    if (typeof options[prop] !== 'undefined') {
+    if (typeof source[prop] !== 'undefined') {
       // force assignment
-      opts[prop] = options[prop] as any;
+      target[prop] = source[prop] as any;
     }
   }
-  return opts;
+  return target;
 }
 
 interface SpecItem {
@@ -66,8 +69,7 @@ interface SpecItem {
 }
 
 class Spec implements ISpec {
-  readonly #args: { [arg: string]: Options | null | undefined } =
-    Object.create(null);
+  readonly #args: { [arg: string]: Options | null | undefined } = deproto();
   readonly #list: SpecItem[] = [];
   readonly #options: Options;
   readonly #parent: ISpec | null;
@@ -114,10 +116,7 @@ class Spec implements ISpec {
   }
 
   #assignAlias(alias: string, args: Required<Options>['alias']['args']) {
-    if (
-      alias in
-      (this.#options.alias ||= <Required<Options>['alias']>Object.create(null))
-    ) {
+    if (alias in (this.#options.alias ||= deproto())) {
       throw this.#error(`Alias '${alias}' already exists.`);
     }
     this.#options.alias[alias] = args;

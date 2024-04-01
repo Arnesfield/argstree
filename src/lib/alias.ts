@@ -1,5 +1,7 @@
 import { Options } from '../core/core.types.js';
 import { isAlias } from '../utils/arg.utils.js';
+import { deproto } from '../utils/deproto.js';
+import { isObject } from '../utils/is-object.js';
 import { split } from '../utils/split.js';
 
 export interface ResolvedAlias {
@@ -9,12 +11,10 @@ export interface ResolvedAlias {
 
 export class Alias {
   private readonly aliases: string[] = [];
-  private readonly aliasMap: Required<Options>['alias'] = Object.create(null);
+  private readonly aliasMap: Required<Options>['alias'];
 
   constructor(alias: Options['alias']) {
-    if (typeof alias === 'object' && alias !== null) {
-      Object.assign(this.aliasMap, alias);
-    }
+    this.aliasMap = deproto(isObject(alias) ? alias : undefined);
 
     // get aliases and sort by length desc
     for (const alias in this.aliasMap) {

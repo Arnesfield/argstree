@@ -747,11 +747,9 @@ describe('argstree', () => {
     expect(argstree(args, { args: {} }).args).to.deep.equal(args);
 
     // NOTE: args function can fall for __proto__ when a
-    // predefined object with options is used for matching.
-    // make sure to manually remove
-    let node = argstree(args, {
-      args: arg => ({ __proto__: null })[arg]
-    });
+    // predefined object with options is used for matching
+    // has a different prototype and not Object.prototype
+    let node = argstree(args, { args: arg => ({})[arg] });
     expect(node.args).to.deep.equal(args);
 
     // probably safe to assume that __proto__ is a valid options object

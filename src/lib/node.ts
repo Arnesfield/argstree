@@ -1,6 +1,8 @@
 import { Node as INode, NodeData, Options } from '../core/core.types.js';
 import { ArgsTreeError } from '../core/error.js';
+import { deproto } from '../utils/deproto.js';
 import { ensureNumber } from '../utils/ensure-number.js';
+import { isObject } from '../utils/is-object.js';
 import { displayName, getType } from '../utils/options.utils.js';
 import { Alias } from './alias.js';
 
@@ -31,15 +33,15 @@ export class Node {
     /** Overridable strict option. */
     readonly strict = false
   ) {
-    const { raw = null, alias = null, options } = opts;
-    this.options = options;
+    const { raw = null, alias = null } = opts;
+    const options = (this.options = deproto(opts.options));
     // set parent.strict to constructor param, but override using provided options.strict
     this.strict = typeof options.strict === 'boolean' ? options.strict : strict;
     // make sure to change reference
     this.args = (Array.isArray(options.initial) ? options.initial : []).concat(
       opts.args || []
     );
-    this.data = { raw, alias, args: this.args, options };
+    this.data = { raw, alias, args: this.args, options: opts.options };
 
     const min = ensureNumber(options.min);
     const max = ensureNumber(options.max);
@@ -69,8 +71,7 @@ export class Node {
       typeof args === 'function'
         ? args
         : args && typeof args === 'object' && !Array.isArray(args)
-          ? ((_args = Object.assign(Object.create(null), args)),
-            arg => _args[arg])
+          ? ((_args = deproto(args)), arg => _args[arg])
           : null;
   }
 
@@ -94,7 +95,7 @@ export class Node {
       raw: this.data.raw,
       alias: this.data.alias,
       args: this.args,
-      options: this.options
+      options: this.data.options // use original object reference
     });
   }
 
@@ -104,10 +105,7 @@ export class Node {
     // make sure parse result is a valid object
     const options =
       typeof this._parse === 'function' ? this._parse(arg, this.data) : null;
-    const value =
-      typeof options === 'object' && options !== null && !Array.isArray(options)
-        ? options
-        : null;
+    const value = isObject(options) ? options : null;
     if (strict && !value) {
       throw this.unrecognized(arg);
     }
