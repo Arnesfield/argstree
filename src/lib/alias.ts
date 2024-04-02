@@ -1,7 +1,7 @@
-import { Options } from '../core/core.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { has } from '../utils/object.utils.js';
 import { split } from '../utils/split.js';
+import { Alias as IAlias } from '../utils/type.utils.js';
 
 export interface ResolvedAlias {
   alias: string;
@@ -10,19 +10,14 @@ export interface ResolvedAlias {
 
 export class Alias {
   private readonly aliases: string[] = [];
-  private readonly alias: Required<Options>['alias'];
 
-  constructor(alias: Options['alias']) {
-    this.alias = alias || {};
+  constructor(private readonly alias: IAlias) {
     // get aliases and sort by length desc
-    for (const [alias, aliasArgs] of Object.entries(this.alias)) {
+    for (const [key, value] of Object.entries(alias)) {
       // skip command aliases since we don't need to split them
-      if (
-        isAlias(alias) &&
-        (typeof aliasArgs === 'string' || Array.isArray(aliasArgs))
-      ) {
+      if (isAlias(key) && (typeof value === 'string' || Array.isArray(value))) {
         // remove prefix only when saving
-        this.aliases.push(alias.slice(1));
+        this.aliases.push(key.slice(1));
       }
     }
     this.aliases.sort((a, b) => b.length - a.length);

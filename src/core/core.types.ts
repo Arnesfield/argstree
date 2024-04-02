@@ -122,7 +122,7 @@ export interface Options {
    * Validate arguments after they are saved for this option or command.
    * Return a boolean or throw an error manually.
    * @param data The node data.
-   * @return A validate error is thrown when `false` is returned.
+   * @returns A validate error is thrown when `false` is returned.
    */
   validate?(data: NodeData): boolean;
 }

@@ -1,7 +1,8 @@
 import { has } from '../utils/object.utils.js';
 import { displayName, getType } from '../utils/options.utils.js';
+import { Alias, ArgsFunction, ArgsObject } from '../utils/type.utils.js';
 import { argstree } from './argstree.js';
-import { NodeData, Options } from './core.types.js';
+import { Options } from './core.types.js';
 import { ArgsTreeError } from './error.js';
 import { Spec as ISpec, SpecOptions } from './spec.types.js';
 
@@ -66,8 +67,7 @@ interface SpecItem {
 }
 
 class Spec implements ISpec {
-  readonly #args: { [arg: string]: Options | null | undefined } =
-    Object.create(null);
+  readonly #args: ArgsObject = Object.create(null);
   readonly #list: SpecItem[] = [];
   readonly #options: Options;
   readonly #parent: ISpec | null;
@@ -113,11 +113,8 @@ class Spec implements ISpec {
     return (this.#args[arg] = options);
   }
 
-  #assignAlias(alias: string, args: Required<Options>['alias']['args']) {
-    if (
-      alias in
-      (this.#options.alias ||= <Required<Options>['alias']>Object.create(null))
-    ) {
+  #assignAlias(alias: string, args: Alias[string]) {
+    if (alias in (this.#options.alias ||= Object.create(null) as Alias)) {
       throw this.#error(`Alias '${alias}' already exists.`);
     }
     this.#options.alias[alias] = args;
@@ -160,14 +157,14 @@ class Spec implements ISpec {
     return this;
   }
 
-  aliases(alias: Required<Options>['alias']) {
+  aliases(alias: Alias) {
     for (const [key, value] of Object.entries(alias)) {
       this.#assignAlias(key, value);
     }
     return this;
   }
 
-  args(handler?: (arg: string, data: NodeData) => Options | null | undefined) {
+  args(handler?: ArgsFunction) {
     // if called, assume args is always set (even empty)
     this.#options.args ||= this.#args;
     if (typeof handler === 'function') {
