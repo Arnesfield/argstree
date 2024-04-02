@@ -93,7 +93,7 @@ for (const child of node.children) {
 run [ 'bar', 'baz' ]
 ```
 
-You can also pass a function to the `args` option. It has two parameters: the `arg` string (comes from the `args` array or from the split aliases of a combined alias) and the `NodeData` object. It should return an options object, `null`, or `undefined`.
+You can also pass a function to the `args` option. It has two parameters: the `arg` string and the `NodeData` object. It should return an options object, `null`, or `undefined`.
 
 ```javascript
 const args = ['--save', 'foo', '--create', '--add', 'bar'];
@@ -115,30 +115,19 @@ for (const child of node.children) {
 
 > [!WARNING]
 >
-> Be aware that there may be cases where `__proto__` and other hidden object properties are used as arguments. **argstree** does not block these possibly unsafe arguments, but it has some checks in place such as:
+> Be aware that there may be cases where `__proto__` and other hidden object properties are used as arguments. **argstree** does not block these possibly unsafe arguments, but it has some checks in place for the `args` object and the incoming options object.
 >
-> - The options object should be a valid object that does not equal the default object prototype (`options !== Object.prototype`).
-> - Both options and `args` objects are reassigned to another object with a `null` prototype before being used internally.
->
-> This may not apply to the `args` function where you _might_ use a predefined object that maps to options objects. Make sure to check for `__proto__` and other related properties. Remove it by setting `__proto__: null` and such, or use a [`Map`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map) object instead.
+> This may not apply to the `args` function where you _might_ use a predefined object that maps to options objects. Make sure to check for `__proto__` and other related properties. You can set it to `null` or use a [`Map`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map) object instead.
 >
 > ```javascript
-> const optionsMap = {
->   '--add': {},
->   '--save': {},
->   // this can happen somehow
->   __proto__: {
->     validate(data) {
->       console.log('evil validate!', data.args);
->       return true;
->     }
->   }
+> const allOptions = {
+>   __proto__: null, // <-- set null prototype
+>   '--add': {}
 > };
->
-> // remove evil proto!
-> Object.setPrototypeOf(optionsMap, null);
->
-> argstree(['__proto__', 'constructor'], { args: arg => optionsMap[arg] });
+> const node = argstree(['__proto__', 'constructor'], {
+>   args: arg => allOptions[arg] // should be safe
+> });
+> console.log(node.args); // [ '__proto__', 'constructor' ]
 > ```
 
 ### Strict Mode
@@ -339,7 +328,7 @@ const node = argstree(['--list', 'a,b,c'], {
       validate(data) {
         // safely assume data.args has 1 length (min-max range: 1-1)
         const args = data.args[0].split(',');
-        // you can validate split args here, then mutate and replace data.args
+        // you can validate args here, then mutate and replace data.args
         data.args.splice(0, data.args.length, ...args);
         return true;
       }
@@ -362,9 +351,7 @@ For errors related to parsing and misconfiguration, an `ArgsTreeError` is thrown
 import argstree, { ArgsTreeError } from 'argstree';
 
 try {
-  argstree(['--add', 'foo'], {
-    args: { '--add': { min: 2 } }
-  });
+  argstree(['--add', 'foo'], { args: { '--add': { min: 2 } } });
 } catch (error) {
   if (error instanceof ArgsTreeError) {
     console.error(JSON.stringify(error, undefined, 2));
@@ -477,11 +464,10 @@ const cmd = spec({ min: 1 });
 
 // add options or commands with aliases (and with alias arguments)
 cmd.option('--add').alias('-a').alias('--no-add', '0');
-cmd.option('--save').alias('-s').alias('--no-save', ['0']);
+cmd.option('--save').alias('-s', ['bar']);
 
 // get the options object with <spec>.options()
 const options = cmd.options();
-console.log(options);
 
 // parse arguments with <spec>.parse(args)
 const node = cmd.parse(['foo', '--add', 'bar', '-s', 'baz']);
@@ -492,22 +478,9 @@ for (const child of node.children) {
 ```
 
 ```text
-[Object: null prototype] {
-  min: 1,
-  args: [Object: null prototype] {
-    '--add': [Object: null prototype] {},
-    '--save': [Object: null prototype] {}
-  },
-  alias: [Object: null prototype] {
-    '-a': '--add',
-    '--no-add': [ '--add', '0' ],
-    '-s': '--save',
-    '--no-save': [ '--save', '0' ]
-  }
-}
 root [ 'foo' ]
 --add [ 'bar' ]
---save [ 'baz' ]
+--save [ 'bar', 'baz' ]
 ```
 
 The options object passed to `spec(options)` is similar to the options from `argstree(args, options)` but the `alias` and `args` options are omitted.
@@ -555,11 +528,11 @@ const cmd = spec();
 // set aliases similar to argstree options alias
 cmd.aliases({ '-A': [['--add'], ['--save']] });
 
-// set alias/es to current option or command
+// set aliases to current option or command
 // spec object method chaining (applies to all methods)
 cmd.option('--add', { maxRead: 0 }).alias('-a').alias('--no-add', '0');
 
-// multiple aliases (array) and multiple arguments (array)
+// multiple aliases and arguments
 cmd.option('--save', { maxRead: 0 }).alias(['-s', '-sa'], ['1', '2', '3']);
 ```
 
@@ -574,37 +547,30 @@ function commonSpec(spec) {
 }
 const cmd = spec({ strict: true })
   .command('run-script')
-  .alias(['run', 'rum', 'urn'])
+  .alias(['run', 'urn'])
   .spec(run => run.option('--workspace', { min: 1, max: 1 }).alias('-w'))
   .spec(commonSpec);
 commonSpec(cmd);
 console.log('%o', cmd.options());
 ```
 
-```javascript
-[Object: null prototype] {
+```text
+{
   strict: true,
   args: [Object: null prototype] {
-    'run-script': [Object: null prototype] {
+    'run-script': {
       args: [Object: null prototype] {
-        '--workspace': [Object: null prototype] { min: 1, max: 1 },
-        '--help': [Object: null prototype] { maxRead: 0 },
-        '--': [Object: null prototype] {
-          strict: false,
-          args: [Object: null prototype] {}
-        }
+        '--workspace': { min: 1, max: 1 },
+        '--help': { maxRead: 0 },
+        '--': { strict: false, args: [Object: null prototype] {} }
       },
       alias: [Object: null prototype] { '-w': '--workspace', '-h': '--help' }
     },
-    '--help': [Object: null prototype] { maxRead: 0 },
-    '--': [Object: null prototype] {
-      strict: false,
-      args: [Object: null prototype] {}
-    }
+    '--help': { maxRead: 0 },
+    '--': { strict: false, args: [Object: null prototype] {} }
   },
   alias: [Object: null prototype] {
     run: 'run-script',
-    rum: 'run-script',
     urn: 'run-script',
     '-h': '--help'
   }
