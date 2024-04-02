@@ -492,9 +492,12 @@ for (const child of node.children) {
 ```
 
 ```text
-{
+[Object: null prototype] {
   min: 1,
-  args: [Object: null prototype] { '--add': {}, '--save': {} },
+  args: [Object: null prototype] {
+    '--add': [Object: null prototype] {},
+    '--save': [Object: null prototype] {}
+  },
   alias: [Object: null prototype] {
     '-a': '--add',
     '--no-add': [ '--add', '0' ],
@@ -579,19 +582,25 @@ console.log('%o', cmd.options());
 ```
 
 ```javascript
-{
+[Object: null prototype] {
   strict: true,
   args: [Object: null prototype] {
-    'run-script': {
+    'run-script': [Object: null prototype] {
       args: [Object: null prototype] {
-        '--workspace': { min: 1, max: 1 },
-        '--help': { maxRead: 0 },
-        '--': { strict: false, args: [Object: null prototype] {} }
+        '--workspace': [Object: null prototype] { min: 1, max: 1 },
+        '--help': [Object: null prototype] { maxRead: 0 },
+        '--': [Object: null prototype] {
+          strict: false,
+          args: [Object: null prototype] {}
+        }
       },
       alias: [Object: null prototype] { '-w': '--workspace', '-h': '--help' }
     },
-    '--help': { maxRead: 0 },
-    '--': { strict: false, args: [Object: null prototype] {} }
+    '--help': [Object: null prototype] { maxRead: 0 },
+    '--': [Object: null prototype] {
+      strict: false,
+      args: [Object: null prototype] {}
+    }
   },
   alias: [Object: null prototype] {
     run: 'run-script',
