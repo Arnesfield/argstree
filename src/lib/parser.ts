@@ -20,6 +20,7 @@ export class Parser {
     // 7 - if has alias args, check if last option can be assigned
     // 8 - if assignable, use second part value as an arg for child (last option)
     // 9 - otherwise, use original arg and treat as value
+    // 10 - for strict mode, error if value is an option-like
 
     if (this.saveArg(arg)) {
       return;
@@ -41,7 +42,7 @@ export class Parser {
     // if not successful, save arg as value
     // only check assignable if assigned value exists
     const split = this.parent.alias.split(match);
-    if (!split || !this.saveAliasArgs(assigned, split.list, split.remainder)) {
+    if (!split || !this.saveAlias(assigned, split.list, split.remainder)) {
       // treat arg as value
       // if current node exists, check if it reached its max args, if not then save arg
       // otherwise, treat this as an arg for the main node
@@ -66,7 +67,7 @@ export class Parser {
     }
     // raw arg is alias
     const resolved = this.parent.alias.resolve([raw]);
-    return resolved && this.saveAliasArgs(assigned, resolved);
+    return resolved && this.saveAlias(assigned, resolved);
   }
 
   private save(items: NodeOptions[]) {
@@ -93,9 +94,8 @@ export class Parser {
     });
 
     // validate all children except next or latest child
-    const ignoreChild = nextChild || this.child;
     for (const child of children) {
-      if (child !== ignoreChild) {
+      if (child !== (nextChild || this.child)) {
         child.validate();
       }
     }
@@ -109,7 +109,7 @@ export class Parser {
     }
   }
 
-  private saveAliasArgs(
+  private saveAlias(
     assigned: string | undefined,
     list: ResolvedAlias[],
     remainder?: string[]
