@@ -185,47 +185,6 @@ describe('spec', () => {
     expect(count).to.equal(2);
   });
 
-  it('should not use properties from prototype', () => {
-    let errorNth = 0;
-    try {
-      // attempt to override validation (possibly access data)
-      Object.assign(Object.prototype, {
-        name: 'evil',
-        validate: () => false
-      } satisfies Options);
-
-      // internally, the provided options is set to another
-      // the provided options object is unsafe, make sure to clean it
-      spec({}).command('test').parse(['test']);
-
-      // should not error, check name
-      try {
-        spec({ min: 1 }).parse([]);
-      } catch (error) {
-        errorNth = 1;
-        // this check does not apply for argstree
-        // since options object reference is preserved in error
-        // but for spec, the options object is controlled
-        expect(error).to.be.instanceOf(ArgsTreeError);
-        if (error instanceof ArgsTreeError) {
-          expect(error.options.name).to.be.undefined;
-        }
-      }
-    } catch (error) {
-      errorNth = 2;
-    } finally {
-      // clean up
-      for (const prop of ['name', 'validate']) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        delete Object.prototype[prop];
-      }
-    }
-
-    // should not have thrown an error from prototype.validate
-    expect(errorNth).to.equal(1);
-  });
-
   it('should get the parent spec object', () => {
     const { cmd } = relationSpec();
     expect(cmd.parent()).to.be.null;

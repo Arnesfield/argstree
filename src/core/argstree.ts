@@ -1,6 +1,5 @@
 import { Node as Tree } from '../lib/node.js';
 import { Parser } from '../lib/parser.js';
-import { isObject } from '../utils/is-object.js';
 import { Node, Options } from './core.types.js';
 
 /**
@@ -10,6 +9,5 @@ import { Node, Options } from './core.types.js';
  * @returns The node object.
  */
 export function argstree(args: readonly string[], options: Options = {}): Node {
-  options = isObject(options) ? options : {};
   return new Parser(new Tree({ options })).parse(args).build();
 }

@@ -1,7 +1,6 @@
 import { Options } from '../core/core.types.js';
 import { isAlias } from '../utils/arg.utils.js';
-import { deproto } from '../utils/deproto.js';
-import { isObject } from '../utils/is-object.js';
+import { has } from '../utils/object.utils.js';
 import { split } from '../utils/split.js';
 
 export interface ResolvedAlias {
@@ -11,15 +10,13 @@ export interface ResolvedAlias {
 
 export class Alias {
   private readonly aliases: string[] = [];
-  private readonly aliasMap: Required<Options>['alias'];
+  private readonly alias: Required<Options>['alias'];
 
   constructor(alias: Options['alias']) {
-    this.aliasMap = deproto(isObject(alias) ? alias : undefined);
-
+    this.alias = alias || {};
     // get aliases and sort by length desc
-    for (const alias in this.aliasMap) {
+    for (const [alias, aliasArgs] of Object.entries(this.alias)) {
       // skip command aliases since we don't need to split them
-      const aliasArgs = this.aliasMap[alias];
       if (
         isAlias(alias) &&
         (typeof aliasArgs === 'string' || Array.isArray(aliasArgs))
@@ -32,7 +29,7 @@ export class Alias {
   }
 
   getArgs(alias: string): [string, ...string[]][] | null {
-    const args = this.aliasMap[alias];
+    const args = has(this.alias, alias) ? this.alias[alias] : null;
     const aliasArgs =
       typeof args === 'string' ? [args] : Array.isArray(args) ? args : null;
     if (!Array.isArray(aliasArgs)) {
@@ -56,7 +53,7 @@ export class Alias {
     return list;
   }
 
-  resolve(aliases: string[], prefix = ''): ResolvedAlias[] | undefined {
+  resolve(aliases: string[], prefix = ''): ResolvedAlias[] | null {
     // get args per alias
     let hasArgs = false;
     const list: ResolvedAlias[] = [];
@@ -71,12 +68,12 @@ export class Alias {
         }
       }
     }
-    return hasArgs ? list : undefined;
+    return hasArgs ? list : null;
   }
 
   split(
     arg: string
-  ): { list: ResolvedAlias[]; remainder: string[] } | undefined {
+  ): { list: ResolvedAlias[]; remainder: string[] } | null | undefined {
     // only accept aliases
     if (!isAlias(arg)) {
       return;
@@ -84,7 +81,7 @@ export class Alias {
     // remove first `-` for alias
     const { values, remainder } = split(arg.slice(1), this.aliases);
     // note that split.values do not have `-` prefix
-    const list = values.length > 0 ? this.resolve(values, '-') : undefined;
+    const list = values.length > 0 ? this.resolve(values, '-') : null;
     // considered as split only if alias args were found
     return list && { list, remainder };
   }
