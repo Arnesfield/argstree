@@ -23,22 +23,21 @@ export class Alias {
     this.aliases.sort((a, b) => b.length - a.length);
   }
 
-  getArgs(alias: string): [string, ...string[]][] | null {
-    const args = has(this.alias, alias) ? this.alias[alias] : null;
-    const aliasArgs =
-      typeof args === 'string' ? [args] : Array.isArray(args) ? args : null;
-    if (!Array.isArray(aliasArgs)) {
-      return null;
+  getArgs(alias: string): [string, ...string[]][] | undefined {
+    const _args = has(this.alias, alias) ? this.alias[alias] : null;
+    const args =
+      typeof _args === 'string' ? [_args] : Array.isArray(_args) ? _args : null;
+    if (!Array.isArray(args)) {
+      return;
     }
     let strList: [string, ...string[]] | undefined;
     const list: [string, ...string[]][] = [];
-    for (const arg of aliasArgs) {
+    for (const arg of args) {
       if (typeof arg === 'string') {
         if (strList) {
           strList.push(arg);
         } else {
-          strList = [arg];
-          list.push(strList);
+          list.push((strList = [arg]));
         }
       } else if (Array.isArray(arg) && arg.length > 0) {
         // filter out empty list
