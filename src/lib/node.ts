@@ -29,7 +29,7 @@ export class Node {
   constructor(
     opts: NodeOptions,
     /** Overridable strict option. */
-    readonly strict = false
+    readonly strict?: boolean
   ) {
     const { raw = null, alias = null, options } = opts;
     this.options = options;
@@ -41,12 +41,10 @@ export class Node {
     );
     this.data = { raw, alias, args: this.args, options };
 
+    // get and validate range only after setting the fields above
     const min = ensureNumber(options.min);
     const max = ensureNumber(options.max);
     const maxRead = ensureNumber(options.maxRead) ?? max;
-    this.range = { min, max, maxRead };
-
-    // validate range
     if (min !== null && max !== null && min > max) {
       const name = this.name();
       this.error(
@@ -62,6 +60,8 @@ export class Node {
           `nvalid max and maxRead range: ${max} < ${maxRead}.`
       );
     }
+
+    this.range = { min, max, maxRead };
 
     const { args } = options;
     this._parse =
@@ -101,7 +101,7 @@ export class Node {
 
   parse(arg: string, strict?: false): Options | null;
   parse(arg: string, strict: true): Options;
-  parse(arg: string, strict = false): Options | null {
+  parse(arg: string, strict?: boolean): Options | null {
     // make sure parse result is a valid object
     const options =
       typeof this._parse === 'function' ? this._parse(arg, this.data) : null;

@@ -49,7 +49,7 @@ export class Alias {
 
   resolve(aliases: string[], prefix = ''): ResolvedAlias[] | null {
     // get args per alias
-    let hasArgs = false;
+    let hasArgs: boolean | undefined;
     const list: ResolvedAlias[] = [];
     for (let alias of aliases) {
       alias = prefix + alias;
