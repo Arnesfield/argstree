@@ -34,7 +34,7 @@ export class Node {
     const { raw = null, alias = null, options } = opts;
     this.options = options;
     // set parent.strict to constructor param, but override using provided options.strict
-    this.strict = typeof options.strict === 'boolean' ? options.strict : strict;
+    this.strict = options.strict ?? strict;
     // make sure to change reference
     this.args = (Array.isArray(options.initial) ? options.initial : []).concat(
       opts.args || []
