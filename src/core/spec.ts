@@ -1,4 +1,3 @@
-import { has } from '../utils/object.utils.js';
 import { displayName, getType } from '../utils/options.utils.js';
 import { Alias, ArgsFunction, ArgsObject } from '../utils/type.utils.js';
 import { argstree } from './argstree.js';
@@ -15,49 +14,13 @@ export function spec(options?: SpecOptions): ISpec {
   return new Spec(normalize(options));
 }
 
-// NOTE: taken from https://stackoverflow.com/a/59775771/7013346
-// this is not included in build. type check to ensure props array is always updated
-type Equal<S, T> = [S, T] extends [T, S] ? S : never;
-function __check__<T>(): <A extends T[]>(arr: Equal<A, T[]>) => void {
-  return () => {};
-}
-// NOTE: apply changes to props array!
-__check__<keyof SpecOptions>()([
-  'id',
-  'name',
-  'min',
-  'max',
-  'maxRead',
-  'strict',
-  'assign',
-  'initial',
-  'validate'
-]);
-
+// normalize should just remove omitted alias and args
+// so we don't have to maintain a list of props
 function normalize(options: SpecOptions | undefined) {
-  const target: Options = {};
-  if (!options) {
-    return target;
-  }
-  // NOTE: make sure to add to props for new Options properties
-  const props: (keyof SpecOptions)[] = [
-    'id',
-    'name',
-    'min',
-    'max',
-    'maxRead',
-    'strict',
-    'assign',
-    'initial',
-    'validate'
-  ];
-  for (const prop of props) {
-    if (has(options, prop)) {
-      // force assignment
-      target[prop] = options[prop] as any;
-    }
-  }
-  return target;
+  options = { ...options };
+  delete (options as Options).alias;
+  delete (options as Options).args;
+  return options;
 }
 
 interface SpecItem {
