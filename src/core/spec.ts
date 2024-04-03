@@ -48,9 +48,9 @@ class Spec implements ISpec {
     this.#parent = parent;
   }
 
-  #error(message: string) {
+  #error(message: string): never {
     const name = displayName(this.id, this.#options);
-    return new ArgsTreeError({
+    throw new ArgsTreeError({
       cause: ArgsTreeError.INVALID_SPEC_ERROR,
       message: (name && name + 'spec error: ') + message,
       raw: this.id,
@@ -62,7 +62,7 @@ class Spec implements ISpec {
 
   #current(context: string) {
     if (this.#list.length === 0) {
-      throw this.#error(
+      this.#error(
         `Requires \`option()\` or \`command()\` call before \`${context}\`.`
       );
     }
@@ -71,14 +71,14 @@ class Spec implements ISpec {
 
   #assignArg(arg: string, options: Options) {
     if (arg in this.#args) {
-      throw this.#error(`${getType(arg)} '${arg}' already exists.`);
+      this.#error(`${getType(arg)} '${arg}' already exists.`);
     }
     return (this.#args[arg] = options);
   }
 
   #assignAlias(alias: string, args: Alias[string]) {
     if (alias in (this.#options.alias ||= Object.create(null) as Alias)) {
-      throw this.#error(`Alias '${alias}' already exists.`);
+      this.#error(`Alias '${alias}' already exists.`);
     }
     this.#options.alias[alias] = args;
   }

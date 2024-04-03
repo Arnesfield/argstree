@@ -49,7 +49,7 @@ export class Parser {
       const node = this.child?.checkRange(1).maxRead ? this.child : this.parent;
       // strict mode: throw error if arg is an option-like
       if (node.strict && isOption(arg)) {
-        throw node.unrecognized(arg);
+        node.unrecognized(arg);
       }
       node.args.push(arg);
     }
@@ -87,7 +87,7 @@ export class Parser {
         (this.child = new Node(item, this.parent.strict))
       );
       // if child has args, use this as next child
-      if (this.child.hasArgs) {
+      if (this.child.hasArgs()) {
         nextChild = this.child;
       }
       return this.child;

@@ -48,15 +48,15 @@ export class Node {
 
     // validate range
     if (min != null && max != null && min > max) {
-      const name = this.displayName();
-      throw this.error(
+      const name = this.name();
+      this.error(
         ArgsTreeError.INVALID_OPTIONS_ERROR,
         (name ? name + 'has i' : 'I') +
           `nvalid min and max range: ${min}-${max}.`
       );
     } else if (max != null && maxRead != null && max < maxRead) {
-      const name = this.displayName();
-      throw this.error(
+      const name = this.name();
+      this.error(
         ArgsTreeError.INVALID_OPTIONS_ERROR,
         (name ? name + 'has i' : 'I') +
           `nvalid max and maxRead range: ${max} < ${maxRead}.`
@@ -72,7 +72,7 @@ export class Node {
           : null;
   }
 
-  get hasArgs(): boolean {
+  hasArgs(): boolean {
     return typeof this._parse === 'function';
   }
 
@@ -81,19 +81,22 @@ export class Node {
     return (this._alias ||= new Alias(this.options.alias || {}));
   }
 
-  private displayName() {
+  private name() {
     return displayName(this.data.raw, this.options);
   }
 
-  private error(cause: string, message: string) {
-    return new ArgsTreeError({
-      cause,
-      message,
-      raw: this.data.raw,
-      alias: this.data.alias,
-      args: this.args,
-      options: this.options
-    });
+  private error(cause: string, message: string): never {
+    throw new ArgsTreeError({ cause, message, ...this.data });
+  }
+
+  /** Throw unrecognized error. */
+  unrecognized(arg: string): never {
+    const name = this.name();
+    this.error(
+      ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
+      (name ? name + 'does not recognize the' : 'Unrecognized') +
+        ` ${getType(arg).toLowerCase()}: ${arg}`
+    );
   }
 
   parse(arg: string, strict?: false): Options | null;
@@ -104,7 +107,7 @@ export class Node {
       typeof this._parse === 'function' ? this._parse(arg, this.data) : null;
     const value = isObject(options) ? options : null;
     if (strict && !value) {
-      throw this.unrecognized(arg);
+      this.unrecognized(arg);
     }
     return value;
   }
@@ -127,21 +130,12 @@ export class Node {
     // hence, allow mutation of args and options by consumer
     const { validate } = this.options;
     if (typeof validate === 'function' && !validate(this.data)) {
-      const name = this.displayName();
-      throw this.error(
+      const name = this.name();
+      this.error(
         ArgsTreeError.VALIDATE_ERROR,
         name ? name + 'failed validation.' : 'Validation failed.'
       );
     }
-  }
-
-  unrecognized(arg: string): ArgsTreeError {
-    const name = this.displayName();
-    return this.error(
-      ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
-      (name ? name + 'does not recognize the' : 'Unrecognized') +
-        ` ${getType(arg).toLowerCase()}: ${arg}`
-    );
   }
 
   private validateRange() {
@@ -162,9 +156,9 @@ export class Node {
                 : [`up to ${max}`, max]
               : null;
     if (phrase != null) {
-      const name = this.displayName();
+      const name = this.name();
       const label = 'argument' + (phrase[1] === 1 ? '' : 's');
-      throw this.error(
+      this.error(
         ArgsTreeError.INVALID_RANGE_ERROR,
         (name ? name + 'e' : 'E') +
           `xpected ${phrase[0]} ${label}, but got ${this.args.length}.`
@@ -179,8 +173,8 @@ export class Node {
     // assume that this is a valid alias
     const label = 'alias' + (aliases.length === 1 ? '' : 'es');
     const list = aliases.map(alias => '-' + alias).join(', ');
-    const name = this.displayName();
-    throw this.error(
+    const name = this.name();
+    this.error(
       ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
       (name ? name + 'does not recognize the' : 'Unrecognized') +
         ` ${label}: ${list}`
