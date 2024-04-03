@@ -82,7 +82,7 @@ export class Node {
   }
 
   private displayName() {
-    return displayName(this.data.raw, this.options.name);
+    return displayName(this.data.raw, this.options);
   }
 
   private error(cause: string, message: string) {

@@ -49,7 +49,7 @@ class Spec implements ISpec {
   }
 
   #error(message: string) {
-    const name = displayName(this.id, this.#options.name);
+    const name = displayName(this.id, this.#options);
     return new ArgsTreeError({
       cause: ArgsTreeError.INVALID_SPEC_ERROR,
       message: (name && name + 'spec error: ') + message,
