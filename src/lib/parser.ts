@@ -4,7 +4,7 @@ import { Node, NodeOptions } from './node.js';
 
 export class Parser {
   private parent: Node;
-  private child: Node | null = null;
+  private child: Node | null | undefined;
 
   constructor(private readonly root: Node) {
     this.parent = root;
@@ -59,54 +59,15 @@ export class Parser {
     const options = this.parent.parse(raw);
     if (options) {
       // check if assignable
-      const save = assigned == null || isAssignable(raw, options);
-      if (save) {
+      if (assigned == null || isAssignable(raw, options)) {
         this.save([{ raw, options, args: assigned != null ? [assigned] : [] }]);
+        return true;
       }
-      return save;
+      return false;
     }
     // raw arg is alias
-    const resolved = this.parent.alias.resolve([raw]);
-    return resolved && this.saveAlias(assigned, resolved);
-  }
-
-  private save(items: NodeOptions[]) {
-    // skipping does not mean saving failed
-    if (items.length === 0) {
-      return;
-    }
-    // validate existing child then make new child
-    this.child?.validate();
-
-    let nextChild: Node | undefined;
-    const children = items.map(item => {
-      // make new child and save values
-      // probably don't need to validate now since it will be
-      // validated when changing child node or at the end of parse
-      this.parent.children.push(
-        (this.child = new Node(item, this.parent.strict))
-      );
-      // if child has args, use this as next child
-      if (this.child.hasArgs()) {
-        nextChild = this.child;
-      }
-      return this.child;
-    });
-
-    // validate all children except next or latest child
-    for (const child of children) {
-      if (child !== (nextChild || this.child)) {
-        child.validate();
-      }
-    }
-
-    // if this child has args, switch it for next parse iteration
-    if (nextChild) {
-      // since we're removing reference to parent, validate it now
-      this.parent.validate();
-      this.parent = nextChild;
-      this.child = null;
-    }
+    const list = this.parent.alias.resolve([raw]);
+    return list && this.saveAlias(assigned, list);
   }
 
   private saveAlias(
@@ -132,10 +93,10 @@ export class Parser {
 
     const items = list.map((item, index): NodeOptions => {
       const raw = item.args[0];
-      const isLast = index === list.length - 1;
+      const last = index === list.length - 1;
       const args = item.args.slice(1);
       // set assigned to last item only
-      if (isLast && assigned != null) {
+      if (last && assigned != null) {
         args.push(assigned);
       }
       // reuse last options when available
@@ -143,12 +104,50 @@ export class Parser {
         raw,
         alias: item.alias,
         args,
-        options: isLast && options ? options : this.parent.parse(raw, true)
+        options: last && options ? options : this.parent.parse(raw, true)
       };
     });
     this.save(items);
 
     return true;
+  }
+
+  private save(items: NodeOptions[]) {
+    // skipping does not mean saving failed
+    if (items.length === 0) {
+      return;
+    }
+    // validate existing child then make new child
+    this.child?.validate();
+
+    let nextChild: Node | undefined;
+    const children = items.map(item => {
+      // make new child and save values
+      // probably don't need to validate now since it will be
+      // validated when changing child node or at the end of parse
+      const node = (this.child = new Node(item, this.parent.strict));
+      this.parent.children.push(node);
+      // if child has args, use this as next child
+      if (node.hasArgs()) {
+        nextChild = node;
+      }
+      return node;
+    });
+
+    // validate all children except next or latest child
+    for (const child of children) {
+      if (child !== (nextChild || this.child)) {
+        child.validate();
+      }
+    }
+
+    // if this child has args, switch it for next parse iteration
+    if (nextChild) {
+      // since we're removing reference to parent, validate it now
+      this.parent.validate();
+      this.parent = nextChild;
+      this.child = null;
+    }
   }
 
   parse(args: readonly string[]): Node {
