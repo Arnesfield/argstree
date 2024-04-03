@@ -133,7 +133,7 @@ export class Parser {
       }
       this.parent.children.push(node);
       // if child has args, use this as next child
-      if (node.hasArgs()) {
+      if (node.hasArgs) {
         nextChild = node;
       }
       return node;

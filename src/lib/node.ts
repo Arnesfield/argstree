@@ -16,6 +16,7 @@ export interface NodeOptions {
 export class Node {
   readonly args: string[];
   readonly children: Node[] = [];
+  readonly hasArgs: boolean;
   private _alias: Alias | undefined;
   private readonly data: NodeData;
   private readonly options: Options;
@@ -45,14 +46,16 @@ export class Node {
     const min = ensureNumber(options.min);
     const max = ensureNumber(options.max);
     const maxRead = ensureNumber(options.maxRead) ?? max;
-    if (min !== null && max !== null && min > max) {
+    if (max === null) {
+      // skip all checks since they all require max to be provided
+    } else if (min !== null && min > max) {
       const name = this.name();
       this.error(
         ArgsTreeError.INVALID_OPTIONS_ERROR,
         (name ? name + 'has i' : 'I') +
           `nvalid min and max range: ${min}-${max}.`
       );
-    } else if (max !== null && maxRead !== null && max < maxRead) {
+    } else if (maxRead !== null && max < maxRead) {
       const name = this.name();
       this.error(
         ArgsTreeError.INVALID_OPTIONS_ERROR,
@@ -63,17 +66,14 @@ export class Node {
 
     this.range = { min, max, maxRead };
 
+    // set _parse and hasArgs
     const { args } = options;
-    this._parse =
+    this.hasArgs = !!(this._parse =
       typeof args === 'function'
         ? args
         : isObject(args)
           ? arg => (has(args, arg) ? args[arg] : null)
-          : null;
-  }
-
-  hasArgs(): boolean {
-    return typeof this._parse === 'function';
+          : null);
   }
 
   get alias(): Alias {
@@ -114,11 +114,11 @@ export class Node {
 
   checkRange(diff = 0): { min: boolean; max: boolean; maxRead: boolean } {
     const { min, max, maxRead } = this.range;
-    const argsLength = this.args.length + diff;
+    const length = this.args.length + diff;
     return {
-      min: min === null || argsLength >= min,
-      max: max === null || argsLength <= max,
-      maxRead: maxRead === null || argsLength <= maxRead
+      min: min === null || length >= min,
+      max: max === null || length <= max,
+      maxRead: maxRead === null || length <= maxRead
     };
   }
 
@@ -155,7 +155,7 @@ export class Node {
                 ? ['no', max]
                 : [`up to ${max}`, max]
               : null;
-    if (phrase !== null) {
+    if (phrase) {
       const name = this.name();
       const label = 'argument' + (phrase[1] === 1 ? '' : 's');
       this.error(
@@ -167,18 +167,16 @@ export class Node {
   }
 
   validateAlias(aliases: string[] | undefined): void {
-    if (!aliases || aliases.length === 0) {
-      return;
+    if (aliases && aliases.length > 0) {
+      // assume that this is a valid alias
+      const name = this.name();
+      this.error(
+        ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
+        (name ? name + 'does not recognize the' : 'Unrecognized') +
+          ` alias${aliases.length === 1 ? '' : 'es'}: ` +
+          aliases.map(alias => '-' + alias).join(', ')
+      );
     }
-    // assume that this is a valid alias
-    const label = 'alias' + (aliases.length === 1 ? '' : 'es');
-    const list = aliases.map(alias => '-' + alias).join(', ');
-    const name = this.name();
-    this.error(
-      ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
-      (name ? name + 'does not recognize the' : 'Unrecognized') +
-        ` ${label}: ${list}`
-    );
   }
 
   build(parent: INode | null = null, depth = 0): INode {
