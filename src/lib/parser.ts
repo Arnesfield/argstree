@@ -5,6 +5,10 @@ import { Node, NodeOptions } from './node.js';
 export class Parser {
   private parent: Node;
   private child: Node | null | undefined;
+  // this might seem counterintuitive, but assigned is being passed
+  // around throughout multiple methods so it probably makes sense to
+  // keep track of it here and only unset it before every parse iteration
+  private assigned: string | null | undefined;
 
   constructor(private readonly root: Node) {
     this.parent = root;
@@ -22,6 +26,8 @@ export class Parser {
     // 9 - otherwise, use original arg and treat as value
     // 10 - for strict mode, error if value is an option-like
 
+    // clear assigned every start of parse iteration
+    this.assigned = null;
     if (this.saveArg(arg)) {
       return;
     }
@@ -29,12 +35,14 @@ export class Parser {
     // no need to check for min index, always split equal sign
     // first part (last option if alias) is checked if assignable
     const equalIndex = arg.indexOf('=');
-    const [match, assigned] =
+    // set assigned here
+    const match =
       equalIndex > -1
-        ? [arg.slice(0, equalIndex), arg.slice(equalIndex + 1)]
-        : [arg];
+        ? ((this.assigned = arg.slice(equalIndex + 1)),
+          arg.slice(0, equalIndex))
+        : arg;
     // skip the same saveArg call (assigned value not set)
-    if (assigned != null && this.saveArg(match, assigned)) {
+    if (this.assigned != null && this.saveArg(match)) {
       return;
     }
 
@@ -42,7 +50,7 @@ export class Parser {
     // if not successful, save arg as value
     // only check assignable if assigned value exists
     const split = this.parent.alias.split(match);
-    if (!split || !this.saveAlias(assigned, split.list, split.remainder)) {
+    if (!split || !this.saveAlias(split.list, split.remainder)) {
       // treat arg as value
       // if current node exists, check if it reached its max args, if not then save arg
       // otherwise, treat this as an arg for the main node
@@ -55,33 +63,29 @@ export class Parser {
     }
   }
 
-  private saveArg(raw: string, assigned?: string) {
+  private saveArg(raw: string) {
     const options = this.parent.parse(raw);
     if (options) {
       // check if assignable
-      if (assigned == null || isAssignable(raw, options)) {
-        this.save([{ raw, options, args: assigned != null ? [assigned] : [] }]);
+      if (this.assigned == null || isAssignable(raw, options)) {
+        this.save([{ raw, options }]);
         return true;
       }
       return false;
     }
     // raw arg is alias
     const list = this.parent.alias.resolve([raw]);
-    return list && this.saveAlias(assigned, list);
+    return list && this.saveAlias(list);
   }
 
-  private saveAlias(
-    assigned: string | undefined,
-    list: ResolvedAlias[],
-    remainder?: string[]
-  ) {
+  private saveAlias(list: ResolvedAlias[], remainder?: string[]) {
     // e.g. -fb=value, cases:
     // -b is null -> error
     // -b is not assignable -> treat as value
     // -b is assignable -> continue split
     let arg: string | null = null;
     const options =
-      assigned != null && list.length > 0
+      this.assigned != null && list.length > 0
         ? this.parent.parse((arg = list[list.length - 1].args[0]))
         : null;
     // allow assign if no options or if assignable
@@ -93,18 +97,15 @@ export class Parser {
 
     const items = list.map((item, index): NodeOptions => {
       const raw = item.args[0];
-      const last = index === list.length - 1;
-      const args = item.args.slice(1);
-      // set assigned to last item only
-      if (last && assigned != null) {
-        args.push(assigned);
-      }
-      // reuse last options when available
       return {
         raw,
         alias: item.alias,
-        args,
-        options: last && options ? options : this.parent.parse(raw, true)
+        args: item.args.slice(1),
+        // reuse last options when available
+        options:
+          index >= list.length - 1 && options
+            ? options
+            : this.parent.parse(raw, true)
       };
     });
     this.save(items);
@@ -121,11 +122,15 @@ export class Parser {
     this.child?.validate();
 
     let nextChild: Node | undefined;
-    const children = items.map(item => {
+    const children = items.map((item, index) => {
       // make new child and save values
       // probably don't need to validate now since it will be
       // validated when changing child node or at the end of parse
       const node = (this.child = new Node(item, this.parent.strict));
+      // save assigned to last saved node
+      if (this.assigned != null && index >= items.length - 1) {
+        node.args.push(this.assigned);
+      }
       this.parent.children.push(node);
       // if child has args, use this as next child
       if (node.hasArgs()) {
