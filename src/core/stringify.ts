@@ -26,10 +26,9 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
   options = { ...options };
   options.args ??= true;
   const lines: string[] = [];
-  const indicator = ':';
 
-  function draw(opts: PrefixOptions & { node: Node; childNodes?: boolean }) {
-    const { node, childNodes, ...prefix } = opts;
+  function draw(opts: PrefixOptions & { node: Node; children?: boolean }) {
+    const { node } = opts;
 
     // 1 - the args label
     // 2 - list of children
@@ -37,8 +36,8 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
     // 4 - the descendants label
     const child = {
       index: -1,
-      prefix: PREFIX.child(prefix),
-      length: childNodes
+      prefix: PREFIX.child(opts),
+      length: opts.children
         ? +!!(options.args && node.args.length > 0) +
           node.children.length +
           +!!(options.ancestors && node.ancestors.length > 0) +
@@ -46,7 +45,7 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
         : 0
     };
 
-    prefix.next = child.length > 0;
+    opts.next = child.length > 0;
     const id = node.id ?? node.raw;
     const labels = [`depth: ${node.depth}`];
     // only show if not the same as the displayed id
@@ -59,9 +58,9 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
     if (node.name !== null && node.name !== id) {
       labels.push(`name: ${node.name}`);
     }
-    lines.push(PREFIX.self(prefix) + id + ` (${labels.join(', ')})`);
+    lines.push(PREFIX.self(opts) + id + ` (${labels.join(', ')})`);
 
-    if (!prefix.next) {
+    if (!opts.next) {
       return;
     }
 
@@ -70,7 +69,7 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
       // increment once only
       const last = ++child.index >= child.length - 1;
       const self = PREFIX.self({ last, next: true, prefix: child.prefix });
-      lines.push(self + indicator + `args (total: ${node.args.length})`);
+      lines.push(`${self}:args (total: ${node.args.length})`);
 
       const prefix = PREFIX.child({ last, prefix: child.prefix });
       // no sub nodes for args
@@ -81,11 +80,11 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
     }
 
     // draw children
-    for (const childNode of node.children) {
+    for (const subnode of node.children) {
       // child.length already accounts for node.children.length
       draw({
-        node: childNode,
-        childNodes: true,
+        node: subnode,
+        children: true,
         prefix: child.prefix,
         last: ++child.index >= child.length - 1
       });
@@ -99,7 +98,7 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
       // increment once per type
       const last = ++child.index >= child.length - 1;
       const self = PREFIX.self({ last, next: true, prefix: child.prefix });
-      lines.push(self + indicator + type + ` (total: ${node[type].length})`);
+      lines.push(`${self}:${type} (total: ${node[type].length})`);
 
       node[type].forEach((node, index, array) => {
         const prefix = PREFIX.child({ last, prefix: child.prefix });
@@ -108,6 +107,6 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
     }
   }
 
-  draw({ node, first: true, childNodes: true });
+  draw({ node, first: true, children: true });
   return lines.join('\n');
 }
