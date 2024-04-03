@@ -47,14 +47,14 @@ export class Node {
     this.range = { min, max, maxRead };
 
     // validate range
-    if (min != null && max != null && min > max) {
+    if (min !== null && max !== null && min > max) {
       const name = this.name();
       this.error(
         ArgsTreeError.INVALID_OPTIONS_ERROR,
         (name ? name + 'has i' : 'I') +
           `nvalid min and max range: ${min}-${max}.`
       );
-    } else if (max != null && maxRead != null && max < maxRead) {
+    } else if (max !== null && maxRead !== null && max < maxRead) {
       const name = this.name();
       this.error(
         ArgsTreeError.INVALID_OPTIONS_ERROR,
@@ -144,18 +144,18 @@ export class Node {
     const phrase: [string | number, number] | null =
       satisfies.min && satisfies.max
         ? null
-        : min != null && max != null
+        : min !== null && max !== null
           ? min === max
             ? [min, min]
             : [`${min}-${max}`, 2]
-          : min != null
+          : min !== null
             ? [`at least ${min}`, min]
-            : max != null
+            : max !== null
               ? max <= 0
                 ? ['no', max]
                 : [`up to ${max}`, max]
               : null;
-    if (phrase != null) {
+    if (phrase !== null) {
       const name = this.name();
       const label = 'argument' + (phrase[1] === 1 ? '' : 's');
       this.error(

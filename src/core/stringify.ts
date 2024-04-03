@@ -50,13 +50,13 @@ export function stringify(node: Node, options: StringifyOptions = {}): string {
     const id = node.id ?? node.raw;
     const labels = [`depth: ${node.depth}`];
     // only show if not the same as the displayed id
-    if (node.raw != null && node.raw !== id) {
+    if (node.raw !== null && node.raw !== id) {
       labels.push(`raw: ${node.raw}`);
     }
-    if (node.alias != null) {
+    if (node.alias !== null) {
       labels.push(`alias: ${node.alias}`);
     }
-    if (node.name != null && node.name !== id) {
+    if (node.name !== null && node.name !== id) {
       labels.push(`name: ${node.name}`);
     }
     lines.push(PREFIX.self(prefix) + id + ` (${labels.join(', ')})`);

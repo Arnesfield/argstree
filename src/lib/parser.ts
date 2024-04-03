@@ -85,7 +85,7 @@ export class Parser {
         ? this.parent.parse((arg = list[list.length - 1].args[0]))
         : null;
     // allow assign if no options or if assignable
-    if (arg != null && options && !isAssignable(arg, options)) {
+    if (arg !== null && options && !isAssignable(arg, options)) {
       return;
     }
     // treat left over from split as argument
