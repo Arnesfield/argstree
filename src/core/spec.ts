@@ -154,11 +154,7 @@ class Spec implements ISpec {
   }
 
   ancestors() {
-    const specs: ISpec[] = [];
-    if (this.#parent) {
-      specs.push(...this.#parent.ancestors(), this.#parent);
-    }
-    return specs;
+    return this.#parent ? [...this.#parent.ancestors(), this.#parent] : [];
   }
 
   descendants() {

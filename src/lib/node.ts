@@ -193,15 +193,10 @@ export class Node {
       args: this.args,
       parent,
       children: [],
-      ancestors: [],
+      // prepare ancestors before checking children and descendants
+      ancestors: parent ? [...parent.ancestors, parent] : [],
       descendants: []
     };
-
-    // prepare ancestors before checking children and descendants
-    if (parent) {
-      node.ancestors.push(...parent.ancestors, parent);
-    }
-
     for (const instance of this.children) {
       const child = instance.build(node, depth + 1);
       node.children.push(child);
