@@ -24,10 +24,10 @@ export class Alias {
   }
 
   getArgs(alias: string): [string, ...string[]][] | undefined {
-    const _args = has(this.alias, alias) ? this.alias[alias] : null;
-    const args =
-      typeof _args === 'string' ? [_args] : Array.isArray(_args) ? _args : null;
-    if (!Array.isArray(args)) {
+    const args = has(this.alias, alias) ? this.alias[alias] : null;
+    if (typeof args === 'string') {
+      return [[args]];
+    } else if (!Array.isArray(args)) {
       return;
     }
     let strList: [string, ...string[]] | undefined;
