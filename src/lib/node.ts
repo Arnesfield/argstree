@@ -114,23 +114,13 @@ export class Node {
     );
   }
 
-  validate(): void {
+  /**
+   * Validate and finalize the node. This assumes that the node
+   * stops receiving arguments and will no longer be used for parsing.
+   */
+  done(): void {
     // validate assumes the node has lost reference
     // so validate range here, too
-    this.validateRange();
-    // NOTE: no need to create copy of args since validation is done
-    // hence, allow mutation of args and options by consumer
-    const { validate } = this.options;
-    if (typeof validate === 'function' && !validate(this.data)) {
-      const name = this.name();
-      this.error(
-        ArgsTreeError.VALIDATE_ERROR,
-        name ? name + 'failed validation.' : 'Validation failed.'
-      );
-    }
-  }
-
-  private validateRange() {
     const { min, max } = this.range;
     const phrase: [string | number, number] | null =
       (min === null || this.args.length >= min) &&
@@ -154,6 +144,17 @@ export class Node {
         (name ? name + 'e' : 'E') +
           `xpected ${phrase[0]} argument${phrase[1] === 1 ? '' : 's'}, ` +
           `but got ${this.args.length}.`
+      );
+    }
+
+    // NOTE: no need to create copy of args since validation is done
+    // hence, allow mutation of args and options by consumer
+    const { validate } = this.options;
+    if (typeof validate === 'function' && !validate(this.data)) {
+      const name = this.name();
+      this.error(
+        ArgsTreeError.VALIDATE_ERROR,
+        name ? name + 'failed validation.' : 'Validation failed.'
       );
     }
   }

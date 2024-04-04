@@ -117,7 +117,7 @@ export class Parser {
       return;
     }
     // validate existing child then make new child
-    this.child?.validate();
+    this.child?.done();
 
     let nextChild: Node | undefined;
     const children = items.map((item, index) => {
@@ -140,14 +140,14 @@ export class Parser {
     // validate all children except next or latest child
     for (const child of children) {
       if (child !== (nextChild || this.child)) {
-        child.validate();
+        child.done();
       }
     }
 
     // if this child has args, switch it for next parse iteration
     if (nextChild) {
       // since we're removing reference to parent, validate it now
-      this.parent.validate();
+      this.parent.done();
       this.parent = nextChild;
       this.child = null;
     }
@@ -159,8 +159,8 @@ export class Parser {
       this.parseArg(arg);
     }
     // finally, make sure to validate the rest of the nodes
-    this.child?.validate();
-    this.parent.validate();
+    this.child?.done();
+    this.parent.done();
     return this.root;
   }
 }
