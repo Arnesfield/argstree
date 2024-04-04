@@ -3,7 +3,6 @@ import { ArgsTreeError } from '../core/error.js';
 import { ensureNumber } from '../utils/ensure-number.js';
 import { has, isObject } from '../utils/object.utils.js';
 import { displayName, getType } from '../utils/options.utils.js';
-import { ArgsFunction } from '../utils/type.utils.js';
 import { Alias } from './alias.js';
 
 export interface NodeOptions {
@@ -25,7 +24,6 @@ export class Node {
     max: number | null;
     maxRead: number | null;
   };
-  private readonly _parse: ArgsFunction | null;
 
   constructor(
     opts: NodeOptions,
@@ -34,8 +32,6 @@ export class Node {
   ) {
     const { raw = null, alias = null, options } = opts;
     this.options = options;
-    // set parent.strict to constructor param, but override using provided options.strict
-    this.strict = options.strict ?? strict;
     // make sure to change reference
     this.args = (Array.isArray(options.initial) ? options.initial : []).concat(
       opts.args || []
@@ -64,16 +60,10 @@ export class Node {
       );
     }
 
+    // set parent.strict to constructor param, but override using provided options.strict
+    this.strict = options.strict ?? strict;
     this.range = { min, max, maxRead };
-
-    // set _parse and hasArgs
-    const { args } = options;
-    this.hasArgs = !!(this._parse =
-      typeof args === 'function'
-        ? args
-        : isObject(args)
-          ? arg => (has(args, arg) ? args[arg] : null)
-          : null);
+    this.hasArgs = typeof options.args === 'function' || isObject(options.args);
   }
 
   get alias(): Alias {
@@ -103,8 +93,13 @@ export class Node {
   parse(arg: string, strict: true): Options;
   parse(arg: string, strict?: boolean): Options | null {
     // make sure parse result is a valid object
+    const { args } = this.options;
     const options =
-      typeof this._parse === 'function' ? this._parse(arg, this.data) : null;
+      typeof args === 'function'
+        ? args(arg, this.data)
+        : isObject(args) && has(args, arg)
+          ? args[arg]
+          : null;
     const value = isObject(options) ? options : null;
     if (strict && !value) {
       this.unrecognized(arg);
@@ -112,14 +107,11 @@ export class Node {
     return value;
   }
 
-  checkRange(diff = 0): { min: boolean; max: boolean; maxRead: boolean } {
-    const { min, max, maxRead } = this.range;
-    const length = this.args.length + diff;
-    return {
-      min: min === null || length >= min,
-      max: max === null || length <= max,
-      maxRead: maxRead === null || length <= maxRead
-    };
+  /** Check if this node can read one more argument. */
+  read(): boolean {
+    return (
+      this.range.maxRead === null || this.range.maxRead >= this.args.length + 1
+    );
   }
 
   validate(): void {
@@ -140,9 +132,9 @@ export class Node {
 
   private validateRange() {
     const { min, max } = this.range;
-    const satisfies = this.checkRange();
     const phrase: [string | number, number] | null =
-      satisfies.min && satisfies.max
+      (min === null || this.args.length >= min) &&
+      (max === null || this.args.length <= max)
         ? null
         : min !== null && max !== null
           ? min === max
@@ -157,11 +149,11 @@ export class Node {
               : null;
     if (phrase) {
       const name = this.name();
-      const label = 'argument' + (phrase[1] === 1 ? '' : 's');
       this.error(
         ArgsTreeError.INVALID_RANGE_ERROR,
         (name ? name + 'e' : 'E') +
-          `xpected ${phrase[0]} ${label}, but got ${this.args.length}.`
+          `xpected ${phrase[0]} argument${phrase[1] === 1 ? '' : 's'}, ` +
+          `but got ${this.args.length}.`
       );
     }
   }

@@ -54,7 +54,7 @@ export class Parser {
       // treat arg as value
       // if current node exists, check if it reached its max args, if not then save arg
       // otherwise, treat this as an arg for the main node
-      const node = this.child?.checkRange(1).maxRead ? this.child : this.parent;
+      const node = this.child?.read() ? this.child : this.parent;
       // strict mode: throw error if arg is an option-like
       if (node.strict && isOption(arg)) {
         node.unrecognized(arg);
@@ -65,17 +65,15 @@ export class Parser {
 
   private saveArg(raw: string) {
     const options = this.parent.parse(raw);
-    if (options) {
+    if (!options) {
+      // raw arg is alias
+      const list = this.parent.alias.resolve([raw]);
+      return list && this.saveAlias(list);
+    } else if (this.assigned == null || isAssignable(raw, options)) {
       // check if assignable
-      if (this.assigned == null || isAssignable(raw, options)) {
-        this.save([{ raw, options }]);
-        return true;
-      }
-      return false;
+      this.save([{ raw, options }]);
+      return true;
     }
-    // raw arg is alias
-    const list = this.parent.alias.resolve([raw]);
-    return list && this.saveAlias(list);
   }
 
   private saveAlias(list: ResolvedAlias[], remainder?: string[]) {
