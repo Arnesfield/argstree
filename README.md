@@ -16,17 +16,17 @@ Parse arguments into a tree structure.
 
 - Preserve the structure of the provided arguments.
 - No data types other than strings.
-- Variadic arguments by default unless [limits](#limits) are configured.
+- Variadic arguments by default unless [limits](#limits) are specified.
 - All arguments are treated as normal parameters unless configured to be an [option or command](#options-and-commands).
 - [Aliases](#aliases) are not restricted to single characters and can be expanded to multiple options or commands with additional arguments.
 - Recognize and [split](#split) combined aliases (e.g. from `-abaa` to `-a`, `-ba`, `-a`).
-- Recognize configured [assignment](#assignment) (`=`) for options and commands (e.g. `--flag=value`, `command=value`).
+- Recognize [assignment](#assignment) (`=`) for options and commands (e.g. `--flag=value`, `command=value`).
 - No [errors](#argstreeerror) for unrecognized options or commands [by default](#strict-mode) (except for misconfigured aliases and unrecognized aliases from a combined alias).
 - Double-dash (`--`) is not treated as anything special but can be configured to be a non-strict subcommand.
 
-Note that **argstree** only parses arguments based on the configuration it has been given. It is still up to the consumers/developers to interpret the parsed arguments and decide how to use these inputs to suit their application's needs.
+Note that **argstree** only parses and transforms arguments into a tree structure. It is still up to the consumers/developers to read, interpret, and process the parsed arguments and decide how to use them to suit their application's needs.
 
-If you're looking for something oddly specific and want more control when working with arguments, then **argstree** _might_ be for you. Otherwise, you can check out the other great projects for parsing arguments like [commander](https://www.npmjs.com/package/commander), [yargs](https://www.npmjs.com/package/yargs), [minimist](https://www.npmjs.com/package/minimist), and [many more](https://www.npmjs.com/search?q=keywords%3Aargs%2Cargv).
+If you're looking for something oddly specific and want more control when working with arguments, then **argstree** _might_ be for you. Otherwise, you can check out the more popular tools like [commander](https://www.npmjs.com/package/commander), [yargs](https://www.npmjs.com/package/yargs), [minimist](https://www.npmjs.com/package/minimist), and [many more](https://www.npmjs.com/search?q=keywords%3Aargs%2Cargv).
 
 ## Install
 
@@ -61,7 +61,7 @@ The `spec(options)` function can also be used to parse arguments while also bein
 
 > [!IMPORTANT]
 >
-> While the sections ahead use the core `argstree()` function to show examples explaining the configuration setup, **it is recommended to use the [Spec API](#spec-api)** instead for the ease of building your parsing spec as it grows with more options and commands.
+> While the sections ahead use the core `argstree()` function to show usage examples, **it is recommended to use the [Spec API](#spec-api) instead** for the ease of building your parsing spec as it grows with more options and commands.
 >
 > Also, for the sake of brevity, not all features/properties are included in this document and it is advised to view the referenced types to learn more.
 
@@ -71,7 +71,7 @@ Configure options and commands by setting the `args` object or function option.
 
 While they may be configured similarly, options start with a hyphen (e.g. `-a`, `--add`) while commands do not (e.g. `run`, `start`).
 
-When setting the `args` object, the _properties_ are used to match the arguments while the _values_ are also options objects similar to the options from `argstree(args, options)`.
+When setting the `args` object, the _properties_ are used to match the arguments while the _values_ are also options objects.
 
 Options and commands will capture arguments and stop when another option or command is matched or the configured [limit](#limits) is reached.
 
@@ -96,36 +96,36 @@ run [ 'bar', 'baz' ]
 You can also pass a function to the `args` option. It has two parameters: the `arg` string and the `NodeData` object. It should return an options object, `null`, or `undefined`.
 
 ```javascript
-const args = ['--save', 'foo', '--create', '--add', 'bar'];
-const node = argstree(args, {
+const node = argstree(['-a=foo', 'bar'], {
+  alias: { '-a': '--add' },
   args(arg, data) {
-    return arg.startsWith('--') ? {} : null;
+    console.log(arg);
+    return arg === '--add' ? {} : null;
   }
 });
-for (const child of node.children) {
-  console.log(child.id, child.args);
-}
+const child = node.children[0];
+console.log(child.id, child.args);
 ```
 
 ```text
---save [ 'foo' ]
---create []
---add [ 'bar' ]
+-a=foo
+-a
+--add
+bar
+--add [ 'foo', 'bar' ]
 ```
 
 > [!WARNING]
 >
-> Be aware that there may be cases where `__proto__` and other hidden object properties are used as arguments. **argstree** does not block these possibly unsafe arguments, but it has some checks in place for the `args` object and the incoming options object.
->
-> This may not apply to the `args` function where you _might_ use a predefined object that maps to options objects. Make sure to check for `__proto__` and other related properties. You can set it to `null` or use a [`Map`](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Map) object instead.
+> Be aware that `__proto__` and other inherited object properties can be used as arguments. **argstree** does not block these possibly unsafe arguments, but it has some checks in place for the `args` object and the incoming options object. Make sure to check for `__proto__` and other related properties.
 >
 > ```javascript
-> const allOptions = {
+> const options = {
 >   __proto__: null, // <-- set null prototype
 >   '--add': {}
 > };
 > const node = argstree(['__proto__', 'constructor'], {
->   args: arg => allOptions[arg] // should be safe
+>   args: arg => options[arg] // should be safe
 > });
 > console.log(node.args); // [ '__proto__', 'constructor' ]
 > ```
@@ -145,7 +145,7 @@ try {
     }
   });
 } catch (error) {
-  console.error(error + ''); // example only to log error
+  console.error(error.toString());
 }
 ```
 
@@ -157,7 +157,7 @@ ArgsTreeError: Command 'run' does not recognize the option: --if-preset
 
 Using `=`, options or commands will treat the assigned value as their own argument regardless of any matches.
 
-By default, this behavior is enabled for options but not for commands. To change this behavior, you can set the `assign` boolean option.
+By default, this behavior is enabled for options but not for commands. Set the `assign` boolean option to change this behavior.
 
 ```javascript
 const node = argstree(['--add=foo', 'copy=foo', '--save=bar', 'move=bar'], {
@@ -192,9 +192,9 @@ const node = argstree(['--add', 'run', '--add', 'build'], {
     '--add': {},
     run: {
       // setting the `args` object (even empty)
-      // will treat `run` as a suboption/subcommand
+      // will treat `run` as a subcommand
       args: {
-        // can also set `args` object for this option or command
+        // can also set `args` object for this subcommand
       }
     }
   }
@@ -354,24 +354,20 @@ try {
   argstree(['--add', 'foo'], { args: { '--add': { min: 2 } } });
 } catch (error) {
   if (error instanceof ArgsTreeError) {
-    console.error(JSON.stringify(error, undefined, 2));
+    console.error(error.toJSON());
   }
 }
 ```
 
 ```text
 {
-  "name": "ArgsTreeError",
-  "cause": "invalid-range",
-  "message": "Option '--add' expected at least 2 arguments, but got 1.",
-  "raw": "--add",
-  "alias": null,
-  "args": [
-    "foo"
-  ],
-  "options": {
-    "min": 2
-  }
+  name: 'ArgsTreeError',
+  cause: 'invalid-range',
+  message: "Option '--add' expected at least 2 arguments, but got 1.",
+  raw: '--add',
+  alias: null,
+  args: [ 'foo' ],
+  options: { min: 2 }
 }
 ```
 
@@ -462,7 +458,7 @@ import { spec } from 'argstree';
 // create command spec
 const cmd = spec({ min: 1 });
 
-// add options or commands with aliases (and with alias arguments)
+// add options or commands with aliases and with arguments
 cmd.option('--add').alias('-a').alias('--no-add', '0');
 cmd.option('--save').alias('-s', ['bar']);
 
@@ -482,8 +478,6 @@ root [ 'foo' ]
 --add [ 'bar' ]
 --save [ 'bar', 'baz' ]
 ```
-
-The options object passed to `spec(options)` is similar to the options from `argstree(args, options)` but the `alias` and `args` options are omitted.
 
 > [!TIP]
 >
@@ -538,7 +532,7 @@ cmd.option('--save', { maxRead: 0 }).alias(['-s', '-sa'], ['1', '2', '3']);
 
 ### Spec Suboptions and Subcommands
 
-Use the `spec` method that accepts a setup callback. This callback contains a `Spec` object parameter (subspec) to modify the options of the current option or command. This can be called multiple times for the same option or command.
+Use the `spec` method that accepts a setup callback which contains a `Spec` object parameter (subspec) to modify the options of the current option or command. This can be used multiple times for the same option or command.
 
 ```javascript
 function commonSpec(spec) {
