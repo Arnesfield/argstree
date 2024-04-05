@@ -3,7 +3,6 @@ import { ArgsTreeError } from '../core/error.js';
 import { ensureNumber } from '../utils/ensure-number.js';
 import { has, isObject } from '../utils/object.utils.js';
 import { displayName, getType } from '../utils/options.utils.js';
-import { Alias } from './alias.js';
 
 export interface NodeOptions {
   options: Options;
@@ -16,9 +15,8 @@ export class Node {
   readonly args: string[];
   readonly children: Node[] = [];
   readonly hasArgs: boolean;
-  private _alias: Alias | undefined;
+  readonly options: Options;
   private readonly data: NodeData;
-  private readonly options: Options;
   private readonly range: {
     min: number | null;
     max: number | null;
@@ -64,11 +62,6 @@ export class Node {
     this.strict = options.strict ?? strict;
     this.range = { min, max, maxRead };
     this.hasArgs = typeof options.args === 'function' || isObject(options.args);
-  }
-
-  get alias(): Alias {
-    // only create alias instance when needed
-    return (this._alias ||= new Alias(this.options.alias || {}));
   }
 
   private name() {
