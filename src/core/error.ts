@@ -1,17 +1,9 @@
 import { NodeData, Options } from './core.types.js';
 
 /** The ArgsTree error options. */
-export interface ArgsTreeErrorOptions extends NodeData {
-  /**
-   * The cause error string.
-   * - {@linkcode ArgsTreeError.VALIDATE_ERROR}
-   * - {@linkcode ArgsTreeError.INVALID_OPTIONS_ERROR}
-   * - {@linkcode ArgsTreeError.INVALID_RANGE_ERROR}
-   * - {@linkcode ArgsTreeError.INVALID_SPEC_ERROR}
-   * - {@linkcode ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR}
-   * - {@linkcode ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR}
-   */
-  cause: string;
+export interface ArgsTreeErrorOptions
+  extends NodeData,
+    Pick<ArgsTreeError, 'cause'> {
   /** The error message. */
   message: string;
 }
@@ -36,6 +28,7 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
   static readonly UNRECOGNIZED_ALIAS_ERROR = 'unrecognized-alias';
   /** The option or command is not recognized as part of {@linkcode Options.args}. */
   static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
+  name = 'ArgsTreeError';
   /**
    * The cause error string.
    * - {@linkcode ArgsTreeError.VALIDATE_ERROR}
@@ -45,24 +38,20 @@ export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
    * - {@linkcode ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR}
    * - {@linkcode ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR}
    */
-  cause: string;
-  raw: string | null;
-  alias: string | null;
-  args: string[];
-  options: Options;
+  cause!: string;
+  raw!: string | null;
+  alias!: string | null;
+  args!: string[];
+  options!: Options;
 
   /**
    * The ArgsTree error.
    * @param options The error options.
    */
   constructor(options: ArgsTreeErrorOptions) {
-    super(options.message, options);
-    this.name = this.constructor.name;
-    this.cause = options.cause;
-    this.raw = options.raw;
-    this.alias = options.alias;
-    this.args = options.args;
-    this.options = options.options;
+    super(options.message);
+    // assume options includes all properties (interface is implemented)
+    Object.assign(this, options);
   }
 
   toJSON(): ArgsTreeErrorObject {
