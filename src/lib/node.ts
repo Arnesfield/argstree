@@ -44,21 +44,20 @@ export class Node {
     const min = ensureNumber(options.min);
     const max = ensureNumber(options.max);
     const maxRead = ensureNumber(options.maxRead) ?? max;
-    if (max === null) {
-      // skip all checks since they all require max to be provided
-    } else if (min !== null && min > max) {
+    // skip all checks since they all require max to be provided
+    const message =
+      max === null
+        ? null
+        : min !== null && min > max
+          ? `min and max range: ${min}-${max}`
+          : maxRead !== null && max < maxRead
+            ? `max and maxRead range: ${max} >= ${maxRead}`
+            : null;
+    if (message) {
       const name = this.name();
       this.error(
         ArgsTreeError.INVALID_OPTIONS_ERROR,
-        (name ? name + 'has i' : 'I') +
-          `nvalid min and max range: ${min}-${max}.`
-      );
-    } else if (maxRead !== null && max < maxRead) {
-      const name = this.name();
-      this.error(
-        ArgsTreeError.INVALID_OPTIONS_ERROR,
-        (name ? name + 'has i' : 'I') +
-          `nvalid max and maxRead range: ${max} < ${maxRead}.`
+        (name ? name + 'has i' : 'I') + `nvalid ${message}.`
       );
     }
 
@@ -127,29 +126,24 @@ export class Node {
   done(): void {
     // validate assumes the node has lost reference
     // so validate range here, too
+    const len = this.args.length;
     const { min, max } = this.range;
     const phrase: [string | number, number] | null =
-      (min === null || this.args.length >= min) &&
-      (max === null || this.args.length <= max)
-        ? null
-        : min !== null && max !== null
-          ? min === max
-            ? [min, min]
-            : [`${min}-${max}`, 2]
-          : min !== null
-            ? [`at least ${min}`, min]
-            : max !== null
-              ? max <= 0
-                ? ['no', max]
-                : [`up to ${max}`, max]
-              : null;
+      min !== null && max !== null && (len < min || len > max)
+        ? min === max
+          ? [min, min]
+          : [`${min}-${max}`, 2]
+        : min !== null && len < min
+          ? [`at least ${min}`, min]
+          : max !== null && len > max
+            ? [max && `up to ${max}`, max]
+            : null;
     if (phrase) {
       const name = this.name();
       this.error(
         ArgsTreeError.INVALID_RANGE_ERROR,
         (name ? name + 'e' : 'E') +
-          `xpected ${phrase[0]} argument${phrase[1] === 1 ? '' : 's'}, ` +
-          `but got ${this.args.length}.`
+          `xpected ${phrase[0]} argument${phrase[1] === 1 ? '' : 's'}, but got ${len}.`
       );
     }
 
