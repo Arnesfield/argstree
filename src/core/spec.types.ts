@@ -15,14 +15,14 @@ export interface Spec {
   /** Depth of spec. */
   readonly depth: number;
   /**
-   * Add an option or command.
+   * Add an option.
    * @param arg The option or command to match.
    * @param options The spec options.
    * @returns `this` for chaining.
    */
   option(arg: string, options?: SpecOptions): this;
   /**
-   * Add an option or command.
+   * Add a command.
    *
    * This is an alias for {@linkcode option} with {@linkcode args} setup:
    * ```javascript
