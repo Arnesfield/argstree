@@ -49,7 +49,9 @@ export function argstree(
       return;
     }
     // treat left over from split as argument
-    parent.validateAlias(remainder);
+    if (remainder && remainder.length > 0) {
+      parent.unrecognized(remainder);
+    }
 
     const items = list.map((item, index): NodeOptions => {
       const raw = item.args[0];

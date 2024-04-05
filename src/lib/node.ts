@@ -76,13 +76,22 @@ export class Node {
     throw new ArgsTreeError({ cause, message, ...this.data });
   }
 
-  /** Throw unrecognized error. */
-  unrecognized(arg: string): never {
+  /**
+   * Throw unrecognized error.
+   * @param arg If an array is provided, it is treated as a list of aliases.
+   */
+  unrecognized(arg: string | string[]): never {
     const name = this.name();
+    const isArg = typeof arg === 'string';
     this.error(
-      ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR,
-      (name ? name + 'does not recognize the' : 'Unrecognized') +
-        ` ${getType(arg).toLowerCase()}: ${arg}`
+      ArgsTreeError[
+        isArg ? 'UNRECOGNIZED_ARGUMENT_ERROR' : 'UNRECOGNIZED_ALIAS_ERROR'
+      ],
+      (name ? name + 'does not recognize the ' : 'Unrecognized ') +
+        (isArg
+          ? getType(arg).toLowerCase() + ': ' + arg
+          : `alias${arg.length === 1 ? '' : 'es'}: ` +
+            arg.map(alias => '-' + alias).join(', '))
     );
   }
 
@@ -152,19 +161,6 @@ export class Node {
       this.error(
         ArgsTreeError.VALIDATE_ERROR,
         name ? name + 'failed validation.' : 'Validation failed.'
-      );
-    }
-  }
-
-  validateAlias(aliases: string[] | undefined): void {
-    if (aliases && aliases.length > 0) {
-      // assume that this is a valid alias
-      const name = this.name();
-      this.error(
-        ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR,
-        (name ? name + 'does not recognize the' : 'Unrecognized') +
-          ` alias${aliases.length === 1 ? '' : 'es'}: ` +
-          aliases.map(alias => '-' + alias).join(', ')
       );
     }
   }
