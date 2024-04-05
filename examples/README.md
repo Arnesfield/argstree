@@ -4,7 +4,7 @@ Some examples using **argstree**.
 
 ## Setup
 
-1. Clone repository:
+1. Clone the repository:
 
    ```sh
    git clone https://github.com/Arnesfield/argstree.git
