@@ -1,11 +1,11 @@
 import { Options } from '../core/core.types.js';
 
 export function isAlias(arg: string): boolean {
-  return arg.length >= 2 && arg[0] === '-' && arg[1] !== '-';
+  return arg.length > 1 && arg[0] === '-' && arg[1] !== '-';
 }
 
 export function isOption(arg: string): boolean {
-  return isAlias(arg) || (arg.length >= 3 && arg.startsWith('--'));
+  return isAlias(arg) || (arg.length > 2 && arg.startsWith('--'));
 }
 
 export function isAssignable(
