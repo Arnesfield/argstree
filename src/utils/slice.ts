@@ -2,7 +2,7 @@ import { Split } from '../core/split.js';
 
 // NOTE: internal. use directly for `alias.ts` since matches are already sorted
 
-export function split(value: string, matches: string[], index = 0): Split {
+export function slice(value: string, matches: string[], index = 0): Split {
   const values: string[] = [];
   const remainder: string[] = [];
   if (index < matches.length) {
@@ -11,7 +11,7 @@ export function split(value: string, matches: string[], index = 0): Split {
     // get leftover values (or parts) from recursive calls
     parts.forEach((part, partIndex) => {
       if (part) {
-        const result = split(part, matches, index + 1);
+        const result = slice(part, matches, index + 1);
         values.push(...result.values);
         remainder.push(...result.remainder);
       }

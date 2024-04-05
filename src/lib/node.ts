@@ -4,7 +4,7 @@ import { isAlias } from '../utils/arg.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
 import { has, isObject } from '../utils/object.utils.js';
 import { displayName, getType } from '../utils/options.utils.js';
-import { split } from '../utils/split.js';
+import { slice } from '../utils/slice.js';
 import { ResolvedAlias, getAliases, getArgs } from './alias.js';
 
 export interface NodeOptions {
@@ -198,7 +198,7 @@ export class Node {
       return;
     }
     // remove first `-` for alias
-    const { values, remainder } = split(arg.slice(1), this.aliases());
+    const { values, remainder } = slice(arg.slice(1), this.aliases());
     // note that split.values do not have `-` prefix
     const list = values.length > 0 ? this.resolve(values, '-') : null;
     // considered as split only if alias args were found

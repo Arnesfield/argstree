@@ -1,4 +1,4 @@
-import { split as _split } from '../utils/split.js';
+import { slice } from '../utils/slice.js';
 
 /** Split result. */
 export interface Split {
@@ -17,7 +17,7 @@ export interface Split {
  */
 export function split(value: string, matches: string[]): Split {
   // sort matches, make sure to avoid mutation
-  return _split(
+  return slice(
     value,
     matches.slice().sort((a, b) => b.length - a.length)
   );
