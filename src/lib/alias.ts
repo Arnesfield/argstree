@@ -1,6 +1,5 @@
 import { isAlias } from '../utils/arg.utils.js';
 import { has } from '../utils/object.utils.js';
-import { split } from '../utils/split.js';
 import { Alias as IAlias } from '../utils/type.utils.js';
 
 export interface ResolvedAlias {
@@ -8,75 +7,40 @@ export interface ResolvedAlias {
   args: [string, ...string[]];
 }
 
-export class Alias {
-  private readonly aliases: string[] = [];
-
-  constructor(private readonly alias: IAlias) {
-    // get aliases and sort by length desc
-    for (const [key, value] of Object.entries(alias)) {
-      // skip command aliases since we don't need to split them
-      if (isAlias(key) && (typeof value === 'string' || Array.isArray(value))) {
-        // remove prefix only when saving
-        this.aliases.push(key.slice(1));
+export function getArgs(
+  alias: IAlias,
+  key: string
+): [string, ...string[]][] | undefined {
+  const args = has(alias, key) ? alias[key] : null;
+  if (typeof args === 'string') {
+    return [[args]];
+  } else if (!Array.isArray(args)) {
+    return;
+  }
+  let strList: [string, ...string[]] | undefined;
+  const list: [string, ...string[]][] = [];
+  for (const arg of args) {
+    if (typeof arg === 'string') {
+      if (!strList?.push(arg)) {
+        list.push((strList = [arg]));
       }
+    } else if (Array.isArray(arg) && arg.length > 0) {
+      // filter out empty list
+      list.push(arg);
     }
-    this.aliases.sort((a, b) => b.length - a.length);
   }
+  return list;
+}
 
-  getArgs(alias: string): [string, ...string[]][] | undefined {
-    const args = has(this.alias, alias) ? this.alias[alias] : null;
-    if (typeof args === 'string') {
-      return [[args]];
-    } else if (!Array.isArray(args)) {
-      return;
+export function getAliases(alias: IAlias): string[] {
+  const aliases: string[] = [];
+  // get aliases and sort by length desc
+  for (const [key, value] of Object.entries(alias)) {
+    // skip command aliases since we don't need to split them
+    if (isAlias(key) && (typeof value === 'string' || Array.isArray(value))) {
+      // remove prefix only when saving
+      aliases.push(key.slice(1));
     }
-    let strList: [string, ...string[]] | undefined;
-    const list: [string, ...string[]][] = [];
-    for (const arg of args) {
-      if (typeof arg === 'string') {
-        if (strList) {
-          strList.push(arg);
-        } else {
-          list.push((strList = [arg]));
-        }
-      } else if (Array.isArray(arg) && arg.length > 0) {
-        // filter out empty list
-        list.push(arg);
-      }
-    }
-    return list;
   }
-
-  resolve(aliases: string[], prefix = ''): ResolvedAlias[] | null {
-    // get args per alias
-    let hasArgs: boolean | undefined;
-    const list: ResolvedAlias[] = [];
-    for (let alias of aliases) {
-      alias = prefix + alias;
-      const argsList = this.getArgs(alias);
-      if (argsList) {
-        hasArgs = true;
-        // assume args contains at least one element (thanks, getArgs!)
-        for (const args of argsList) {
-          list.push({ alias, args });
-        }
-      }
-    }
-    return hasArgs ? list : null;
-  }
-
-  split(
-    arg: string
-  ): { list: ResolvedAlias[]; remainder: string[] } | null | undefined {
-    // only accept aliases
-    if (!isAlias(arg)) {
-      return;
-    }
-    // remove first `-` for alias
-    const { values, remainder } = split(arg.slice(1), this.aliases);
-    // note that split.values do not have `-` prefix
-    const list = values.length > 0 ? this.resolve(values, '-') : null;
-    // considered as split only if alias args were found
-    return list && { list, remainder };
-  }
+  return aliases.sort((a, b) => b.length - a.length);
 }

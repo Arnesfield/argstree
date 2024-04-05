@@ -1,11 +1,10 @@
 import { isAssignable, isOption } from '../utils/arg.utils.js';
-import { Alias, ResolvedAlias } from './alias.js';
+import { ResolvedAlias } from './alias.js';
 import { Node, NodeOptions } from './node.js';
 
 export class Parser {
   private parent: Node;
   private child: Node | null | undefined;
-  private _alias: Alias | null | undefined;
   // this might seem counterintuitive, but assigned is being passed
   // around throughout multiple methods so it probably makes sense to
   // keep track of it here and only unset it before every parse iteration
@@ -13,11 +12,6 @@ export class Parser {
 
   constructor(private readonly root: Node) {
     this.parent = root;
-  }
-
-  private get alias(): Alias {
-    // only create alias instance when needed
-    return (this._alias ||= new Alias(this.parent.options.alias || {}));
   }
 
   private parseArg(arg: string) {
@@ -55,7 +49,7 @@ export class Parser {
     // treat first as is (alias) while the rest as values
     // if not successful, save arg as value
     // only check assignable if assigned value exists
-    const split = this.alias.split(match);
+    const split = this.parent.split(match);
     if (!split || !this.saveAlias(split.list, split.remainder)) {
       // treat arg as value
       // if current node exists, check if it reached its max args, if not then save arg
@@ -73,7 +67,7 @@ export class Parser {
     const options = this.parent.parse(raw);
     if (!options) {
       // raw arg is alias
-      const list = this.alias.resolve([raw]);
+      const list = this.parent.resolve([raw]);
       return list && this.saveAlias(list);
     } else if (this.assigned == null || isAssignable(raw, options)) {
       // check if assignable
@@ -155,8 +149,7 @@ export class Parser {
       // since we're removing reference to parent, validate it now
       this.parent.done();
       this.parent = nextChild;
-      // also clear alias when updating parent node
-      this._alias = this.child = null;
+      this.child = null;
     }
   }
 

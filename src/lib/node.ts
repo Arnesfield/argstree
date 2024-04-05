@@ -1,8 +1,11 @@
 import { Node as INode, NodeData, Options } from '../core/core.types.js';
 import { ArgsTreeError } from '../core/error.js';
+import { isAlias } from '../utils/arg.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
 import { has, isObject } from '../utils/object.utils.js';
 import { displayName, getType } from '../utils/options.utils.js';
+import { split } from '../utils/split.js';
+import { ResolvedAlias, getAliases, getArgs } from './alias.js';
 
 export interface NodeOptions {
   options: Options;
@@ -16,6 +19,7 @@ export class Node {
   readonly children: Node[] = [];
   readonly hasArgs: boolean;
   readonly options: Options;
+  private _aliases: string[] | undefined;
   private readonly data: NodeData;
   private readonly range: {
     min: number | null;
@@ -188,5 +192,44 @@ export class Node {
       node.descendants.push(child, ...child.descendants);
     }
     return node;
+  }
+
+  // aliases
+
+  private aliases() {
+    return (this._aliases ||= getAliases(this.options.alias || {}));
+  }
+
+  split(
+    arg: string
+  ): { list: ResolvedAlias[]; remainder: string[] } | null | undefined {
+    // only accept aliases
+    if (!isAlias(arg)) {
+      return;
+    }
+    // remove first `-` for alias
+    const { values, remainder } = split(arg.slice(1), this.aliases());
+    // note that split.values do not have `-` prefix
+    const list = values.length > 0 ? this.resolve(values, '-') : null;
+    // considered as split only if alias args were found
+    return list && { list, remainder };
+  }
+
+  resolve(aliases: string[], prefix = ''): ResolvedAlias[] | null {
+    // get args per alias
+    let hasArgs: boolean | undefined;
+    const list: ResolvedAlias[] = [];
+    for (let alias of aliases) {
+      alias = prefix + alias;
+      const argsList = getArgs(this.options.alias || {}, alias);
+      if (argsList) {
+        hasArgs = true;
+        // assume args contains at least one element (thanks, getArgs!)
+        for (const args of argsList) {
+          list.push({ alias, args });
+        }
+      }
+    }
+    return hasArgs ? list : null;
   }
 }
