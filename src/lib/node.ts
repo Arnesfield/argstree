@@ -5,13 +5,18 @@ import { ensureNumber } from '../utils/ensure-number.js';
 import { has, isObject } from '../utils/object.utils.js';
 import { displayName, getType } from '../utils/options.utils.js';
 import { slice } from '../utils/slice.js';
-import { ResolvedAlias, getAliases, getArgs } from './alias.js';
+import { getAliases, getArgs } from './alias.js';
 
 export interface NodeOptions {
   options: Options;
   raw?: string | null;
   alias?: string | null;
   args?: string[];
+}
+
+export interface ResolvedAlias {
+  alias: string;
+  args: [string, ...string[]];
 }
 
 export class Node {

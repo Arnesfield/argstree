@@ -1,5 +1,4 @@
-import { ResolvedAlias } from '../lib/alias.js';
-import { Node, NodeOptions } from '../lib/node.js';
+import { Node, NodeOptions, ResolvedAlias } from '../lib/node.js';
 import { isAssignable, isOption } from '../utils/arg.utils.js';
 import * as T from './core.types.js';
 

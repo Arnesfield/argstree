@@ -1,14 +1,9 @@
 import { isAlias } from '../utils/arg.utils.js';
 import { has } from '../utils/object.utils.js';
-import { Alias as IAlias } from '../utils/type.utils.js';
-
-export interface ResolvedAlias {
-  alias: string;
-  args: [string, ...string[]];
-}
+import { Alias } from '../utils/type.utils.js';
 
 export function getArgs(
-  alias: IAlias,
+  alias: Alias,
   key: string
 ): [string, ...string[]][] | undefined {
   const args = has(alias, key) ? alias[key] : null;
@@ -32,7 +27,7 @@ export function getArgs(
   return list;
 }
 
-export function getAliases(alias: IAlias): string[] {
+export function getAliases(alias: Alias): string[] {
   const aliases: string[] = [];
   // get aliases and sort by length desc
   for (const [key, value] of Object.entries(alias)) {
