@@ -38,13 +38,14 @@ export function argstree(
     // -b is null -> error
     // -b is not assignable -> treat as value
     // -b is assignable -> continue split
-    let arg: string | null = null;
-    const options =
-      assigned != null && list.length > 0
-        ? parent.parse((arg = list[list.length - 1].args[0]))
-        : null;
     // allow assign if no options or if assignable
-    if (arg !== null && options && !isAssignable(arg, options)) {
+    let arg: string, options: T.Options | null;
+    if (
+      assigned != null &&
+      list.length > 0 &&
+      (options = parent.parse((arg = list[list.length - 1].args[0]))) &&
+      !isAssignable(arg, options)
+    ) {
       return;
     }
     // treat left over from split as argument
@@ -60,9 +61,7 @@ export function argstree(
         args: item.args.slice(1),
         // reuse last options when available
         options:
-          index >= list.length - 1 && options
-            ? options
-            : parent.parse(raw, true)
+          (index >= list.length - 1 && options) || parent.parse(raw, true)
       };
     });
     set(items);
