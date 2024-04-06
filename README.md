@@ -73,14 +73,11 @@ While they may be configured similarly, options start with a hyphen (e.g. `-a`, 
 
 When setting the `args` object, the _properties_ are used to match the arguments while the _values_ are also options objects.
 
-Options and commands will capture arguments and stop when another option or command is matched or the configured [limit](#limits) is reached.
+Options and commands will capture arguments and stop when another option or command is matched or the specified [limit](#limits) is reached.
 
 ```javascript
-const node = argstree(['--add', 'foo', '--add', 'run', 'baz'], {
-  args: {
-    '--add': {}, // options object
-    run: { initial: ['bar'] } // options object with initial arguments
-  }
+const node = argstree(['--add', 'foo', '--add', 'run', 'bar'], {
+  args: { '--add': {}, run: {} }
 });
 for (const child of node.children) {
   console.log(child.id, child.args);
@@ -90,17 +87,18 @@ for (const child of node.children) {
 ```text
 --add [ 'foo' ]
 --add []
-run [ 'bar', 'baz' ]
+run [ 'bar' ]
 ```
 
 You can also pass a function to the `args` option. It has two parameters: the `arg` string and the `NodeData` object. It should return an options object, `null`, or `undefined`.
 
 ```javascript
-const node = argstree(['-a=foo', 'bar'], {
+const node = argstree(['-a=bar', 'baz'], {
   alias: { '-a': '--add' },
   args(arg, data) {
     console.log(arg);
-    return arg === '--add' ? {} : null;
+    // options object with initial arguments
+    return arg === '--add' ? { initial: ['foo'] } : null;
   }
 });
 const child = node.children[0];
@@ -108,11 +106,11 @@ console.log(child.id, child.args);
 ```
 
 ```text
--a=foo
+-a=bar
 -a
 --add
-bar
---add [ 'foo', 'bar' ]
+baz
+--add [ 'foo', 'bar', 'baz' ]
 ```
 
 > [!WARNING]
