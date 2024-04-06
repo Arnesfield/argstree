@@ -12,7 +12,7 @@ Parse arguments into a tree structure.
 
 ## Features
 
-**argstree** is meant to be a minimal and _less_ opinionated argument parser with the following goals and features:
+**argstree** is meant to be a minimal and less opinionated argument parser with the following goals and features:
 
 - Preserve the structure of the provided arguments.
 - No data types other than strings.
