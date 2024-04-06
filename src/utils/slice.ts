@@ -9,15 +9,15 @@ export function slice(value: string, matches: string[], index = 0): Split {
     const match = matches[index];
     const parts = value.split(match);
     // get leftover values (or parts) from recursive calls
-    parts.forEach((part, partIndex) => {
+    parts.forEach((part, pIndex) => {
+      // save the match in between parts
+      if (pIndex > 0) {
+        values.push(match);
+      }
       if (part) {
         const result = slice(part, matches, index + 1);
         values.push(...result.values);
         remainder.push(...result.remainder);
-      }
-      // save the match in between parts
-      if (partIndex < parts.length - 1) {
-        values.push(match);
       }
     });
   } else if (value) {
