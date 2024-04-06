@@ -35,6 +35,7 @@ function run(args) {
       ) {
         return;
       }
+      // get index to slice off hyphens
       const start =
         arg.length > 1 && arg[1] !== '-'
           ? 1
@@ -50,16 +51,15 @@ function run(args) {
   const object = { __proto__: null, _: root.args.slice() };
   for (const node of root.children) {
     const { args } = node;
-    const id = transform(node.id);
+    const id = camelCase(node.id);
     if (node.id === '--' || id === '_') {
       // handle positional args
-      object._ = Array.isArray(object._) ? object._ : [];
       object._.push(...args);
     } else if (args.length === 0) {
       // handle boolean
       const match = 'no-';
       const negate = node.id.startsWith(match);
-      const prop = transform(negate ? node.id.slice(match.length) : node.id);
+      const prop = camelCase(negate ? node.id.slice(match.length) : node.id);
       object[prop] = !negate;
     } else if (args.length === 1 && args[0].includes(',')) {
       // handle comma separated values
@@ -76,7 +76,7 @@ function run(args) {
 
 // naive camelCase transform
 /** @param {string | null} id  */
-function transform(id) {
+function camelCase(id) {
   if (typeof id !== 'string') {
     return id;
   }

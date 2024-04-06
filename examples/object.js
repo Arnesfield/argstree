@@ -48,7 +48,7 @@ function run(args) {
     let curr = object;
     for (const prop of props) {
       read.push(prop);
-      if (!Object.prototype.hasOwnProperty.call(curr, prop)) {
+      if (!(prop in curr)) {
         curr = curr[prop] = Object.create(null);
       } else if (typeof curr[prop] === 'object' && curr[prop] !== null) {
         curr = curr[prop];
