@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { ArgsTreeError, Options } from '../src/index.js';
+import argstree, { ArgsTreeError, Options } from '../src/index.js';
 
 describe('error', () => {
   it('should be a class (function)', () => {
@@ -50,6 +50,39 @@ describe('error', () => {
     expect(error.alias).to.be.null;
     expect(error.args).to.equal(args);
     expect(error.options).to.equal(options);
+    expect(error.toJSON).to.be.a('function');
+  });
+
+  it('should use the option or command name in the error message', () => {
+    // NOTE: this test does not check all types of errors,
+    // but displayName is used consistently so we can assume
+    // it works for all error cases
+    try {
+      argstree([], { min: 1 });
+    } catch (error) {
+      expect(error).to.be.instanceof(ArgsTreeError);
+      if (error instanceof ArgsTreeError) {
+        expect(error.message.startsWith('Expected')).to.be.true;
+      }
+    }
+
+    try {
+      argstree(['--foo'], { args: { '--foo': {} } });
+    } catch (error) {
+      expect(error).to.be.instanceof(ArgsTreeError);
+      if (error instanceof ArgsTreeError) {
+        expect(error.message.startsWith("Option '--foo' ")).to.be.true;
+      }
+    }
+
+    try {
+      argstree(['--foo'], { args: { '--foo': { name: 'bar, --foo' } } });
+    } catch (error) {
+      expect(error).to.be.instanceof(ArgsTreeError);
+      if (error instanceof ArgsTreeError) {
+        expect(error.message.startsWith("Option 'bar, --foo' ")).to.be.true;
+      }
+    }
   });
 
   it('should contain properties for toJSON', () => {
