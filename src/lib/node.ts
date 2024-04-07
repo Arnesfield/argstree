@@ -38,11 +38,9 @@ export class Node {
     readonly strict?: boolean
   ) {
     const { raw = null, alias = null, options } = opts;
-    this.options = options;
+    const { initial, args } = (this.options = options);
     // make sure to change reference
-    this.args = (Array.isArray(options.initial) ? options.initial : []).concat(
-      opts.args || []
-    );
+    this.args = (Array.isArray(initial) ? initial : []).concat(opts.args || []);
     this.data = { raw, alias, args: this.args, options };
 
     // get and validate range only after setting the fields above
@@ -66,10 +64,10 @@ export class Node {
       );
     }
 
+    this.range = { min, max, maxRead };
     // set parent.strict to constructor param, but override using provided options.strict
     this.strict = options.strict ?? strict;
-    this.range = { min, max, maxRead };
-    this.hasArgs = typeof options.args === 'function' || isObject(options.args);
+    this.hasArgs = typeof args === 'function' || isObject(args);
   }
 
   private name() {
@@ -154,8 +152,10 @@ export class Node {
 
     // NOTE: no need to create copy of args since validation is done
     // hence, allow mutation of args and options by consumer
-    const { validate } = this.options;
-    if (typeof validate === 'function' && !validate(this.data)) {
+    if (
+      typeof this.options.validate === 'function' &&
+      !this.options.validate(this.data)
+    ) {
       const name = this.name();
       this.error(
         ArgsTreeError.VALIDATE_ERROR,
@@ -165,11 +165,11 @@ export class Node {
   }
 
   build(parent: INode | null = null, depth = 0): INode {
-    const { id } = this.options;
     const { raw, alias } = this.data;
+    const { id, name = null } = this.options;
     const node: INode = {
       id: (typeof id === 'function' ? id(raw, this.data) : id) ?? raw ?? null,
-      name: this.options.name ?? null,
+      name,
       raw,
       alias,
       depth,
@@ -180,8 +180,8 @@ export class Node {
       ancestors: parent ? [...parent.ancestors, parent] : [],
       descendants: []
     };
-    for (const instance of this.children) {
-      const child = instance.build(node, depth + 1);
+    for (const subnode of this.children) {
+      const child = subnode.build(node, depth + 1);
       node.children.push(child);
       // also save descendants of child
       node.descendants.push(child, ...child.descendants);
