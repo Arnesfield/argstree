@@ -1,6 +1,6 @@
 module.exports = {
   require: 'tsx',
   spec: ['**/*.spec.ts'],
-  'watch-files': ['src', 'test'],
-  'watch-ignore': ['test/fixtures']
+  watchFiles: ['src', 'test'],
+  watchIgnore: ['test/fixtures']
 };
