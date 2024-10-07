@@ -1,4 +1,4 @@
-import { Spec } from './spec.types.js';
+import { Spec } from '../spec/spec.types.js';
 
 // TODO: pending
 export interface NodeData {
@@ -14,8 +14,6 @@ export type Alias =
   | [[string, ...string[]], ...[string, ...string[]][]]
   | null
   | undefined;
-
-export type Type = 'command' | 'option';
 
 export interface Options {
   id?:

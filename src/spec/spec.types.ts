@@ -1,4 +1,4 @@
-import { Alias, Options, Type } from './core.types.js';
+import { Alias, Options } from '../core/core.types.js';
 
 export interface Aliases {
   [alias: string]: Alias;
@@ -11,7 +11,7 @@ export interface Spec {
    */
   readonly id: string | null;
   /** Type of spec. */
-  readonly type: Type;
+  readonly type: 'command' | 'option';
   /** Depth of spec. */
   readonly depth: number;
   /**

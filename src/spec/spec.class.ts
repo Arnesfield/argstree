@@ -1,6 +1,7 @@
-import { SpecError } from '../error/spec.error.js';
+import { Alias, Options } from '../core/core.types.js';
 import { has } from '../utils/object.utils.js';
-import { Alias, Options, Type } from './core.types.js';
+import { Type } from '../utils/type.utils.js';
+import { SpecError } from './spec.error.js';
 import { Aliases, Spec as ISpec } from './spec.types.js';
 
 export const typeLabel = { command: 'Command', option: 'Option' } as const;

@@ -1,4 +1,4 @@
-import { Options } from './core.types.js';
+import { Options } from '../core/core.types.js';
 import { Spec } from './spec.class.js';
 import { Spec as ISpec } from './spec.types.js';
 
