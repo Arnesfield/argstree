@@ -1,4 +1,4 @@
-export function has<T extends Record<keyof any, any>>(
+export function has<T extends Record<keyof unknown, unknown>>(
   obj: T,
   prop: keyof T
 ): boolean {

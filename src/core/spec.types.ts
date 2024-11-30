@@ -3,6 +3,7 @@ import { argstree } from './argstree.js';
 import { Node, NodeData, Options } from './core.types.js';
 
 /** The spec options. */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface SpecOptions extends Omit<Options, 'alias' | 'args'> {}
 
 /** The spec object. */
