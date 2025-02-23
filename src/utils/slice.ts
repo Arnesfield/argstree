@@ -1,17 +1,16 @@
 import { Split } from '../core/split.js';
 
-// NOTE: internal. use directly for `alias.ts` since matches are already sorted
+// NOTE: internal
 
 export function slice(value: string, matches: string[], index = 0): Split {
   const values: string[] = [];
   const remainder: string[] = [];
   if (index < matches.length) {
     const match = matches[index];
-    const parts = value.split(match);
     // get leftover values (or parts) from recursive calls
-    parts.forEach((part, pIndex) => {
+    value.split(match).forEach((part, idx) => {
       // save the match in between parts
-      if (pIndex > 0) {
+      if (idx > 0) {
         values.push(match);
       }
       if (part) {
