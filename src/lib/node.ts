@@ -1,187 +1,194 @@
-import { Node as INode, NodeData, Options } from '../core/core.types.js';
-import { ArgsTreeError } from '../core/error.js';
-import { isAlias } from '../utils/arg.utils.js';
-import { ensureNumber } from '../utils/ensure-number.js';
-import { has, isObject } from '../utils/object.utils.js';
-import { displayName, getType } from '../utils/options.utils.js';
+import {
+  Arg,
+  Node as INode,
+  NodeData,
+  Options,
+  ParseOptions
+} from '../core/core.types.js';
+import { ParseError } from '../core/error.js';
+import { NormalizedOptions } from './normalize.js';
+import { Split } from '../core/split.js';
+import { isAlias, isOption, isOptionType } from '../utils/arg.utils.js';
+import { display } from '../utils/display.utils.js';
+import { error } from '../utils/error.utils.js';
 import { slice } from '../utils/slice.js';
-import { getAliases, getArgs } from './alias.js';
 
-export interface NodeOptions {
-  options: Options;
-  raw?: string | null;
-  alias?: string | null;
-  args?: string[];
-}
+// NOTE: internal
 
-export interface ResolvedAlias {
-  alias: string;
+export interface AliasItem {
+  /** Alias name. */
+  name: string;
   args: [string, ...string[]];
 }
 
+export interface NodeSplit extends Split {
+  list: [AliasItem, ...AliasItem[]];
+}
+
+export interface NodeOptions {
+  raw?: string | null;
+  key?: string | null;
+  alias?: string | null;
+  args?: string[];
+  src: Options | true;
+}
+
+// required args
+export interface ParsedNodeOptions
+  extends Omit<NodeOptions, 'args'>,
+    Required<Pick<NodeOptions, 'args'>> {}
+
 export class Node {
-  readonly args: string[];
+  readonly data: NodeData;
+  readonly args: string[] = [];
   readonly children: Node[] = [];
-  readonly hasArgs: boolean;
-  readonly options: Options;
-  private _aliases: string[] | undefined;
-  private readonly data: NodeData;
-  private readonly range: {
-    min: number | null;
-    max: number | null;
-    maxRead: number | null;
-  };
+  readonly strict: boolean;
+  /** Determines if the Node is a leaf node and cannot have descendants. */
+  readonly leaf: boolean;
 
+  // strict by default
   constructor(
-    opts: NodeOptions,
-    /** Overridable strict option. */
-    readonly strict?: boolean
+    readonly options: NormalizedOptions,
+    opts: Omit<NodeOptions, 'src'>,
+    strict: boolean
   ) {
-    const { raw = null, alias = null, options } = opts;
-    const { initial, args } = (this.options = options);
-    // make sure to change reference
-    this.args = (Array.isArray(initial) ? initial : []).concat(opts.args || []);
-    this.data = { raw, alias, args: this.args, options };
+    // prettier-ignore
+    const { src, range: { min, max, maxRead } } = options;
+    const { raw = null, key = null, alias = null } = opts;
 
-    // get and validate range only after setting the fields above
-    const min = ensureNumber(options.min);
-    const max = ensureNumber(options.max);
-    const maxRead = ensureNumber(options.maxRead) ?? max;
-    // skip all checks since they all require max to be provided
-    const message =
-      max === null
+    // data.args is a reference to this.args
+    this.args = (src.initial || []).concat(opts.args || []);
+    this.data = { raw, key, alias, args: this.args, options: src };
+
+    // if no max, skip all checks as they all require max to be provided
+    const msg =
+      max == null
         ? null
-        : min !== null && min > max
+        : min != null && min > max
           ? `min and max range: ${min}-${max}`
-          : maxRead !== null && max < maxRead
+          : maxRead != null && max < maxRead
             ? `max and maxRead range: ${max} >= ${maxRead}`
             : null;
-    if (message) {
-      const name = this.name();
-      this.error(
-        ArgsTreeError.INVALID_OPTIONS_ERROR,
-        (name ? name + 'has i' : 'I') + `nvalid ${message}.`
+    if (msg) {
+      const name = display(this.data);
+      error(
+        this.data,
+        ParseError.OPTIONS_ERROR,
+        (name ? name + 'has i' : 'I') + `nvalid ${msg}`
       );
     }
 
-    this.range = { min, max, maxRead };
-    // set parent.strict to constructor param, but override using provided options.strict
-    this.strict = options.strict ?? strict;
-    this.hasArgs = typeof args === 'function' || isObject(args);
+    // set parent.strict to constructor param,
+    // but override using provided options.strict
+    this.strict = src.strict ?? strict;
+    this.leaf = !(src.args || src.handler) && isOptionType(key, src);
   }
 
-  private name() {
-    return displayName(this.data.raw, this.options);
-  }
-
-  private error(cause: string, message: string): never {
-    throw new ArgsTreeError({ cause, message, ...this.data });
-  }
-
-  /**
-   * Throw unrecognized error.
-   * @param arg If an array is provided, it is treated as a list of aliases.
-   */
-  unrecognized(arg: string | string[]): never {
-    const name = this.name();
-    const isArg = typeof arg === 'string';
-    this.error(
-      ArgsTreeError[
-        isArg ? 'UNRECOGNIZED_ARGUMENT_ERROR' : 'UNRECOGNIZED_ALIAS_ERROR'
-      ],
-      (name ? name + 'does not recognize the ' : 'Unrecognized ') +
-        (isArg
-          ? getType(arg).toLowerCase() + ': ' + arg
-          : `alias${arg.length === 1 ? '' : 'es'}: ` +
-            arg.map(alias => '-' + alias).join(', '))
+  private arg(arg: string, hasValue: boolean | undefined) {
+    // check if assignable if has value
+    let opts;
+    return (
+      (opts = this.options.args[arg]) &&
+      (!hasValue ||
+        (typeof opts === 'object'
+          ? (opts.assign ?? isOptionType(arg, opts))
+          : isOption(arg))) &&
+      opts
     );
   }
 
-  parse(arg: string, strict?: false): Options | null;
-  parse(arg: string, strict: true): Options;
-  parse(arg: string, strict?: boolean): Options | null {
-    // make sure parse result is a valid object
-    const { args } = this.options;
-    const options =
-      typeof args === 'function'
-        ? args(arg, this.data)
-        : isObject(args) && has(args, arg)
-          ? args[arg]
-          : null;
-    const value = isObject(options) ? options : null;
-    if (strict && !value) {
-      this.unrecognized(arg);
+  parse(
+    arg: Arg,
+    flags: { exact?: boolean; hasValue?: boolean } = {}
+  ): ParsedNodeOptions | undefined {
+    // scenario: -a=6
+    // alias -a: --option=3, 4, 5
+    // option --option: initial 1, 2
+    // order of args: [options.initial, arg assigned, alias.args, alias assigned]
+
+    let src,
+      key = arg.raw,
+      args: string[] = [];
+
+    if ((src = this.arg(key, flags.hasValue))) {
+      // do nothing
+    } else if (arg.value != null && (src = this.arg(arg.key, true))) {
+      key = arg.key;
+      args = [arg.value];
+    } else if (!flags.exact) {
+      src = this.handle(arg);
     }
-    return value;
+
+    if (src) {
+      return { raw: arg.raw, key, args, src };
+    }
+  }
+
+  handle(arg: Arg): ReturnType<NonNullable<ParseOptions['handler']>> {
+    // preserve `this` for callbacks
+    return (
+      typeof this.options.src.handler === 'function' &&
+      this.options.src.handler(arg, this.data)
+    );
   }
 
   /** Check if this node can read one more argument. */
   read(): boolean {
     return (
-      this.range.maxRead === null || this.range.maxRead >= this.args.length + 1
+      this.options.range.maxRead == null ||
+      this.options.range.maxRead > this.args.length
     );
   }
 
-  /**
-   * Validate and finalize the node. This assumes that the node
-   * stops receiving arguments and will no longer be used for parsing.
-   */
   done(): void {
     // validate assumes the node has lost reference
     // so validate range here, too
     const len = this.args.length;
-    const { min, max } = this.range;
-    const phrase: [string | number, number] | null =
-      min !== null && max !== null && (len < min || len > max)
+    const { min, max } = this.options.range;
+    const msg: [string | number, number] | null =
+      min != null && max != null && (len < min || len > max)
         ? min === max
           ? [min, min]
           : [`${min}-${max}`, 2]
-        : min !== null && len < min
+        : min != null && len < min
           ? [`at least ${min}`, min]
-          : max !== null && len > max
+          : max != null && len > max
             ? [max && `up to ${max}`, max]
             : null;
-    if (phrase) {
-      const name = this.name();
-      this.error(
-        ArgsTreeError.INVALID_RANGE_ERROR,
+    if (msg) {
+      const name = display(this.data);
+      error(
+        this.data,
+        ParseError.RANGE_ERROR,
         (name ? name + 'e' : 'E') +
-          `xpected ${phrase[0]} argument${phrase[1] === 1 ? '' : 's'}, but got ${len}.`
+          `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`
       );
     }
 
-    // NOTE: no need to create copy of args since validation is done
-    // hence, allow mutation of args and options by consumer
-    if (
-      typeof this.options.validate === 'function' &&
-      !this.options.validate(this.data)
-    ) {
-      const name = this.name();
-      this.error(
-        ArgsTreeError.VALIDATE_ERROR,
-        name ? name + 'failed validation.' : 'Validation failed.'
-      );
-    }
+    // preserve `this` for callbacks
+    const { src } = this.options;
+    typeof src.done === 'function' && src.done(this.data);
   }
 
-  build(parent: INode | null = null, depth = 0): INode {
-    const { raw, alias } = this.data;
-    const { id, name = null } = this.options;
+  tree(parent: INode | null, depth: number): INode {
+    const { src } = this.options;
+    const { raw, key, alias, args } = this.data;
     const node: INode = {
-      id: (typeof id === 'function' ? id(raw, this.data) : id) ?? raw ?? null,
-      name,
+      id: (typeof src.id === 'function' ? src.id(this.data) : src.id) ?? key,
+      name: src.name ?? key,
       raw,
+      key,
       alias,
       depth,
-      args: this.args,
+      args,
+      // prepare ancestors before checking children and descendants
       parent,
       children: [],
-      // prepare ancestors before checking children and descendants
-      ancestors: parent ? [...parent.ancestors, parent] : [],
+      ancestors: parent ? parent.ancestors.concat(parent) : [],
       descendants: []
     };
-    for (const subnode of this.children) {
-      const child = subnode.build(node, depth + 1);
+    for (const sub of this.children) {
+      const child = sub.tree(node, depth + 1);
       node.children.push(child);
       // also save descendants of child
       node.descendants.push(child, ...child.descendants);
@@ -191,40 +198,33 @@ export class Node {
 
   // aliases
 
-  private aliases() {
-    return (this._aliases ||= getAliases(this.options.alias || {}));
-  }
+  split(arg: string): NodeSplit | undefined {
+    // accept false for split.list (internal to Node only)
+    type PartialNodeSplit = Split & { list: NodeSplit['list'] | false };
 
-  split(
-    arg: string
-  ): { list: ResolvedAlias[]; remainder: string[] } | null | undefined {
     // only accept aliases
-    if (!isAlias(arg)) {
-      return;
-    }
     // remove first `-` for alias
-    const { values, remainder } = slice(arg.slice(1), this.aliases());
-    // note that split.values do not have `-` prefix
-    const list = values.length > 0 ? this.resolve(values, '-') : null;
     // considered as split only if alias args were found
-    return list && { list, remainder };
+    let data;
+    if (
+      isAlias(arg) &&
+      (data = slice(arg.slice(1), this.options.names) as PartialNodeSplit) &&
+      (data.list = this.alias(data.values, '-'))
+    ) {
+      // list should have value here
+      return data as NodeSplit;
+    }
   }
 
-  resolve(aliases: string[], prefix = ''): ResolvedAlias[] | null {
+  alias(aliases: string[], prefix = ''): NodeSplit['list'] | false {
     // get args per alias
-    let hasArgs: boolean | undefined;
-    const list: ResolvedAlias[] = [];
-    for (let alias of aliases) {
-      alias = prefix + alias;
-      const argsList = getArgs(this.options.alias || {}, alias);
-      if (argsList) {
-        hasArgs = true;
-        // assume args contains at least one element (thanks, getArgs!)
-        for (const args of argsList) {
-          list.push({ alias, args });
-        }
+    const all: AliasItem[] = [];
+    for (let name of aliases) {
+      name = prefix + name;
+      for (const args of this.options.aliases[name] || []) {
+        all.push({ name, args });
       }
     }
-    return hasArgs ? list : null;
+    return all.length > 0 && (all as NodeSplit['list']);
   }
 }

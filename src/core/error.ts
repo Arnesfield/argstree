@@ -1,68 +1,49 @@
 import { NodeData, Options } from './core.types.js';
 
-/** The ArgsTree error options. */
-export interface ArgsTreeErrorOptions
-  extends NodeData,
-    Pick<ArgsTreeError, 'cause'> {
+/** The parse error options. */
+export interface ParseErrorOptions extends NodeData {
+  /**
+   * The reason for error.
+   * - {@linkcode ParseError.OPTIONS_ERROR}
+   * - {@linkcode ParseError.RANGE_ERROR}
+   * - {@linkcode ParseError.UNRECOGNIZED_ALIAS_ERROR}
+   * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
+   */
+  reason: string;
   /** The error message. */
   message: string;
 }
 
-/** The ArgsTree error object. */
-export interface ArgsTreeErrorObject extends ArgsTreeErrorOptions {
-  /** The error name. */
-  name: string;
-}
-
-/** The ArgsTree error. */
-export class ArgsTreeError extends Error implements ArgsTreeErrorObject {
-  /** Validation failed from provided {@linkcode Options.validate} function. */
-  static readonly VALIDATE_ERROR = 'validate';
-  /** The {@linkcode Options} object provided is not valid (e.g. incorrect range). */
-  static readonly INVALID_OPTIONS_ERROR = 'invalid-options';
-  /** The option or command did not satisfy the required number of arguments. */
-  static readonly INVALID_RANGE_ERROR = 'invalid-range';
-  /** Failed operation for spec builder. */
-  static readonly INVALID_SPEC_ERROR = 'invalid-spec';
-  /** After an alias is parsed, it is not recognized as part of {@linkcode Options.alias}. */
-  static readonly UNRECOGNIZED_ALIAS_ERROR = 'unrecognized-alias';
-  /** The option or command is not recognized as part of {@linkcode Options.args}. */
-  static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
-  name = 'ArgsTreeError';
+/** The parse error. */
+export class ParseError extends Error implements ParseErrorOptions {
   /**
-   * The cause error string.
-   * - {@linkcode ArgsTreeError.VALIDATE_ERROR}
-   * - {@linkcode ArgsTreeError.INVALID_OPTIONS_ERROR}
-   * - {@linkcode ArgsTreeError.INVALID_RANGE_ERROR}
-   * - {@linkcode ArgsTreeError.INVALID_SPEC_ERROR}
-   * - {@linkcode ArgsTreeError.UNRECOGNIZED_ALIAS_ERROR}
-   * - {@linkcode ArgsTreeError.UNRECOGNIZED_ARGUMENT_ERROR}
+   * The {@linkcode Options} object provided is not valid
+   * (e.g. incorrect range config or duplicate aliases).
    */
-  cause!: string;
+  static readonly OPTIONS_ERROR = 'options';
+  /** The option or command did not satisfy the required number of arguments. */
+  static readonly RANGE_ERROR = 'range';
+  /** The parsed alias cannot be recognized. */
+  static readonly UNRECOGNIZED_ALIAS_ERROR = 'unrecognized-alias';
+  /** The option or command cannot be recognized. */
+  static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
+
+  // follow order of properties in NodeData
+  name = 'ParseError';
+  reason!: string;
   raw!: string | null;
+  key!: string | null;
   alias!: string | null;
   args!: string[];
   options!: Options;
 
   /**
-   * The ArgsTree error.
+   * The parse error.
    * @param options The error options.
    */
-  constructor(options: ArgsTreeErrorOptions) {
+  constructor(options: ParseErrorOptions) {
     super(options.message);
     // assume options includes all properties (interface is implemented)
     Object.assign(this, options);
-  }
-
-  toJSON(): ArgsTreeErrorObject {
-    return {
-      name: this.name,
-      cause: this.cause,
-      message: this.message,
-      raw: this.raw,
-      alias: this.alias,
-      args: this.args,
-      options: this.options
-    };
   }
 }
