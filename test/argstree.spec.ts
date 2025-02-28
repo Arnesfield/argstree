@@ -718,7 +718,22 @@ describe('argstree', () => {
       args: {
         '--foo': { min: 2, args: { test: { min: 1 } } },
         '--bar': { min: 1, args: {} },
-        '--baz': { args: {} }
+        '--baz': { args: {} },
+        max: {
+          alias: {
+            '-f': [
+              ['--foo', 'bar'],
+              ['--bar', 'foo', 'baz'],
+              ['--baz', 'bar', 'baz'],
+              ['--bar', 'foo', 'baz']
+            ]
+          },
+          args: {
+            '--foo': { max: 1 },
+            '--bar': { max: 2 },
+            '--baz': { max: 1 }
+          }
+        }
       }
     } satisfies Options;
     expectError({
@@ -738,6 +753,12 @@ describe('argstree', () => {
       cause: ArgsTreeError.INVALID_RANGE_ERROR,
       options,
       equal: options.args['--foo'].args.test
+    });
+    expectError({
+      args: ['max', '-f'],
+      cause: ArgsTreeError.INVALID_RANGE_ERROR,
+      options,
+      equal: options.args.max.args['--baz']
     });
   });
 

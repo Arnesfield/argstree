@@ -92,10 +92,8 @@ export function argstree(
     });
 
     // validate all children except next or latest child
-    for (const child of children) {
-      if (child !== (nextChild || child)) {
-        child.done();
-      }
+    for (const c of children) {
+      c !== (nextChild || child) && c.done();
     }
 
     // if this child has args, switch it for next parse iteration
