@@ -183,8 +183,10 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
       throw new Error(
         'Unrecognized alias' +
           (split.remainder.length === 1 ? '' : 'es') +
-          ': ' +
-          split.remainder.map(alias => '-' + alias).join(', ')
+          ': -' +
+          split.items
+            .map(item => (item.remainder ? `(${item.value})` : item.value))
+            .join('')
       );
     }
 
@@ -210,13 +212,15 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
   }
   render(root, '');
 }
-
-parse(['-aa', '1', '--arg', '2', '-ba'], {
+// Unrecognized aliases: -ab(c)a(d)
+parse(['-fafgba=a='], {
   aliases: {
+    '-a=a': '--arg',
+    // '-a': ['--arg', 'v:a'],
     '-b': '--arg'
   },
   args: {
-    '--arg': { alias: '-a' }
+    '--arg': { alias: ['-a', 'v:a'] }
   },
   handler(arg) {
     console.log('HANDLER', arg);

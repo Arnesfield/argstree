@@ -2,6 +2,7 @@ import { isAlias, isAssignable } from '../utils/arg.utils.js';
 import { slice } from '../utils/slice.js';
 import { Arg, Args, ParseOptions } from './core.types.js';
 import { NormalizedOptions } from './options.js';
+import { Split } from './split.js';
 
 // NOTE: internal
 
@@ -19,6 +20,10 @@ export interface ResolvedAlias {
   /** Alias name. */
   name: string;
   args: [string, ...string[]];
+}
+
+export interface NodeSplit extends Split {
+  list: ResolvedAlias[];
 }
 
 export interface NodeOptions {
@@ -121,19 +126,20 @@ export class Node {
     // }
   }
 
-  split(
-    arg: string
-  ): { list: ResolvedAlias[]; remainder: string[] } | null | undefined {
+  split(arg: string): NodeSplit | undefined {
     // only accept aliases
     if (!isAlias(arg)) {
       return;
     }
     // remove first `-` for alias
-    const { values, remainder } = slice(arg.slice(1), this.options.names);
+    const data = slice(arg.slice(1), this.options.names) as NodeSplit;
     // note that split.values do not have `-` prefix
-    const list = this.alias(values, '-');
+    const list = this.alias(data.values, '-');
     // considered as split only if alias args were found
-    return list && { list, remainder };
+    if (list) {
+      data.list = list;
+      return data;
+    }
   }
 
   alias(aliases: string[], prefix = ''): ResolvedAlias[] | null {
