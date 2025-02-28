@@ -1,6 +1,12 @@
 import { isAlias, isAssignable } from '../utils/arg.utils.js';
 import { slice } from '../utils/slice.js';
-import { Arg, Args, NodeData, ParseOptions } from './core.types.js';
+import {
+  Arg,
+  Args,
+  Node as INode,
+  NodeData,
+  ParseOptions
+} from './core.types.js';
 import { NormalizedOptions } from './options.js';
 import { Split } from './split.js';
 
@@ -11,7 +17,7 @@ export function toArg(raw: string): Arg {
   const split = index > -1;
   return {
     raw,
-    name: split ? raw.slice(0, index) : raw,
+    key: split ? raw.slice(0, index) : raw,
     value: split ? raw.slice(index + 1) : null
   };
 }
@@ -29,7 +35,7 @@ export interface NodeSplit extends Split {
 export interface NodeOptions {
   options: NormalizedOptions;
   raw?: string | null;
-  name?: string | null;
+  key?: string | null;
   alias?: string | null;
   args?: string[];
 }
@@ -46,8 +52,8 @@ export class Node {
     const { src } = (this.options = opts.options);
     this.args = (src.initial || []).concat(opts.args || []);
 
-    const { raw = null, alias = null, name = null } = opts;
-    this.data = { raw, alias, name, args: this.args, options: src };
+    const { raw = null, key = null, alias = null } = opts;
+    this.data = { raw, key, alias, args: this.args, options: src };
 
     // set parent.strict to constructor param, but override using provided options.strict
     this.strict = src.strict ?? strict;
@@ -110,6 +116,37 @@ export class Node {
     const { src } = this.options;
     typeof src.done === 'function' && src.done(this.data);
   }
+
+  tree(parent: INode | null, depth: number): INode {
+    const { src } = this.options;
+    const { raw, key, alias } = this.data;
+    const node: INode = {
+      id:
+        (typeof src.id === 'function' ? src.id(this.data) : src.id) ??
+        raw ??
+        key,
+      name: src.name ?? null,
+      raw,
+      key,
+      alias,
+      depth,
+      args: this.args,
+      // prepare ancestors before checking children and descendants
+      parent,
+      children: [],
+      ancestors: parent ? parent.ancestors.concat(parent) : [],
+      descendants: []
+    };
+    for (const sub of this.children) {
+      const child = sub.tree(node, depth + 1);
+      node.children.push(child);
+      // also save descendants of child
+      node.descendants.push(child, ...child.descendants);
+    }
+    return node;
+  }
+
+  // aliases
 
   split(arg: string): NodeSplit | undefined {
     // only accept aliases

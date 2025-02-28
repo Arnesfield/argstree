@@ -1,5 +1,5 @@
 import { isOption } from '../utils/arg.utils.js';
-import { Arg, ParseOptions } from './core.types.js';
+import { Arg, ParseOptions, Node as INode } from './core.types.js';
 import { Node, NodeOptions, ResolvedAlias, toArg } from './node.js';
 import { normalizer } from './options.js';
 
@@ -23,20 +23,20 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
     // order of args: [options.initial, arg assigned, alias.args, alias assigned]
 
     let opts,
-      name = arg.raw,
+      key = arg.raw,
       args: string[] = [];
 
-    if ((opts = parent.parse(name, flags.hasValue))) {
+    if ((opts = parent.parse(key, flags.hasValue))) {
       // do nothing
-    } else if (arg.value != null && (opts = parent.parse(arg.name, true))) {
-      name = arg.name;
+    } else if (arg.value != null && (opts = parent.parse(arg.key, true))) {
+      key = arg.key;
       args = [arg.value];
     } else if (!flags.exact) {
       opts = parent.hparse(arg);
     }
 
     if (opts) {
-      return { raw: arg.raw, name, args, options: normalize(opts) };
+      return { raw: arg.raw, key, args, options: normalize(opts) };
     }
   }
 
@@ -142,7 +142,7 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
     // for this case, handle exact alias
     else if ((aliases = parent.alias([raw]))) {
       setAlias(aliases);
-    } else if (hasValue && (aliases = parent.alias([arg.name]))) {
+    } else if (hasValue && (aliases = parent.alias([arg.key]))) {
       setAlias(aliases, arg.value);
     }
 
@@ -162,12 +162,12 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
       setAlias(split.list);
     } else if (
       hasValue &&
-      (split = parent.split(arg.name)) &&
+      (split = parent.split(arg.key)) &&
       split.remainder.length === 0
     ) {
       setAlias(split.list, arg.value);
     } else if ((parsed = parent.hparse(arg))) {
-      set([{ raw, name: raw, options: normalize(parsed) }]);
+      set([{ raw, key: raw, options: normalize(parsed) }]);
     }
 
     // split can be unset by the 2nd parent.split() call
@@ -191,62 +191,38 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
     }
   }
 
-  // TODO: return formatted root node
-  function render(node: Node, prefix: string) {
-    console.log(
-      '%s%s (%s, %s): [%s]',
-      prefix,
-      node.data.name,
-      node.data.raw,
-      node.data.alias ?? '?',
-      node.args.join(', ')
-    );
-    for (const child of node.children) {
-      render(child, prefix + '. ');
-    }
-  }
-  render(root, '');
-
   // finally, make sure to validate the rest of the nodes
   child?.done();
   parent.done();
-  // return root.tree();
+  return root.tree(null, 0);
 }
 
-// Unrecognized aliases: -ab(c)a(d)
-parse(
+const node = parse(
   [
-    '-a'
-    //
+    '-sa=aa',
+    '1'
     // '-fafgba=a='
   ],
   {
-    aliases: {
-      '-a=a': '--arg',
-      // '-a': ['--arg', 'v:a'],
-      '-b': '--arg'
-    },
-    args: {
-      '--arg': {
-        alias: ['-a', 'v:a'],
-        done(data) {
-          console.log('arg', this);
-        },
-        handler(arg, data) {
-          console.log('arg handler', this);
-        }
-      }
-    },
-    handler(arg, data) {
-      console.log('HANDLER', arg, data);
-      console.log('HANDLER this', this);
-    },
-    done(data) {
-      console.log('DONE', data);
-      console.log('DONE this', this.args);
-    }
+    aliases: { '-a=a': '--arg', '-b': '--arg' },
+    args: { '--arg': { alias: ['-a', 'v:a'] } }
   }
 );
+
+function render(node: INode, prefix = '') {
+  console.log(
+    '%s%s (%s, %s): [%s]',
+    prefix,
+    node.key,
+    node.raw,
+    node.alias ?? '?',
+    node.args.join(', ')
+  );
+  for (const child of node.children) {
+    render(child, prefix + '  ');
+  }
+}
+render(node);
 
 // const commonOpts = { type: 'command' } satisfies Options;
 // const opts = {

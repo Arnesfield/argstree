@@ -1,6 +1,6 @@
 export interface Arg {
   raw: string;
-  name: string;
+  key: string;
   value: string | null;
 }
 
@@ -19,13 +19,15 @@ export interface Aliases {
 
 export interface NodeData {
   raw: string | null;
-  name: string | null;
+  key: string | null;
   alias: string | null;
   args: string[];
   options: Options;
 }
 
 export interface ParseOptions {
+  id?: string | null | ((data: NodeData) => string | null | undefined);
+  name?: string;
   type?: 'option' | 'command';
   aliases?: Aliases;
   args?: Args;
@@ -47,4 +49,22 @@ export interface ParseOptions {
 export interface Options extends ParseOptions {
   assign?: boolean;
   alias?: Alias | null;
+}
+
+/** The node object. */
+export interface Node extends Omit<NodeData, 'options'> {
+  /** The provided {@linkcode Options.id} or the parsed argument. */
+  id: string | null;
+  /** The provided {@linkcode Options.name}. */
+  name: string | null;
+  /** Depth of node. */
+  depth: number;
+  /** The parent node. If `null`, then this is the root node. */
+  parent: Node | null;
+  /** The direct children nodes. */
+  children: Node[];
+  /** The ancestor nodes starting from the root node to the parent node. */
+  ancestors: Node[];
+  /** The descendant nodes starting from the children nodes down to the leaf nodes. */
+  descendants: Node[];
 }
