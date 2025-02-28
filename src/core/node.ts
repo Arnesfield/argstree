@@ -1,12 +1,12 @@
 import { isAlias, isAssignable } from '../utils/arg.utils.js';
 import { slice } from '../utils/slice.js';
-import { Arg, Args, ParseOptions } from './core.types.js';
+import { Arg, Args, NodeData, ParseOptions } from './core.types.js';
 import { NormalizedOptions } from './options.js';
 import { Split } from './split.js';
 
 // NOTE: internal
 
-export function parseArg(raw: string): Arg {
+export function toArg(raw: string): Arg {
   const index = raw.lastIndexOf('=');
   const split = index > -1;
   return {
@@ -39,27 +39,21 @@ export class Node {
   readonly children: Node[] = [];
   readonly options: NormalizedOptions;
   readonly strict: boolean;
-  readonly data: {
-    readonly raw?: string | null;
-    readonly name?: string | null;
-    readonly alias?: string | null;
-  };
+  readonly data: NodeData;
 
   // strict by default
   constructor(opts: NodeOptions, strict = true) {
-    // TODO: remove?
-    // this.data = { raw: opts.raw, name: opts.name, alias: opts.alias };
-    this.data = opts;
-
     const { src } = (this.options = opts.options);
     this.args = (src.initial || []).concat(opts.args || []);
+
+    const { raw = null, alias = null, name = null } = opts;
+    this.data = { raw, alias, name, args: this.args, options: src };
 
     // set parent.strict to constructor param, but override using provided options.strict
     this.strict = src.strict ?? strict;
   }
 
-  // TODO: rename?
-  parseExact(arg: string, hasValue?: boolean): Args[string] {
+  parse(arg: string, hasValue?: boolean): Args[string] {
     let opts;
     return (
       (opts = this.options.args[arg]) &&
@@ -68,10 +62,11 @@ export class Node {
     );
   }
 
-  parseHandler(arg: Arg): ParseOptions | boolean | null {
+  hparse(arg: Arg): ReturnType<NonNullable<ParseOptions['handler']>> {
+    // preserve `this` for callbacks
     return (
       typeof this.options.src.handler === 'function' &&
-      (this.options.src.handler(arg) || null)
+      this.options.src.handler(arg, this.data)
     );
   }
 
@@ -111,19 +106,9 @@ export class Node {
       // );
     }
 
-    // TODO: validate handler?
-    // // NOTE: no need to create copy of args since validation is done
-    // // hence, allow mutation of args and options by consumer
-    // if (
-    //   typeof this.options.validate === 'function' &&
-    //   !this.options.validate(this.data)
-    // ) {
-    //   const name = this.name();
-    //   this.error(
-    //     ArgsTreeError.VALIDATE_ERROR,
-    //     name ? name + 'failed validation.' : 'Validation failed.'
-    //   );
-    // }
+    // preserve `this` for callbacks
+    const { src } = this.options;
+    typeof src.done === 'function' && src.done(this.data);
   }
 
   split(arg: string): NodeSplit | undefined {

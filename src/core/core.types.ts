@@ -17,6 +17,14 @@ export interface Aliases {
   [alias: string]: Alias | null | undefined;
 }
 
+export interface NodeData {
+  raw: string | null;
+  name: string | null;
+  alias: string | null;
+  args: string[];
+  options: Options;
+}
+
 export interface ParseOptions {
   type?: 'option' | 'command';
   aliases?: Aliases;
@@ -28,8 +36,12 @@ export interface ParseOptions {
   // TODO: note inherited
   /** @default true */
   strict?: boolean;
-  // TODO: node data?
-  handler?(arg: Arg): ParseOptions | boolean | null | undefined | void;
+  handler?(
+    this: this,
+    arg: Arg,
+    data: NodeData
+  ): ParseOptions | boolean | null | undefined | void;
+  done?(this: this, data: NodeData): void;
 }
 
 export interface Options extends ParseOptions {

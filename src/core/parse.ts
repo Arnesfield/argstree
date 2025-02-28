@@ -1,6 +1,6 @@
 import { isOption } from '../utils/arg.utils.js';
 import { Arg, ParseOptions } from './core.types.js';
-import { Node, NodeOptions, parseArg, ResolvedAlias } from './node.js';
+import { Node, NodeOptions, ResolvedAlias, toArg } from './node.js';
 import { normalizer } from './options.js';
 
 type ParsedNodeOptions = Required<Omit<NodeOptions, 'alias'>> &
@@ -13,7 +13,7 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
     child: Node | null | undefined;
 
   // TODO: update?
-  function parseRaw(
+  function parseArg(
     arg: Arg,
     flags: { exact?: boolean; hasValue?: boolean } = {}
   ): ParsedNodeOptions | undefined {
@@ -26,16 +26,13 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
       name = arg.raw,
       args: string[] = [];
 
-    if ((opts = parent.parseExact(name, flags.hasValue))) {
+    if ((opts = parent.parse(name, flags.hasValue))) {
       // do nothing
-    } else if (
-      arg.value != null &&
-      (opts = parent.parseExact(arg.name, true))
-    ) {
+    } else if (arg.value != null && (opts = parent.parse(arg.name, true))) {
       name = arg.name;
       args = [arg.value];
     } else if (!flags.exact) {
-      opts = parent.parseHandler(arg);
+      opts = parent.hparse(arg);
     }
 
     if (opts) {
@@ -51,19 +48,19 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
     // convert aliases to options
     // make sure the last option is assignable
     const hasValue = value != null;
-    const lastArg = parseArg(aliases[aliases.length - 1].args[0]);
-    const lastParsed = parseRaw(lastArg, { hasValue });
+    const lastArg = toArg(aliases[aliases.length - 1].args[0]);
+    const lastParsed = parseArg(lastArg, { hasValue });
     // skip if assiging a value to alias but no parsed last options
     if (hasValue && !lastParsed) {
       return;
     }
 
     const items = aliases.map((alias, index) => {
-      const isLast = index >= aliases.length - 1;
-      const arg = isLast && lastParsed ? lastArg : parseArg(alias.args[0]);
+      const last = index >= aliases.length - 1;
+      const arg = last && lastParsed ? lastArg : toArg(alias.args[0]);
       // no need to check assignable here since
       // we only need to check that for the last alias arg
-      const item = isLast && lastParsed ? lastParsed : parseRaw(arg);
+      const item = last && lastParsed ? lastParsed : parseArg(arg);
 
       if (!item) {
         // TODO: error
@@ -74,9 +71,7 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
 
       item.alias = alias.name;
       item.args.push(...alias.args.slice(1));
-      if (isLast && hasValue) {
-        item.args.push(value);
-      }
+      last && hasValue && item.args.push(value);
       return item;
     });
     set(items);
@@ -124,7 +119,7 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
 
   // create copy of args to avoid external mutation
   for (const raw of args.slice()) {
-    const arg = parseArg(raw);
+    const arg = toArg(raw);
     const hasValue = arg.value != null;
     let parsed, aliases, split;
 
@@ -135,7 +130,7 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
     }
 
     // parse options from options.args only
-    else if ((parsed = parseRaw(arg, { exact: true }))) {
+    else if ((parsed = parseArg(arg, { exact: true }))) {
       set([parsed]);
     }
 
@@ -171,7 +166,7 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
       split.remainder.length === 0
     ) {
       setAlias(split.list, arg.value);
-    } else if ((parsed = parent.parseHandler(arg))) {
+    } else if ((parsed = parent.hparse(arg))) {
       set([{ raw, name: raw, options: normalize(parsed) }]);
     }
 
@@ -211,21 +206,47 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
     }
   }
   render(root, '');
+
+  // finally, make sure to validate the rest of the nodes
+  child?.done();
+  parent.done();
+  // return root.tree();
 }
+
 // Unrecognized aliases: -ab(c)a(d)
-parse(['-fafgba=a='], {
-  aliases: {
-    '-a=a': '--arg',
-    // '-a': ['--arg', 'v:a'],
-    '-b': '--arg'
-  },
-  args: {
-    '--arg': { alias: ['-a', 'v:a'] }
-  },
-  handler(arg) {
-    console.log('HANDLER', arg);
+parse(
+  [
+    '-a'
+    //
+    // '-fafgba=a='
+  ],
+  {
+    aliases: {
+      '-a=a': '--arg',
+      // '-a': ['--arg', 'v:a'],
+      '-b': '--arg'
+    },
+    args: {
+      '--arg': {
+        alias: ['-a', 'v:a'],
+        done(data) {
+          console.log('arg', this);
+        },
+        handler(arg, data) {
+          console.log('arg handler', this);
+        }
+      }
+    },
+    handler(arg, data) {
+      console.log('HANDLER', arg, data);
+      console.log('HANDLER this', this);
+    },
+    done(data) {
+      console.log('DONE', data);
+      console.log('DONE this', this.args);
+    }
   }
-});
+);
 
 // const commonOpts = { type: 'command' } satisfies Options;
 // const opts = {

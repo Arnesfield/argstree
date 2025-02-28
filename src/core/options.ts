@@ -89,9 +89,10 @@ export function normalizer() {
     range.min = ensureNumber(src.min);
     range.max = ensureNumber(src.max);
     range.maxRead = ensureNumber(src.maxRead) ?? range.max;
-    const { min, max, maxRead } = range;
+
     // if no max, skip all checks as they all require max to be provided
-    const message =
+    const { min, max, maxRead } = range;
+    const msg =
       max == null
         ? null
         : min != null && min > max
@@ -99,9 +100,9 @@ export function normalizer() {
           : maxRead != null && max < maxRead
             ? `max and maxRead range: ${max} >= ${maxRead}`
             : null;
-    if (message) {
+    if (msg) {
       // TODO: error
-      throw new Error(`Invalid ${message}.`);
+      throw new Error(`Invalid ${msg}.`);
       // const name = this.name();
       // this.error(
       //   ArgsTreeError.INVALID_OPTIONS_ERROR,
