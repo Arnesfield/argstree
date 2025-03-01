@@ -41,17 +41,17 @@ export interface ParsedNodeOptions
 export class Node {
   readonly args: string[];
   readonly children: Node[] = [];
-  readonly options: NormalizedOptions;
-  readonly strict: boolean;
   readonly data: NodeData;
 
   // strict by default
-  constructor(opts: NodeOptions, strict = true) {
-    const o = (this.options = opts.options);
+  constructor(
+    readonly options: NormalizedOptions,
+    // set parent.strict to constructor param,
+    // but override using provided options.strict
+    readonly strict = options.src.strict ?? true
+  ) {
     // this.args is a reference to data.args
-    this.args = (this.data = o.data).args;
-    // set parent.strict to constructor param, but override using provided options.strict
-    this.strict = o.src.strict ?? strict;
+    this.args = (this.data = options.data).args;
   }
 
   private arg(arg: string, hasValue: boolean | undefined) {
@@ -145,7 +145,7 @@ export class Node {
     const { raw, key, alias, args } = this.data;
     const node: INode = {
       id: (typeof src.id === 'function' ? src.id(this.data) : src.id) ?? key,
-      name: src.name ?? null,
+      name: src.name ?? key,
       raw,
       key,
       alias,

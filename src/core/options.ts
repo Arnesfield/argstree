@@ -1,4 +1,4 @@
-import { NodeOptions } from '../lib/node.js';
+import { Node, NodeOptions } from '../lib/node.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
@@ -70,21 +70,21 @@ export function normalizer() {
   let o: Options | undefined;
   const map = new WeakMap<Options, NormalizedOptions>();
 
-  return (nopts: NormalizeOptions): NodeOptions => {
+  return (options: NormalizeOptions): NormalizedOptions => {
     // convert src options to object
-    const src = typeof nopts.src === 'object' ? nopts.src : (o ||= {});
+    const src = typeof options.src === 'object' ? options.src : (o ||= {});
 
     // reuse existing normalized options
     const exists = map.get(src);
     if (exists) {
-      return { ...nopts, options: exists };
+      return exists;
     }
 
     const data: NodeData = {
-      raw: nopts.raw ?? null,
-      key: nopts.key ?? null,
-      alias: nopts.alias ?? null,
-      args: (src.initial || []).concat(nopts.args || []),
+      raw: options.raw ?? null,
+      key: options.key ?? null,
+      alias: options.alias ?? null,
+      args: (src.initial || []).concat(options.args || []),
       options: src
     };
 
@@ -183,6 +183,6 @@ export function normalizer() {
 
     // sort by length desc for splitting later on
     opts.names.sort((a, b) => b.length - a.length);
-    return { ...nopts, options: opts };
+    return opts;
   };
 }
