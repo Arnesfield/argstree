@@ -6,8 +6,10 @@ import { ParseError } from './error.js';
 import { Node, ResolvedAlias, toArg } from './node.js';
 import { NormalizeOptions, normalizer } from './options.js';
 
-type ParsedNodeOptions = Required<Omit<NormalizeOptions, 'alias'>> &
-  Pick<NormalizeOptions, 'alias'>;
+// optional alias
+interface ParsedNodeOptions extends Required<Omit<NormalizeOptions, 'alias'>> {
+  alias?: string;
+}
 
 export function parse(
   args: readonly string[],

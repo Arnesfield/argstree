@@ -7,11 +7,6 @@ export interface NameOptions {
   options: Options;
 }
 
-// TODO: remove unused
-// export function getType(data: NameOptions): string {
-//   return isOptionType(data.options.type, data.key) ? 'Option' : 'Command';
-// }
-
 export function display(data: NameOptions): string {
   const name = data.options.name ?? data.key;
   return name == null
