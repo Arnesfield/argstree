@@ -1,8 +1,8 @@
 import { toArg } from '../lib/arg.js';
 import { Node, ResolvedAlias } from '../lib/node.js';
 import { isOption } from '../utils/arg.utils.js';
+import { display } from '../utils/display.utils.js';
 import { error } from '../utils/error.utils.js';
-import { display } from '../utils/options.utils.js';
 import { Arg, Node as INode, ParseOptions } from './core.types.js';
 import { ParseError } from './error.js';
 import { NormalizeOptions, normalizer } from './options.js';
@@ -219,39 +219,3 @@ export function parse(
   parent.done();
   return root.tree(null, 0);
 }
-
-const node0 = parse(
-  // '-fzk=abasdcaasd',
-  // '-fafgba=a='
-  ['-a', '1', '-cdarf'],
-  {
-    // name: '--root',
-    // max: 0,
-    // max: 1,
-    // min: 2,
-    // maxRead: 1,
-    initial: ['1'],
-    aliases: {
-      // '-a': '--arg',
-      '-a=a': '--arg',
-      '-b': '--arg',
-      '-c': '--cat'
-    },
-    args: { '--arg': { alias: ['-a', 'v:a'] } }
-  }
-);
-
-function render(node: INode, prefix = '') {
-  console.log(
-    '%s%s (%s, %s): [%s]',
-    prefix,
-    node.key,
-    node.raw,
-    node.alias ?? '?',
-    node.args.join(', ')
-  );
-  for (const child of node.children) {
-    render(child, prefix + '  ');
-  }
-}
-render(node0);

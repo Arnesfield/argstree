@@ -3,9 +3,9 @@ import { NodeData, Options } from './core.types.js';
 /** The parse error options. */
 export interface ParseErrorOptions extends NodeData {
   /**
-   * The reason error string.
-   * - {@linkcode ParseError.INVALID_OPTIONS_ERROR}
-   * - {@linkcode ParseError.INVALID_RANGE_ERROR}
+   * The reason for error.
+   * - {@linkcode ParseError.OPTIONS_ERROR}
+   * - {@linkcode ParseError.RANGE_ERROR}
    * - {@linkcode ParseError.UNRECOGNIZED_ALIAS_ERROR}
    * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
    */
@@ -14,23 +14,21 @@ export interface ParseErrorOptions extends NodeData {
   message: string;
 }
 
-/** The parse error object. */
-export interface ParseErrorObject extends ParseErrorOptions {
-  /** The error name. */
-  name: string;
-}
-
 /** The parse error. */
-export class ParseError extends Error implements ParseErrorObject {
-  /** The {@linkcode Options} object provided is not valid (e.g. incorrect range). */
-  static readonly INVALID_OPTIONS_ERROR = 'invalid-options';
+export class ParseError extends Error implements ParseErrorOptions {
+  /**
+   * The {@linkcode Options} object provided is not valid
+   * (e.g. incorrect range config or duplicate aliases).
+   */
+  static readonly OPTIONS_ERROR = 'options';
   /** The option or command did not satisfy the required number of arguments. */
-  static readonly INVALID_RANGE_ERROR = 'invalid-range';
-  /** After an alias is parsed that cannot be recognized. */
+  static readonly RANGE_ERROR = 'range';
+  /** The parsed alias cannot be recognized. */
   static readonly UNRECOGNIZED_ALIAS_ERROR = 'unrecognized-alias';
   /** The option or command cannot be recognized. */
   static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
 
+  // follow order of properties in NodeData
   name = 'ParseError';
   reason!: string;
   raw!: string | null;
@@ -47,18 +45,5 @@ export class ParseError extends Error implements ParseErrorObject {
     super(options.message);
     // assume options includes all properties (interface is implemented)
     Object.assign(this, options);
-  }
-
-  toJSON(): ParseErrorObject {
-    return {
-      name: this.name,
-      reason: this.reason,
-      message: this.message,
-      raw: this.raw,
-      key: this.key,
-      alias: this.alias,
-      args: this.args,
-      options: this.options
-    };
   }
 }

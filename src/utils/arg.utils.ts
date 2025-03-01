@@ -8,15 +8,6 @@ export function isOption(arg: string): boolean {
   return arg[0] === '-' && arg.length > (arg[1] === '-' ? 2 : 1);
 }
 
-export function isOptionType(
-  type: Options['type'],
-  arg: string | null | undefined
-): boolean {
-  return type ? type !== 'command' : !!arg && isOption(arg);
-}
-
-export function isAssignable(arg: string, options: Options | true): boolean {
-  return typeof options === 'object'
-    ? (options.assign ?? isOptionType(options.type, arg))
-    : isOption(arg);
+export function isOptionType(arg: string, options: Options): boolean {
+  return options.type ? options.type !== 'command' : isOption(arg);
 }

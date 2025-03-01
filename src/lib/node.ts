@@ -8,9 +8,9 @@ import {
 import { ParseError } from '../core/error.js';
 import { NormalizedOptions } from '../core/options.js';
 import { Split } from '../core/split.js';
-import { isAlias, isAssignable } from '../utils/arg.utils.js';
+import { isAlias, isOption, isOptionType } from '../utils/arg.utils.js';
+import { display } from '../utils/display.utils.js';
 import { error } from '../utils/error.utils.js';
-import { display } from '../utils/options.utils.js';
 import { slice } from '../utils/slice.js';
 
 // NOTE: internal
@@ -56,10 +56,14 @@ export class Node {
   }
 
   parse(arg: string, hasValue: boolean | undefined): Args[string] {
+    // check if assignable if has value
     let opts;
     return (
       (opts = this.options.args[arg]) &&
-      (!hasValue || isAssignable(arg, opts)) &&
+      (!hasValue ||
+        (typeof opts === 'object'
+          ? (opts.assign ?? isOptionType(arg, opts))
+          : isOption(arg))) &&
       opts
     );
   }
@@ -99,7 +103,7 @@ export class Node {
       const name = display(this.data);
       error(
         this.data,
-        ParseError.INVALID_RANGE_ERROR,
+        ParseError.RANGE_ERROR,
         (name ? name + 'e' : 'E') +
           `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`
       );
