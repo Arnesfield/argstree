@@ -36,8 +36,9 @@ export interface NormalizedOptions {
     maxRead?: number | null;
   };
   readonly src: Options;
-  /** Args without prototype. */
+  /** Safe args object. */
   readonly args: Args;
+  /** Safe aliases object. */
   readonly aliases: NormalizedAliases;
   /** A sorted list of splittable alias names without the `-` prefix. */
   readonly names: string[];
@@ -83,7 +84,7 @@ export function normalizer() {
       raw: nopts.raw ?? null,
       key: nopts.key ?? null,
       alias: nopts.alias ?? null,
-      args: (src.initial || []).concat(nopts.argv || []),
+      args: (src.initial || []).concat(nopts.args || []),
       options: src
     };
 

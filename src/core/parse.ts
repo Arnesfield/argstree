@@ -3,14 +3,9 @@ import { Node, ResolvedAlias } from '../lib/node.js';
 import { isOption } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { error } from '../utils/error.utils.js';
-import { Arg, Node as INode, ParseOptions } from './core.types.js';
+import { Node as INode, ParseOptions } from './core.types.js';
 import { ParseError } from './error.js';
 import { NormalizeOptions, normalizer } from './options.js';
-
-// optional alias
-interface ParsedNodeOptions extends Required<Omit<NormalizeOptions, 'alias'>> {
-  alias?: string;
-}
 
 export function parse(
   args: readonly string[],
@@ -21,33 +16,6 @@ export function parse(
   let parent = root,
     child: Node | null | undefined;
 
-  function parseArg(
-    arg: Arg,
-    flags: { exact?: boolean; hasValue?: boolean } = {}
-  ): ParsedNodeOptions | undefined {
-    // scenario: -a=6
-    // alias -a: --option=3, 4, 5
-    // option --option: initial 1, 2
-    // order of args: [options.initial, arg assigned, alias.args, alias assigned]
-
-    let src,
-      key = arg.raw,
-      argv: string[] = [];
-
-    if ((src = parent.parse(key, flags.hasValue))) {
-      // do nothing
-    } else if (arg.value != null && (src = parent.parse(arg.key, true))) {
-      key = arg.key;
-      argv = [arg.value];
-    } else if (!flags.exact) {
-      src = parent.hparse(arg);
-    }
-
-    if (src) {
-      return { raw: arg.raw, key, argv, src };
-    }
-  }
-
   function setAlias(aliases: ResolvedAlias[], value?: string | null) {
     // assignable arg --option: initial 1, 2
     // alias -a: --option=3, 4, 5
@@ -57,7 +25,7 @@ export function parse(
     // make sure the last option is assignable
     const hasValue = value != null;
     const lastArg = toArg(aliases[aliases.length - 1].args[0]);
-    const lastParsed = parseArg(lastArg, { hasValue });
+    const lastParsed = parent.parse(lastArg, { hasValue });
     // skip if assiging a value to alias but no parsed last options
     if (hasValue && !lastParsed) {
       return;
@@ -68,7 +36,7 @@ export function parse(
       const arg = last && lastParsed ? lastArg : toArg(alias.args[0]);
       // no need to check assignable here since
       // we only need to check that for the last alias arg
-      const item = last && lastParsed ? lastParsed : parseArg(arg);
+      const item = last && lastParsed ? lastParsed : parent.parse(arg);
 
       if (!item) {
         const name = display(parent.data);
@@ -81,9 +49,9 @@ export function parse(
       }
 
       item.alias = alias.name;
-      item.argv.push(...alias.args.slice(1));
+      item.args.push(...alias.args.slice(1));
       // add value to the last item (assume last item is assignable)
-      last && hasValue && item.argv.push(value);
+      last && hasValue && item.args.push(value);
       return item;
     });
     set(items);
@@ -146,7 +114,7 @@ export function parse(
     }
 
     // parse options from options.args only
-    else if ((parsed = parseArg(arg, { exact: true }))) {
+    else if ((parsed = parent.parse(arg, { exact: true }))) {
       set([parsed]);
     }
 
@@ -186,7 +154,7 @@ export function parse(
       split.remainder.length === 0
     ) {
       setAlias(split.list, arg.value);
-    } else if ((parsed = parent.hparse(arg))) {
+    } else if ((parsed = parent.handle(arg))) {
       set([{ raw, key: raw, src: parsed }]);
     }
 

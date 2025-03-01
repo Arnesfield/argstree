@@ -1,12 +1,11 @@
 import {
   Arg,
-  Args,
   Node as INode,
   NodeData,
   ParseOptions
 } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
-import { NormalizedOptions } from '../core/options.js';
+import { NormalizedOptions, NormalizeOptions } from '../core/options.js';
 import { Split } from '../core/split.js';
 import { isAlias, isOption, isOptionType } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
@@ -30,9 +29,13 @@ export interface NodeOptions {
   raw?: string | null;
   key?: string | null;
   alias?: string | null;
-  // why not args? well, rollup renames the variable
-  // to args2 due to variable shadowing
-  argv?: string[];
+  args?: string[];
+}
+
+// optional alias
+export interface ParsedNodeOptions
+  extends Required<Omit<NormalizeOptions, 'alias'>> {
+  alias?: string;
 }
 
 export class Node {
@@ -47,16 +50,11 @@ export class Node {
     const o = (this.options = opts.options);
     // this.args is a reference to data.args
     this.args = (this.data = o.data).args;
-
-    // const { raw = null, key = null, alias = null } = opts;
-    // this.args = (src.initial || []).concat(opts.argv || []);
-    // this.data = { raw, key, alias, args: this.args, options: src };
-
     // set parent.strict to constructor param, but override using provided options.strict
     this.strict = o.src.strict ?? strict;
   }
 
-  parse(arg: string, hasValue: boolean | undefined): Args[string] {
+  private arg(arg: string, hasValue: boolean | undefined) {
     // check if assignable if has value
     let opts;
     return (
@@ -69,7 +67,34 @@ export class Node {
     );
   }
 
-  hparse(arg: Arg): ReturnType<NonNullable<ParseOptions['handler']>> {
+  parse(
+    arg: Arg,
+    flags: { exact?: boolean; hasValue?: boolean } = {}
+  ): ParsedNodeOptions | undefined {
+    // scenario: -a=6
+    // alias -a: --option=3, 4, 5
+    // option --option: initial 1, 2
+    // order of args: [options.initial, arg assigned, alias.args, alias assigned]
+
+    let src,
+      key = arg.raw,
+      args: string[] = [];
+
+    if ((src = this.arg(key, flags.hasValue))) {
+      // do nothing
+    } else if (arg.value != null && (src = this.arg(arg.key, true))) {
+      key = arg.key;
+      args = [arg.value];
+    } else if (!flags.exact) {
+      src = this.handle(arg);
+    }
+
+    if (src) {
+      return { raw: arg.raw, key, args, src };
+    }
+  }
+
+  handle(arg: Arg): ReturnType<NonNullable<ParseOptions['handler']>> {
     // preserve `this` for callbacks
     return (
       typeof this.options.src.handler === 'function' &&
@@ -81,7 +106,7 @@ export class Node {
   read(): boolean {
     return (
       this.options.range.maxRead == null ||
-      this.options.range.maxRead >= this.args.length + 1
+      this.options.range.maxRead > this.args.length
     );
   }
 
