@@ -1,29 +1,19 @@
-import { isAlias, isAssignable } from '../utils/arg.utils.js';
-import { error } from '../utils/error.utils.js';
-import { display } from '../utils/options.utils.js';
-import { slice } from '../utils/slice.js';
 import {
   Arg,
   Args,
   Node as INode,
   NodeData,
   ParseOptions
-} from './core.types.js';
-import { ParseError } from './error.js';
-import { NormalizedOptions } from './options.js';
-import { Split } from './split.js';
+} from '../core/core.types.js';
+import { ParseError } from '../core/error.js';
+import { NormalizedOptions } from '../core/options.js';
+import { Split } from '../core/split.js';
+import { isAlias, isAssignable } from '../utils/arg.utils.js';
+import { error } from '../utils/error.utils.js';
+import { display } from '../utils/options.utils.js';
+import { slice } from '../utils/slice.js';
 
 // NOTE: internal
-
-export function toArg(raw: string): Arg {
-  const index = raw.lastIndexOf('=');
-  const split = index > -1;
-  return {
-    raw,
-    key: split ? raw.slice(0, index) : raw,
-    value: split ? raw.slice(index + 1) : null
-  };
-}
 
 export interface ResolvedAlias {
   /** Alias name. */

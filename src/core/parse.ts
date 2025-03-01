@@ -1,9 +1,10 @@
+import { toArg } from '../lib/arg.js';
+import { Node, ResolvedAlias } from '../lib/node.js';
 import { isOption } from '../utils/arg.utils.js';
 import { error } from '../utils/error.utils.js';
 import { display } from '../utils/options.utils.js';
 import { Arg, Node as INode, ParseOptions } from './core.types.js';
 import { ParseError } from './error.js';
-import { Node, ResolvedAlias, toArg } from './node.js';
 import { NormalizeOptions, normalizer } from './options.js';
 
 // optional alias

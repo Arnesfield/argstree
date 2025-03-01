@@ -1,10 +1,10 @@
+import { NodeOptions } from '../lib/node.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
 import { error } from '../utils/error.utils.js';
 import { display } from '../utils/options.utils.js';
 import { Alias, Args, NodeData, Options } from './core.types.js';
 import { ParseError } from './error.js';
-import { NodeOptions } from './node.js';
 
 export interface NormalizedArgs {
   [arg: string]: NormalizedOptions;
