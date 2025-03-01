@@ -37,7 +37,9 @@ export interface NodeOptions {
   raw?: string | null;
   key?: string | null;
   alias?: string | null;
-  args?: string[];
+  // why not args? well, rollup renames the variable
+  // to args2 due to variable shadowing
+  argv?: string[];
 }
 
 export class Node {
@@ -50,7 +52,7 @@ export class Node {
   // strict by default
   constructor(opts: NodeOptions, strict = true) {
     const { src } = (this.options = opts.options);
-    this.args = (src.initial || []).concat(opts.args || []);
+    this.args = (src.initial || []).concat(opts.argv || []);
 
     const { raw = null, key = null, alias = null } = opts;
     this.data = { raw, key, alias, args: this.args, options: src };
@@ -59,7 +61,7 @@ export class Node {
     this.strict = src.strict ?? strict;
   }
 
-  parse(arg: string, hasValue?: boolean): Args[string] {
+  parse(arg: string, hasValue: boolean | undefined): Args[string] {
     let opts;
     return (
       (opts = this.options.args[arg]) &&
@@ -150,15 +152,14 @@ export class Node {
 
   split(arg: string): NodeSplit | undefined {
     // only accept aliases
-    if (!isAlias(arg)) {
-      return;
-    }
     // remove first `-` for alias
-    const data = slice(arg.slice(1), this.options.names) as NodeSplit;
-    // note that split.values do not have `-` prefix
-    const list = this.alias(data.values, '-');
     // considered as split only if alias args were found
-    if (list) {
+    let data, list;
+    if (
+      isAlias(arg) &&
+      (data = slice(arg.slice(1), this.options.names) as NodeSplit) &&
+      (list = this.alias(data.values, '-'))
+    ) {
       data.list = list;
       return data;
     }

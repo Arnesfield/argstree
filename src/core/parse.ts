@@ -6,13 +6,15 @@ import { normalizer } from './options.js';
 type ParsedNodeOptions = Required<Omit<NodeOptions, 'alias'>> &
   Pick<NodeOptions, 'alias'>;
 
-export function parse(args: readonly string[], options: ParseOptions = {}) {
+export function parse(
+  args: readonly string[],
+  options: ParseOptions = {}
+): INode {
   const normalize = normalizer();
   const root = new Node({ options: normalize(options) });
   let parent = root,
     child: Node | null | undefined;
 
-  // TODO: update?
   function parseArg(
     arg: Arg,
     flags: { exact?: boolean; hasValue?: boolean } = {}
@@ -24,19 +26,19 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
 
     let opts,
       key = arg.raw,
-      args: string[] = [];
+      argv: string[] = [];
 
     if ((opts = parent.parse(key, flags.hasValue))) {
       // do nothing
     } else if (arg.value != null && (opts = parent.parse(arg.key, true))) {
       key = arg.key;
-      args = [arg.value];
+      argv = [arg.value];
     } else if (!flags.exact) {
       opts = parent.hparse(arg);
     }
 
     if (opts) {
-      return { raw: arg.raw, key, args, options: normalize(opts) };
+      return { raw: arg.raw, key, argv, options: normalize(opts) };
     }
   }
 
@@ -70,8 +72,9 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
       }
 
       item.alias = alias.name;
-      item.args.push(...alias.args.slice(1));
-      last && hasValue && item.args.push(value);
+      item.argv.push(...alias.args.slice(1));
+      // add value to the last item (assume last item is assignable)
+      last && hasValue && item.argv.push(value);
       return item;
     });
     set(items);
@@ -159,6 +162,10 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
     // if value is an option-like with strict mode, throw error
     // otherwise, save value to node.args
     else if ((split = parent.split(raw)) && split.remainder.length === 0) {
+      // you would think it might be ideal to stop parent.split()
+      // when it finds at least 1 remainder, but we'll need to display
+      // the list of remainders for the error message anyway,
+      // so it's probably ok
       setAlias(split.list);
     } else if (
       hasValue &&
@@ -197,74 +204,29 @@ export function parse(args: readonly string[], options: ParseOptions = {}) {
   return root.tree(null, 0);
 }
 
-const node = parse(
-  [
-    '-sa=aa',
-    '1'
-    // '-fafgba=a='
-  ],
-  {
-    aliases: { '-a=a': '--arg', '-b': '--arg' },
-    args: { '--arg': { alias: ['-a', 'v:a'] } }
-  }
-);
-
-function render(node: INode, prefix = '') {
-  console.log(
-    '%s%s (%s, %s): [%s]',
-    prefix,
-    node.key,
-    node.raw,
-    node.alias ?? '?',
-    node.args.join(', ')
-  );
-  for (const child of node.children) {
-    render(child, prefix + '  ');
-  }
-}
-render(node);
-
-// const commonOpts = { type: 'command' } satisfies Options;
-// const opts = {
-//   alias: '-c',
-//   args: { '--help': {}, common: commonOpts }
-// } satisfies Options;
-// opts.args['--help'] = opts;
-
-// const args = ['--add', '1', '2', '3', '--save', 'test'];
-// // const args = ['-da=3', 'val', 'val2', 'c'];
-// console.log('args', args);
-// parse(args, {
-//   aliases: {
-//     '-a': '--add',
-//     '-ba': ['--add', 'bar', 'baz'],
-//     '-ca': [['--add'], ['--save']],
-//     '-da': [
-//       ['--add', 'multi', 'bar', 'baz'],
-//       ['--save', 'multi', 'foo', 'baz'],
-//       ['--save=1', '2']
-//     ],
-//     a: '--create',
-//     b: 'start'
-//   },
-//   args: {
-//     '--add': { assign: false },
-//     '--save': {
-//       initial: ['-1', '0'],
-//       args: {}
-//     },
-//     test: opts,
-//     common: commonOpts,
-//     '--test': {
-//       alias: ['-t']
-//     },
-//     '--wow=val': true,
-//     abc: true,
-//     '--hello': {
-//       alias: [
-//         ['-H', 'args', 'here'],
-//         ['-h2', 'args', 'here']
-//       ]
-//     }
+// const node0 = parse(
+//   [
+//     '-fzk=abasdcaasd',
+//     '1'
+//     // '-fafgba=a='
+//   ],
+//   {
+//     aliases: { '-a=a': '--arg', '-b': '--arg' },
+//     args: { '--arg': { alias: ['-a', 'v:a'] } }
 //   }
-// });
+// );
+
+// function render(node: INode, prefix = '') {
+//   console.log(
+//     '%s%s (%s, %s): [%s]',
+//     prefix,
+//     node.key,
+//     node.raw,
+//     node.alias ?? '?',
+//     node.args.join(', ')
+//   );
+//   for (const child of node.children) {
+//     render(child, prefix + '  ');
+//   }
+// }
+// render(node0);

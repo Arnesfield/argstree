@@ -72,11 +72,11 @@ export function normalizer() {
       return exists;
     }
 
-    const entries = Object.entries(src.args || {});
+    const args = Object.entries(src.args || {});
     const range: NormalizedOptions['range'] = {};
     const opts: NormalizedOptions = {
       branch: !!(src.args || src.handler),
-      fertile: !!(src.handler || entries.length > 0),
+      fertile: !!(src.handler || args.length > 0),
       src,
       args: { __proto__: null, ...src.args },
       aliases: { __proto__: null },
@@ -129,7 +129,7 @@ export function normalizer() {
     }
 
     // apply aliases from args
-    for (const [arg, value] of entries) {
+    for (const [arg, value] of args) {
       if (!value || typeof value !== 'object') {
         continue;
       }
