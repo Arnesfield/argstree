@@ -45,6 +45,7 @@ export class Node {
   // strict by default
   constructor(opts: NodeOptions, strict = true) {
     const o = (this.options = opts.options);
+    // this.args is a reference to data.args
     this.args = (this.data = o.data).args;
 
     // const { raw = null, key = null, alias = null } = opts;
@@ -116,18 +117,15 @@ export class Node {
 
   tree(parent: INode | null, depth: number): INode {
     const { src } = this.options;
-    const { raw, key, alias } = this.data;
+    const { raw, key, alias, args } = this.data;
     const node: INode = {
-      id:
-        (typeof src.id === 'function' ? src.id(this.data) : src.id) ??
-        raw ??
-        key,
+      id: (typeof src.id === 'function' ? src.id(this.data) : src.id) ?? key,
       name: src.name ?? null,
       raw,
       key,
       alias,
       depth,
-      args: this.args,
+      args,
       // prepare ancestors before checking children and descendants
       parent,
       children: [],
