@@ -17,11 +17,17 @@ export interface Aliases {
   [alias: string]: Alias | null | undefined;
 }
 
+/** The node data. */
 export interface NodeData {
+  /** The parsed argument. The value is `null` for the root node. */
   raw: string | null;
+  /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
   key: string | null;
+  /** The alias used to parse the options for this node. Otherwise, the value is `null`. */
   alias: string | null;
+  /** The arguments for this node. */
   args: string[];
+  /** The options for this node. */
   options: Options;
 }
 

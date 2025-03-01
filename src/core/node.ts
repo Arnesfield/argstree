@@ -1,4 +1,6 @@
 import { isAlias, isAssignable } from '../utils/arg.utils.js';
+import { error } from '../utils/error.utils.js';
+import { display } from '../utils/options.utils.js';
 import { slice } from '../utils/slice.js';
 import {
   Arg,
@@ -7,6 +9,7 @@ import {
   NodeData,
   ParseOptions
 } from './core.types.js';
+import { ParseError } from './error.js';
 import { NormalizedOptions } from './options.js';
 import { Split } from './split.js';
 
@@ -51,14 +54,15 @@ export class Node {
 
   // strict by default
   constructor(opts: NodeOptions, strict = true) {
-    const { src } = (this.options = opts.options);
-    this.args = (src.initial || []).concat(opts.argv || []);
+    const o = (this.options = opts.options);
+    this.args = (this.data = o.data).args;
 
-    const { raw = null, key = null, alias = null } = opts;
-    this.data = { raw, key, alias, args: this.args, options: src };
+    // const { raw = null, key = null, alias = null } = opts;
+    // this.args = (src.initial || []).concat(opts.argv || []);
+    // this.data = { raw, key, alias, args: this.args, options: src };
 
     // set parent.strict to constructor param, but override using provided options.strict
-    this.strict = src.strict ?? strict;
+    this.strict = o.src.strict ?? strict;
   }
 
   parse(arg: string, hasValue: boolean | undefined): Args[string] {
@@ -91,7 +95,7 @@ export class Node {
     // so validate range here, too
     const len = this.args.length;
     const { min, max } = this.options.range;
-    const phrase: [string | number, number] | null =
+    const msg: [string | number, number] | null =
       min != null && max != null && (len < min || len > max)
         ? min === max
           ? [min, min]
@@ -101,17 +105,14 @@ export class Node {
           : max != null && len > max
             ? [max && `up to ${max}`, max]
             : null;
-    if (phrase) {
-      // TODO: error
-      throw new Error(
-        `Expected ${phrase[0]} argument${phrase[1] === 1 ? '' : 's'}, but got ${len}.`
+    if (msg) {
+      const name = display(this.data);
+      error(
+        this.data,
+        ParseError.INVALID_RANGE_ERROR,
+        (name ? name + 'e' : 'E') +
+          `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`
       );
-      // const name = this.name();
-      // this.error(
-      //   ArgsTreeError.INVALID_RANGE_ERROR,
-      //   (name ? name + 'e' : 'E') +
-      //     `xpected ${phrase[0]} argument${phrase[1] === 1 ? '' : 's'}, but got ${len}.`
-      // );
     }
 
     // preserve `this` for callbacks

@@ -1,17 +1,20 @@
 import { isOption } from '../utils/arg.utils.js';
-import { Arg, ParseOptions, Node as INode } from './core.types.js';
-import { Node, NodeOptions, ResolvedAlias, toArg } from './node.js';
-import { normalizer } from './options.js';
+import { error } from '../utils/error.utils.js';
+import { display } from '../utils/options.utils.js';
+import { Arg, Node as INode, ParseOptions } from './core.types.js';
+import { ParseError } from './error.js';
+import { Node, ResolvedAlias, toArg } from './node.js';
+import { NormalizeOptions, normalizer } from './options.js';
 
-type ParsedNodeOptions = Required<Omit<NodeOptions, 'alias'>> &
-  Pick<NodeOptions, 'alias'>;
+type ParsedNodeOptions = Required<Omit<NormalizeOptions, 'alias'>> &
+  Pick<NormalizeOptions, 'alias'>;
 
 export function parse(
   args: readonly string[],
   options: ParseOptions = {}
 ): INode {
   const normalize = normalizer();
-  const root = new Node({ options: normalize(options) });
+  const root = new Node(normalize({ src: options }));
   let parent = root,
     child: Node | null | undefined;
 
@@ -24,21 +27,21 @@ export function parse(
     // option --option: initial 1, 2
     // order of args: [options.initial, arg assigned, alias.args, alias assigned]
 
-    let opts,
+    let src,
       key = arg.raw,
       argv: string[] = [];
 
-    if ((opts = parent.parse(key, flags.hasValue))) {
+    if ((src = parent.parse(key, flags.hasValue))) {
       // do nothing
-    } else if (arg.value != null && (opts = parent.parse(arg.key, true))) {
+    } else if (arg.value != null && (src = parent.parse(arg.key, true))) {
       key = arg.key;
       argv = [arg.value];
     } else if (!flags.exact) {
-      opts = parent.hparse(arg);
+      src = parent.hparse(arg);
     }
 
-    if (opts) {
-      return { raw: arg.raw, key, argv, options: normalize(opts) };
+    if (src) {
+      return { raw: arg.raw, key, argv, src };
     }
   }
 
@@ -65,9 +68,12 @@ export function parse(
       const item = last && lastParsed ? lastParsed : parseArg(arg);
 
       if (!item) {
-        // TODO: error
-        throw new Error(
-          `Unrecognized argument '${arg.raw}' from alias '${alias.name}'.`
+        const name = display(parent.data);
+        error(
+          parent.data,
+          ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
+          (name ? name + 'does not recognize the' : 'Unrecognized') +
+            ` argument '${arg.raw}' from alias: ${alias.name}`
         );
       }
 
@@ -80,7 +86,7 @@ export function parse(
     set(items);
   }
 
-  function set(items: NodeOptions[]) {
+  function set(items: NormalizeOptions[]) {
     // validate existing child then make new child
     child?.done();
 
@@ -89,7 +95,7 @@ export function parse(
       // make new child and save values
       // probably don't need to validate now since it will be
       // validated when changing child node or at the end of parse
-      parent.children.push((child = new Node(item, parent.strict)));
+      parent.children.push((child = new Node(normalize(item), parent.strict)));
 
       // if child has args, use this as next child
       return child.options.branch ? (next = child) : child;
@@ -113,9 +119,13 @@ export function parse(
     const node = child?.read() ? child : parent;
     // strict mode: throw error if arg is an option-like
     if (node.strict && isOption(raw)) {
-      // TODO: error
-      throw new Error(`Unrecognized option: ${raw}`);
-      // node.unrecognized(arg);
+      const name = display(parent.data);
+      error(
+        parent.data,
+        ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
+        (name ? name + 'does not recognize the' : 'Unrecognized') +
+          ` option: ${raw}`
+      );
     }
     node.args.push(raw);
   }
@@ -174,16 +184,19 @@ export function parse(
     ) {
       setAlias(split.list, arg.value);
     } else if ((parsed = parent.hparse(arg))) {
-      set([{ raw, key: raw, options: normalize(parsed) }]);
+      set([{ raw, key: raw, src: parsed }]);
     }
 
     // split can be unset by the 2nd parent.split() call
     // which is ok since it would be weird to show remainders from raw
     // also assume split.remainder has values
     else if (split) {
-      // TODO: error
-      throw new Error(
-        'Unrecognized alias' +
+      const name = display(parent.data);
+      error(
+        parent.data,
+        ParseError.UNRECOGNIZED_ALIAS_ERROR,
+        (name ? name + 'does not recognize the' : 'Unrecognized') +
+          ' alias' +
           (split.remainder.length === 1 ? '' : 'es') +
           ': -' +
           split.items
@@ -204,29 +217,38 @@ export function parse(
   return root.tree(null, 0);
 }
 
-// const node0 = parse(
-//   [
-//     '-fzk=abasdcaasd',
-//     '1'
-//     // '-fafgba=a='
-//   ],
-//   {
-//     aliases: { '-a=a': '--arg', '-b': '--arg' },
-//     args: { '--arg': { alias: ['-a', 'v:a'] } }
-//   }
-// );
+const node0 = parse(
+  // '-fzk=abasdcaasd',
+  // '-fafgba=a='
+  ['-a', '1', '-cdarf'],
+  {
+    // name: '--root',
+    // max: 0,
+    // max: 1,
+    // min: 2,
+    // maxRead: 1,
+    initial: ['1'],
+    aliases: {
+      // '-a': '--arg',
+      '-a=a': '--arg',
+      '-b': '--arg',
+      '-c': '--cat'
+    },
+    args: { '--arg': { alias: ['-a', 'v:a'] } }
+  }
+);
 
-// function render(node: INode, prefix = '') {
-//   console.log(
-//     '%s%s (%s, %s): [%s]',
-//     prefix,
-//     node.key,
-//     node.raw,
-//     node.alias ?? '?',
-//     node.args.join(', ')
-//   );
-//   for (const child of node.children) {
-//     render(child, prefix + '  ');
-//   }
-// }
-// render(node0);
+function render(node: INode, prefix = '') {
+  console.log(
+    '%s%s (%s, %s): [%s]',
+    prefix,
+    node.key,
+    node.raw,
+    node.alias ?? '?',
+    node.args.join(', ')
+  );
+  for (const child of node.children) {
+    render(child, prefix + '  ');
+  }
+}
+render(node0);

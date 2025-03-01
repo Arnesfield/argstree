@@ -1,6 +1,10 @@
 import { isAlias } from '../utils/arg.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
-import { Alias, Args, Options } from './core.types.js';
+import { error } from '../utils/error.utils.js';
+import { display } from '../utils/options.utils.js';
+import { Alias, Args, NodeData, Options } from './core.types.js';
+import { ParseError } from './error.js';
+import { NodeOptions } from './node.js';
 
 export interface NormalizedArgs {
   [arg: string]: NormalizedOptions;
@@ -11,6 +15,14 @@ export interface NormalizedAliases {
     | [[string, ...string[]], ...[string, ...string[]][]]
     | null
     | undefined;
+}
+
+export interface NormalizeOptions extends Omit<NodeOptions, 'options'> {
+  src: Options | true;
+}
+
+export interface MakeOptions extends Omit<NodeOptions, 'options'> {
+  src: Options;
 }
 
 export interface NormalizedOptions {
@@ -38,6 +50,8 @@ export interface NormalizedOptions {
     max?: number | null;
     maxRead?: number | null;
   };
+
+  readonly data: NodeData;
 }
 
 function getArgs(alias: Alias | null | undefined) {
@@ -66,28 +80,19 @@ export function normalizer() {
   let o: Options | undefined;
   const map = new WeakMap<Options, NormalizedOptions>();
 
-  return (src: Options | true): NormalizedOptions => {
-    const exists = map.get((src = typeof src === 'object' ? src : (o ||= {})));
-    if (exists) {
-      return exists;
-    }
+  function mkdata(options: MakeOptions): NodeData {
+    const { src, raw = null, key = null, alias = null } = options;
+    const args = (src.initial || []).concat(options.argv || []);
+    return { raw, key, alias, args, options: src };
+  }
 
-    const args = Object.entries(src.args || {});
-    const range: NormalizedOptions['range'] = {};
-    const opts: NormalizedOptions = {
-      branch: !!(src.args || src.handler),
-      fertile: !!(src.handler || args.length > 0),
-      src,
-      args: { __proto__: null, ...src.args },
-      aliases: { __proto__: null },
-      names: [],
-      range
-    };
-    map.set(src, opts);
+  function make(options: MakeOptions) {
+    const data = mkdata(options);
 
     // get and validate range only after setting the fields above
-    range.min = ensureNumber(src.min);
-    range.max = ensureNumber(src.max);
+    const { src } = options;
+    type R = NormalizedOptions['range'];
+    const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
     range.maxRead = ensureNumber(src.maxRead) ?? range.max;
 
     // if no max, skip all checks as they all require max to be provided
@@ -101,14 +106,26 @@ export function normalizer() {
             ? `max and maxRead range: ${max} >= ${maxRead}`
             : null;
     if (msg) {
-      // TODO: error
-      throw new Error(`Invalid ${msg}.`);
-      // const name = this.name();
-      // this.error(
-      //   ArgsTreeError.INVALID_OPTIONS_ERROR,
-      //   (name ? name + 'has i' : 'I') + `nvalid ${message}.`
-      // );
+      const name = display(data);
+      error(
+        data,
+        ParseError.INVALID_OPTIONS_ERROR,
+        (name ? name + 'has i' : 'I') + `nvalid ${msg}.`
+      );
     }
+
+    const entries = Object.entries(src.args || {});
+    const opts: NormalizedOptions = {
+      branch: !!(src.args || src.handler),
+      fertile: !!(src.handler || entries.length > 0),
+      data,
+      src,
+      args: { __proto__: null, ...src.args },
+      aliases: { __proto__: null },
+      names: [],
+      range
+    };
+    map.set(src, opts);
 
     function setAlias(
       key: string,
@@ -129,7 +146,7 @@ export function normalizer() {
     }
 
     // apply aliases from args
-    for (const [arg, value] of args) {
+    for (const [arg, value] of entries) {
       if (!value || typeof value !== 'object') {
         continue;
       }
@@ -146,9 +163,16 @@ export function normalizer() {
         if (arr.length > 0) {
           const key = arr[0];
           if (opts.aliases[key]) {
-            // TODO: error
-            throw new Error(`Alias '${key}' already exists.`);
+            const name = display({ key: arg, options: value });
+            error(
+              data,
+              ParseError.INVALID_OPTIONS_ERROR,
+              name
+                ? name + `cannot use an existing alias: ${key}`
+                : `Alias '${key}' already exists.`
+            );
           }
+
           setAlias(key, [[arg].concat(arr.slice(1))] as [
             [string, ...string[]]
           ]);
@@ -159,5 +183,12 @@ export function normalizer() {
     // sort by length desc for splitting later on
     opts.names.sort((a, b) => b.length - a.length);
     return opts;
+  }
+
+  return (opts: NormalizeOptions): NodeOptions => {
+    // convert src options to object
+    // NOTE: directly mutate since we probably won't need to reference opts again
+    opts.src = typeof opts.src === 'object' ? opts.src : (o ||= {});
+    return { ...opts, options: map.get(opts.src) || make(opts as MakeOptions) };
   };
 }
