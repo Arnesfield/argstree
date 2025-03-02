@@ -15,14 +15,14 @@ import { slice } from '../utils/slice.js';
 
 // NOTE: internal
 
-export interface ResolvedAlias {
+export interface AliasItem {
   /** Alias name. */
   name: string;
   args: [string, ...string[]];
 }
 
 export interface NodeSplit extends Split {
-  list: ResolvedAlias[];
+  list: [AliasItem, ...AliasItem[]];
 }
 
 export interface NodeOptions {
@@ -191,29 +191,32 @@ export class Node {
   // aliases
 
   split(arg: string): NodeSplit | undefined {
+    // accept false for split.list (internal to Node only)
+    type PartialNodeSplit = Split & { list: NodeSplit['list'] | false };
+
     // only accept aliases
     // remove first `-` for alias
     // considered as split only if alias args were found
-    let data, list;
+    let data;
     if (
       isAlias(arg) &&
-      (data = slice(arg.slice(1), this.options.names) as NodeSplit) &&
-      (list = this.alias(data.values, '-'))
+      (data = slice(arg.slice(1), this.options.names) as PartialNodeSplit) &&
+      (data.list = this.alias(data.values, '-'))
     ) {
-      data.list = list;
-      return data;
+      // list should have value here
+      return data as NodeSplit;
     }
   }
 
-  alias(aliases: string[], prefix = ''): ResolvedAlias[] | null {
+  alias(aliases: string[], prefix = ''): NodeSplit['list'] | false {
     // get args per alias
-    const all: ResolvedAlias[] = [];
+    const all: AliasItem[] = [];
     for (let name of aliases) {
       name = prefix + name;
       for (const args of this.options.aliases[name] || []) {
         all.push({ name, args });
       }
     }
-    return all.length > 0 ? all : null;
+    return all.length > 0 && (all as NodeSplit['list']);
   }
 }

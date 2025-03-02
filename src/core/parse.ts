@@ -1,5 +1,5 @@
 import { toArg } from '../lib/arg.js';
-import { Node, NodeOptions, ResolvedAlias } from '../lib/node.js';
+import { Node, NodeOptions, NodeSplit } from '../lib/node.js';
 import { isOption } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { error } from '../utils/error.utils.js';
@@ -28,7 +28,7 @@ export function parse(
     );
   }
 
-  function setAlias(aliases: ResolvedAlias[], value?: string | null) {
+  function setAlias(aliases: NodeSplit['list'], value?: string | null) {
     // assignable arg --option: initial 1, 2
     // alias -a: --option=3, 4, 5
     // scenario: -a=6
