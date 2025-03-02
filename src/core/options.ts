@@ -101,17 +101,17 @@ export function normalizer() {
     }
 
     // apply aliases from args
-    for (const [arg, value] of entries) {
-      if (!value || typeof value !== 'object') {
+    for (const [raw, options] of entries) {
+      if (!options || typeof options !== 'object') {
         continue;
       }
 
       // use `alias[0]` as alias and `arg` as arg
       const aliases =
-        typeof value.alias === 'string'
-          ? [value.alias]
-          : Array.isArray(value.alias)
-            ? value.alias
+        typeof options.alias === 'string'
+          ? [options.alias]
+          : Array.isArray(options.alias)
+            ? options.alias
             : [];
       for (const item of aliases) {
         // each item is an alias
@@ -123,13 +123,8 @@ export function normalizer() {
           if (opts.aliases[key]) {
             // this node data is for current value options
             // and is not being parsed but being validated
-            const data: NodeData = {
-              raw: arg,
-              key: arg,
-              alias: null,
-              options: value,
-              args: []
-            };
+            type N = NodeData;
+            const data: N = { raw, key: raw, alias: null, options, args: [] };
 
             // assume that the display name always has value
             // since data.key is explicitly provided
@@ -140,7 +135,7 @@ export function normalizer() {
             );
           }
 
-          setAlias(key, [[arg].concat(arr.slice(1))] as [
+          setAlias(key, [[raw].concat(arr.slice(1))] as [
             [string, ...string[]]
           ]);
         }
