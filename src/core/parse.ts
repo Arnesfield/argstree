@@ -16,6 +16,18 @@ export function parse(
   let parent = root,
     child: Node | null | undefined;
 
+  function unrecognized(
+    msg: string,
+    reason = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
+  ): never {
+    const name = display(parent.data);
+    error(
+      parent.data,
+      reason,
+      (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg
+    );
+  }
+
   function setAlias(aliases: ResolvedAlias[], value?: string | null) {
     // assignable arg --option: initial 1, 2
     // alias -a: --option=3, 4, 5
@@ -39,14 +51,7 @@ export function parse(
       const item = last && lastParsed ? lastParsed : parent.parse(arg);
 
       if (!item) {
-        // TODO: fix duplicated unrecognized error flow
-        const name = display(parent.data);
-        error(
-          parent.data,
-          ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
-          (name ? name + 'does not recognize the' : 'Unrecognized') +
-            ` argument from alias '${alias.name}': ${arg.raw}`
-        );
+        unrecognized(`argument from alias '${alias.name}': ${arg.raw}`);
       }
 
       item.alias = alias.name;
@@ -91,15 +96,7 @@ export function parse(
   function setValue(raw: string) {
     const node = child?.read() ? child : parent;
     // strict mode: throw error if arg is an option-like
-    if (node.strict && isOption(raw)) {
-      const name = display(parent.data);
-      error(
-        parent.data,
-        ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
-        (name ? name + 'does not recognize the' : 'Unrecognized') +
-          ` option: ${raw}`
-      );
-    }
+    node.strict && isOption(raw) && unrecognized(`option: ${raw}`);
     node.args.push(raw);
   }
 
@@ -164,17 +161,14 @@ export function parse(
     // which is ok since it would be weird to show remainders from raw
     // also assume split.remainder has values
     else if (split) {
-      const name = display(parent.data);
-      error(
-        parent.data,
-        ParseError.UNRECOGNIZED_ALIAS_ERROR,
-        (name ? name + 'does not recognize the' : 'Unrecognized') +
-          ' alias' +
+      unrecognized(
+        'alias' +
           (split.remainder.length === 1 ? '' : 'es') +
           ': -' +
           split.items
             .map(item => (item.remainder ? `(${item.value})` : item.value))
-            .join('')
+            .join(''),
+        ParseError.UNRECOGNIZED_ALIAS_ERROR
       );
     }
 
