@@ -1,18 +1,18 @@
 import { toArg } from '../lib/arg.js';
-import { Node, ResolvedAlias } from '../lib/node.js';
+import { Node, NodeOptions, ResolvedAlias } from '../lib/node.js';
 import { isOption } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { error } from '../utils/error.utils.js';
 import { Node as INode, ParseOptions } from './core.types.js';
 import { ParseError } from './error.js';
-import { NormalizeOptions, normalizer } from './options.js';
+import { normalizer } from './options.js';
 
 export function parse(
   args: readonly string[],
   options: ParseOptions = {}
 ): INode {
   const normalize = normalizer();
-  const root = new Node(normalize({ src: options }));
+  const root = new Node(normalize(options), {});
   let parent = root,
     child: Node | null | undefined;
 
@@ -39,12 +39,13 @@ export function parse(
       const item = last && lastParsed ? lastParsed : parent.parse(arg);
 
       if (!item) {
+        // TODO: fix duplicated unrecognized error flow
         const name = display(parent.data);
         error(
           parent.data,
           ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
           (name ? name + 'does not recognize the' : 'Unrecognized') +
-            ` argument '${arg.raw}' from alias: ${alias.name}`
+            ` argument from alias '${alias.name}': ${arg.raw}`
         );
       }
 
@@ -57,7 +58,7 @@ export function parse(
     set(items);
   }
 
-  function set(items: NormalizeOptions[]) {
+  function set(items: NodeOptions[]) {
     // validate existing child then make new child
     child?.done();
 
@@ -66,7 +67,8 @@ export function parse(
       // make new child and save values
       // probably don't need to validate now since it will be
       // validated when changing child node or at the end of parse
-      parent.children.push((child = new Node(normalize(item), parent.strict)));
+      child = new Node(normalize(item.src), item, parent.strict);
+      parent.children.push(child);
 
       // if child has args, use this as next child
       return child.options.branch ? (next = child) : child;

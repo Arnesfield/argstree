@@ -2,10 +2,11 @@ import {
   Arg,
   Node as INode,
   NodeData,
+  Options,
   ParseOptions
 } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
-import { NormalizedOptions, NormalizeOptions } from '../core/options.js';
+import { NormalizedOptions } from '../core/options.js';
 import { Split } from '../core/split.js';
 import { isAlias, isOption, isOptionType } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
@@ -25,33 +26,54 @@ export interface NodeSplit extends Split {
 }
 
 export interface NodeOptions {
-  options: NormalizedOptions;
   raw?: string | null;
   key?: string | null;
   alias?: string | null;
   args?: string[];
+  src: Options | true;
 }
 
-// optional alias
+// required args
 export interface ParsedNodeOptions
-  extends Required<Omit<NormalizeOptions, 'alias'>> {
-  alias?: string;
-}
+  extends Omit<NodeOptions, 'args'>,
+    Required<Pick<NodeOptions, 'args'>> {}
 
 export class Node {
-  readonly args: string[];
-  readonly children: Node[] = [];
   readonly data: NodeData;
+  readonly children: Node[] = [];
 
   // strict by default
   constructor(
     readonly options: NormalizedOptions,
+    opts: Omit<NodeOptions, 'src'>,
     // set parent.strict to constructor param,
     // but override using provided options.strict
-    readonly strict = options.src.strict ?? true
+    readonly strict = options.src.strict ?? true,
+    // this is only here to make the build a teeny bit smaller, lol
+    readonly args = (options.src.initial || []).concat(opts.args || [])
   ) {
-    // this.args is a reference to data.args
-    this.args = (this.data = options.data).args;
+    // data.args is a reference to this.args
+    const { raw = null, key = null, alias = null } = opts;
+    this.data = { raw, key, alias, args, options: options.src };
+
+    // if no max, skip all checks as they all require max to be provided
+    const { min, max, maxRead } = options.range;
+    const msg =
+      max == null
+        ? null
+        : min != null && min > max
+          ? `min and max range: ${min}-${max}`
+          : maxRead != null && max < maxRead
+            ? `max and maxRead range: ${max} >= ${maxRead}`
+            : null;
+    if (msg) {
+      const name = display(this.data);
+      error(
+        this.data,
+        ParseError.OPTIONS_ERROR,
+        (name ? name + 'has i' : 'I') + `nvalid ${msg}`
+      );
+    }
   }
 
   private arg(arg: string, hasValue: boolean | undefined) {

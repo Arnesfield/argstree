@@ -1,4 +1,3 @@
-import { Node, NodeOptions } from '../lib/node.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
@@ -6,20 +5,10 @@ import { error } from '../utils/error.utils.js';
 import { Alias, Args, NodeData, Options } from './core.types.js';
 import { ParseError } from './error.js';
 
-export interface NormalizeOptions extends Omit<NodeOptions, 'options'> {
-  src: Options | true;
-}
-
-export interface NormalizedArgs {
-  [arg: string]: NormalizedOptions;
-}
-
-export interface NormalizedAliases {
-  [alias: string]:
-    | [[string, ...string[]], ...[string, ...string[]][]]
-    | null
-    | undefined;
-}
+export type NormalizedAlias = [
+  [string, ...string[]],
+  ...[string, ...string[]][]
+];
 
 export interface NormalizedOptions {
   /**
@@ -29,7 +18,6 @@ export interface NormalizedOptions {
   readonly branch: boolean;
   /** Determines if the Node can actually have children. */
   readonly fertile: boolean;
-  readonly data: NodeData;
   readonly range: {
     min?: number | null;
     max?: number | null;
@@ -39,7 +27,7 @@ export interface NormalizedOptions {
   /** Safe args object. */
   readonly args: Args;
   /** Safe aliases object. */
-  readonly aliases: NormalizedAliases;
+  readonly aliases: { [alias: string]: NormalizedAlias | null | undefined };
   /** A sorted list of splittable alias names without the `-` prefix. */
   readonly names: string[];
 }
@@ -70,9 +58,9 @@ export function normalizer() {
   let o: Options | undefined;
   const map = new WeakMap<Options, NormalizedOptions>();
 
-  return (options: NormalizeOptions): NormalizedOptions => {
+  return (src: Options | true): NormalizedOptions => {
     // convert src options to object
-    const src = typeof options.src === 'object' ? options.src : (o ||= {});
+    src = typeof src === 'object' ? src : (o ||= {});
 
     // reuse existing normalized options
     const exists = map.get(src);
@@ -80,43 +68,15 @@ export function normalizer() {
       return exists;
     }
 
-    const data: NodeData = {
-      raw: options.raw ?? null,
-      key: options.key ?? null,
-      alias: options.alias ?? null,
-      args: (src.initial || []).concat(options.args || []),
-      options: src
-    };
-
     // get and validate range only after setting the fields above
     type R = NormalizedOptions['range'];
     const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
     range.maxRead = ensureNumber(src.maxRead) ?? range.max;
 
-    // if no max, skip all checks as they all require max to be provided
-    const { min, max, maxRead } = range;
-    const msg =
-      max == null
-        ? null
-        : min != null && min > max
-          ? `min and max range: ${min}-${max}`
-          : maxRead != null && max < maxRead
-            ? `max and maxRead range: ${max} >= ${maxRead}`
-            : null;
-    if (msg) {
-      const name = display(data);
-      error(
-        data,
-        ParseError.OPTIONS_ERROR,
-        (name ? name + 'has i' : 'I') + `nvalid ${msg}.`
-      );
-    }
-
     const entries = Object.entries(src.args || {});
     const opts: NormalizedOptions = {
       branch: !!(src.args || src.handler),
       fertile: !!(src.handler || entries.length > 0),
-      data,
       range,
       src,
       args: { __proto__: null, ...src.args },
@@ -125,10 +85,7 @@ export function normalizer() {
     };
     map.set(src, opts);
 
-    function setAlias(
-      key: string,
-      args: NonNullable<NormalizedAliases[string]>
-    ) {
+    function setAlias(key: string, args: NormalizedAlias) {
       opts.aliases[key] = args;
       // skip command aliases since we don't need to split them
       // and remove `-` prefix
@@ -139,7 +96,7 @@ export function normalizer() {
     for (const [arg, alias] of Object.entries(src.aliases || {})) {
       const args = getArgs(alias);
       if (args.length > 0) {
-        setAlias(arg, args as NonNullable<NormalizedAliases[string]>);
+        setAlias(arg, args as NormalizedAlias);
       }
     }
 
@@ -164,13 +121,22 @@ export function normalizer() {
         if (arr.length > 0) {
           const key = arr[0];
           if (opts.aliases[key]) {
-            const name = display({ key: arg, options: value });
+            // this node data is for current value options
+            // and is not being parsed but being validated
+            const data: NodeData = {
+              raw: arg,
+              key: arg,
+              alias: null,
+              options: value,
+              args: []
+            };
+
+            // assume that the display name always has value
+            // since data.key is explicitly provided
             error(
               data,
               ParseError.OPTIONS_ERROR,
-              name
-                ? name + `cannot use an existing alias: ${key}`
-                : `Alias '${key}' already exists.`
+              `${display(data)}cannot use an existing alias: ${key}`
             );
           }
 
