@@ -126,7 +126,7 @@ export function normalizer() {
             // this node data is for current value options
             // and is not being parsed but being validated
             type N = NodeData;
-            const data: N = { raw, key: raw, alias: null, options, args: [] };
+            const data: N = { raw, key: raw, alias: null, args: [], options };
 
             // assume that the display name always has value
             // since data.key is explicitly provided
