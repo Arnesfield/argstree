@@ -1,4 +1,4 @@
-import { Alias, Args, Options } from '../core/core.types.js';
+import { Aliases, Args, Options } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
@@ -30,7 +30,7 @@ export interface NormalizedOptions {
   readonly names: string[];
 }
 
-function getArgs(alias: Alias | null | undefined) {
+function getArgs(alias: Aliases[string]) {
   /** List of strings in `args`. */
   let strs: [string, ...string[]] | undefined;
   const list: [string, ...string[]][] = [];
@@ -44,7 +44,7 @@ function getArgs(alias: Alias | null | undefined) {
       }
     } else if (Array.isArray(arg) && arg.length > 0) {
       // filter out empty array
-      list.push(arg);
+      list.push(arg as [string, ...string[]]);
     }
   }
 

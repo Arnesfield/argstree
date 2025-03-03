@@ -9,13 +9,8 @@ export interface Args {
   [arg: string]: Options | boolean | null | undefined;
 }
 
-export type Alias =
-  | string
-  | [string, ...string[]]
-  | [[string, ...string[]], ...[string, ...string[]][]];
-
 export interface Aliases {
-  [alias: string]: Alias | null | undefined;
+  [alias: string]: string | string[] | string[][] | null | undefined;
 }
 
 /** The node data. */
@@ -60,7 +55,7 @@ export interface ParseOptions {
 
 export interface Options extends ParseOptions {
   assign?: boolean;
-  alias?: Alias | null;
+  alias?: string | (string | string[])[] | null;
 }
 
 /** The node object. */
