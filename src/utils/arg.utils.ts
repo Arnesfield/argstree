@@ -22,7 +22,10 @@ export function isOption(arg: string): boolean {
 
 // NOTE: internal
 
-export function isOptionType(arg: string | null, options: Options): boolean {
+export function isOptionType(
+  arg: string | null,
+  options: Pick<Options, 'type'>
+): boolean {
   // follow type if it's explicitly set, otherwise guess from arg
   return (
     options.type === 'option' ||
