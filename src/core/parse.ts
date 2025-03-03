@@ -74,7 +74,7 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
     const children = items.map(item => {
       // create child nodes from options that are validated later
       // since we want to validate them in order except the next node
-      child = new Node(normalize(item.src), item, parent.options.src.strict);
+      child = new Node(normalize(item.src), item, parent.dstrict);
       parent.children.push(child);
 
       // if child has args, use this as next child
