@@ -39,7 +39,7 @@ export interface ParsedNodeOptions
     Required<Pick<NodeOptions, 'args'>> {}
 
 // create empty node data
-export function ndata(key: string, options: Options): NodeData {
+export function ndata(key: string | null, options: Options): NodeData {
   return { raw: key, key, alias: null, args: [], options };
 }
 
