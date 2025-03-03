@@ -9,6 +9,7 @@ import { ParseError } from '../core/error.js';
 import { Split } from '../core/split.js';
 import { isAlias, isOption, isOptionType } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
+import { error } from '../utils/error.utils.js';
 import { slice } from '../utils/slice.js';
 import { NormalizedOptions } from './normalize.js';
 
@@ -36,6 +37,11 @@ export interface NodeOptions {
 export interface ParsedNodeOptions
   extends Omit<NodeOptions, 'args'>,
     Required<Pick<NodeOptions, 'args'>> {}
+
+// create empty node data
+export function ndata(key: string, options: Options): NodeData {
+  return { raw: key, key, alias: null, args: [], options };
+}
 
 export class Node {
   readonly data: NodeData;
@@ -72,7 +78,7 @@ export class Node {
             : null;
     if (msg) {
       const name = display(this.data);
-      throw new ParseError(
+      error(
         ParseError.OPTIONS_ERROR,
         (name ? name + 'has i' : 'I') + `nvalid ${msg}`,
         this.data
@@ -159,7 +165,7 @@ export class Node {
             : null;
     if (msg) {
       const name = display(this.data);
-      throw new ParseError(
+      error(
         ParseError.RANGE_ERROR,
         (name ? name + 'e' : 'E') +
           `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`,

@@ -1,8 +1,10 @@
-import { Node, Options, ParseOptions } from '../core/core.types.js';
+import { Aliases, Node, Options, ParseOptions } from '../core/core.types.js';
+
+export type SpecOptions = Omit<Options, 'type'>;
 
 export interface Spec {
-  option(arg: string, options?: Omit<Options, 'type'>): this;
-  command(arg: string, options?: Omit<Options, 'type'>): this;
   options(): ParseOptions;
+  add(arg: string, options?: SpecOptions): this;
+  alias(aliases: Aliases): this;
   parse(args: readonly string[]): Node;
 }

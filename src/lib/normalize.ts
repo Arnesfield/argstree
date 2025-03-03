@@ -1,8 +1,10 @@
-import { Alias, Args, NodeData, Options } from '../core/core.types.js';
+import { Alias, Args, Options } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
+import { error } from '../utils/error.utils.js';
+import { ndata } from './node.js';
 
 // NOTE: internal
 
@@ -125,12 +127,11 @@ export function normalizer() {
           if (opts.aliases[key]) {
             // this node data is for current value options
             // and is not being parsed but being validated
-            type N = NodeData;
-            const data: N = { raw, key: raw, alias: null, options, args: [] };
+            const data = ndata(raw, options);
 
             // assume that the display name always has value
             // since data.key is explicitly provided
-            throw new ParseError(
+            error(
               ParseError.OPTIONS_ERROR,
               `${display(data)}cannot use an existing alias: ${key}`,
               data
