@@ -3,6 +3,7 @@ import { ParseError } from '../core/error.js';
 import { parse } from '../core/parse.js';
 import { ndata } from '../lib/node.js';
 import { display } from '../utils/display.utils.js';
+import { error } from '../utils/error.utils.js';
 import { Spec as ISpec } from './spec.types.js';
 
 // NOTE: internal
@@ -28,7 +29,7 @@ export class Spec implements ISpec {
   add(arg: string, options: Options = {}): this {
     const opts = this.opts.args[arg];
     if (opts) {
-      throw new ParseError(
+      error(
         ParseError.OPTIONS_ERROR,
         display({ key: arg, options: typeof opts === 'object' ? opts : {} }) +
           'already exists.',
@@ -44,7 +45,7 @@ export class Spec implements ISpec {
     for (const [key, value] of Object.entries(aliases)) {
       if (this.opts.aliases[key]) {
         const data = ndata(key, this.opts);
-        throw new ParseError(
+        error(
           ParseError.OPTIONS_ERROR,
           `${display(data)}cannot use an existing alias: ${key}`,
           data
