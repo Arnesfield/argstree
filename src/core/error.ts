@@ -1,21 +1,7 @@
 import { NodeData, Options } from './core.types.js';
 
-/** The parse error options. */
-export interface ParseErrorOptions extends NodeData {
-  /**
-   * The reason for error.
-   * - {@linkcode ParseError.OPTIONS_ERROR}
-   * - {@linkcode ParseError.RANGE_ERROR}
-   * - {@linkcode ParseError.UNRECOGNIZED_ALIAS_ERROR}
-   * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
-   */
-  reason: string;
-  /** The error message. */
-  message: string;
-}
-
 /** The parse error. */
-export class ParseError extends Error implements ParseErrorOptions {
+export class ParseError extends Error {
   /**
    * The {@linkcode Options} object provided is not valid
    * (e.g. incorrect range config or duplicate aliases).
@@ -30,20 +16,30 @@ export class ParseError extends Error implements ParseErrorOptions {
 
   // follow order of properties in NodeData
   name = 'ParseError';
-  reason!: string;
-  raw!: string | null;
-  key!: string | null;
-  alias!: string | null;
-  args!: string[];
-  options!: Options;
+  /**
+   * The reason for error.
+   * - {@linkcode ParseError.OPTIONS_ERROR}
+   * - {@linkcode ParseError.RANGE_ERROR}
+   * - {@linkcode ParseError.UNRECOGNIZED_ALIAS_ERROR}
+   * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
+   */
+  reason: string;
+  raw: string | null = null;
+  key: string | null = null;
+  alias: string | null = null;
+  args: string[] = [];
+  options: Options = {};
 
   /**
    * The parse error.
-   * @param options The error options.
+   * @param reason The reason for error. See {@linkcode ParseError.reason} for details.
+   * @param message The error message.
+   * @param data The node data.
    */
-  constructor(options: ParseErrorOptions) {
-    super(options.message);
-    // assume options includes all properties (interface is implemented)
-    Object.assign(this, options);
+  constructor(reason: string, message: string, data?: NodeData) {
+    super(message);
+    this.reason = reason;
+    // assume data includes all properties
+    Object.assign(this, data);
   }
 }

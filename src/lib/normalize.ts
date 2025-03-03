@@ -3,7 +3,6 @@ import { ParseError } from '../core/error.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
-import { error } from '../utils/error.utils.js';
 
 // NOTE: internal
 
@@ -131,10 +130,10 @@ export function normalizer() {
 
             // assume that the display name always has value
             // since data.key is explicitly provided
-            error(
-              data,
+            throw new ParseError(
               ParseError.OPTIONS_ERROR,
-              `${display(data)}cannot use an existing alias: ${key}`
+              `${display(data)}cannot use an existing alias: ${key}`,
+              data
             );
           }
 

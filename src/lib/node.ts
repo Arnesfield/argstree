@@ -6,12 +6,11 @@ import {
   ParseOptions
 } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
-import { NormalizedOptions } from './normalize.js';
 import { Split } from '../core/split.js';
 import { isAlias, isOption, isOptionType } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
-import { error } from '../utils/error.utils.js';
 import { slice } from '../utils/slice.js';
+import { NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
 
@@ -71,10 +70,10 @@ export class Node {
             : null;
     if (msg) {
       const name = display(this.data);
-      error(
-        this.data,
+      throw new ParseError(
         ParseError.OPTIONS_ERROR,
-        (name ? name + 'has i' : 'I') + `nvalid ${msg}`
+        (name ? name + 'has i' : 'I') + `nvalid ${msg}`,
+        this.data
       );
     }
 
@@ -157,11 +156,11 @@ export class Node {
             : null;
     if (msg) {
       const name = display(this.data);
-      error(
-        this.data,
+      throw new ParseError(
         ParseError.RANGE_ERROR,
         (name ? name + 'e' : 'E') +
-          `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`
+          `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`,
+        this.data
       );
     }
 
