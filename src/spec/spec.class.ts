@@ -1,4 +1,4 @@
-import { Aliases, Node, Options, ParseOptions } from '../core/core.types.js';
+import { Aliases, Node, Options } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { parse } from '../core/parse.js';
 import { ndata } from '../lib/node.js';
@@ -9,12 +9,12 @@ import { Spec as ISpec } from './spec.types.js';
 // NOTE: internal
 
 type RequiredPick<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
-type SpecParseOptions = RequiredPick<ParseOptions, 'args' | 'aliases'>;
+type SpecParseOptions = RequiredPick<Options, 'args' | 'aliases'>;
 
 export class Spec implements ISpec {
   private opts: SpecParseOptions;
 
-  constructor(opts: ParseOptions) {
+  constructor(opts: Options) {
     this.opts = {
       ...opts,
       args: { __proto__: null, ...opts.args },
@@ -22,11 +22,17 @@ export class Spec implements ISpec {
     };
   }
 
-  options(): ParseOptions {
+  options(): Options {
     return this.opts;
   }
 
-  add(arg: string, options: Options = {}): this {
+  arg(arg: string, options: Options | (() => ISpec | Options) = {}): this {
+    const o = typeof options === 'function' ? options() : options;
+    options =
+      typeof (o as ISpec).options === 'function'
+        ? (o as ISpec).options()
+        : (o as Options);
+
     const opts = this.opts.args[arg];
     if (opts) {
       error(
