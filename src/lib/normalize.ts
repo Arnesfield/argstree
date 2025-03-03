@@ -61,7 +61,7 @@ export function normalizer() {
   let o: Options | undefined;
   const map = new WeakMap<Options, NormalizedOptions>();
 
-  return (src: Options | true): NormalizedOptions => {
+  return (src: Options | true | undefined): NormalizedOptions => {
     // convert src options to object
     src = typeof src === 'object' ? src : (o ||= {});
 

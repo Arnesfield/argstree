@@ -6,10 +6,7 @@ import { display } from '../utils/display.utils.js';
 import { Node as INode, ParseOptions } from './core.types.js';
 import { ParseError } from './error.js';
 
-export function parse(
-  args: readonly string[],
-  options: ParseOptions = {}
-): INode {
+export function parse(args: readonly string[], options?: ParseOptions): INode {
   const normalize = normalizer();
   const root = new Node(normalize(options), {});
   let parent = root,
