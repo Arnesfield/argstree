@@ -2,6 +2,7 @@ import { Aliases, Node, Options } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { parse } from '../core/parse.js';
 import { ndata } from '../lib/node.js';
+import { isOptionType } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { error } from '../utils/error.utils.js';
 import { Spec as ISpec } from './spec.types.js';
@@ -35,11 +36,17 @@ export class Spec implements ISpec {
 
     const opts = this.opts.args[arg];
     if (opts) {
+      const data = ndata(null, this.opts);
+      const name = display(data);
       error(
         ParseError.OPTIONS_ERROR,
-        display({ key: arg, options: typeof opts === 'object' ? opts : {} }) +
-          'already exists.',
-        ndata(arg, options)
+        (name ? name + 'c' : 'C') +
+          'annot override an existing ' +
+          (isOptionType(arg, typeof opts === 'object' ? opts : {})
+            ? 'option'
+            : 'command') +
+          `: ${arg}`,
+        data
       );
     }
 
@@ -49,11 +56,18 @@ export class Spec implements ISpec {
 
   alias(aliases: Aliases): this {
     for (const [key, value] of Object.entries(aliases)) {
-      if (this.opts.aliases[key]) {
-        const data = ndata(key, this.opts);
+      const args = this.opts.aliases[key];
+      // make sure alias args does not actually have value
+      if (
+        typeof args === 'string' ||
+        (Array.isArray(args) &&
+          args.some(a => typeof a === 'string' || a.length > 0))
+      ) {
+        const data = ndata(null, this.opts);
+        const name = display(data);
         error(
           ParseError.OPTIONS_ERROR,
-          `${display(data)}cannot use an existing alias: ${key}`,
+          (name ? name + 'c' : 'C') + `annot use an existing alias: ${key}`,
           data
         );
       }
