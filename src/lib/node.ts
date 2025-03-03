@@ -37,6 +37,11 @@ export interface ParsedNodeOptions
   extends Omit<NodeOptions, 'args'>,
     Required<Pick<NodeOptions, 'args'>> {}
 
+// create empty node data
+export function ndata(key: string, options: Options): NodeData {
+  return { raw: key, key, alias: null, args: [], options };
+}
+
 export class Node {
   readonly data: NodeData;
   readonly args: string[] = [];

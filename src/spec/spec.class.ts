@@ -1,12 +1,7 @@
-import {
-  Aliases,
-  Node,
-  NodeData,
-  Options,
-  ParseOptions
-} from '../core/core.types.js';
+import { Aliases, Node, Options, ParseOptions } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { parse } from '../core/parse.js';
+import { ndata } from '../lib/node.js';
 import { display } from '../utils/display.utils.js';
 import { Spec as ISpec } from './spec.types.js';
 
@@ -37,7 +32,7 @@ export class Spec implements ISpec {
         ParseError.OPTIONS_ERROR,
         display({ key: arg, options: typeof opts === 'object' ? opts : {} }) +
           'already exists.',
-        { raw: arg, key: arg, alias: null, args: [], options }
+        ndata(arg, options)
       );
     }
 
@@ -48,8 +43,7 @@ export class Spec implements ISpec {
   alias(aliases: Aliases): this {
     for (const [key, value] of Object.entries(aliases)) {
       if (this.opts.aliases[key]) {
-        // prettier-ignore
-        const data: NodeData = { raw: key, key, alias: null, args: [], options: this.opts };
+        const data = ndata(key, this.opts);
         throw new ParseError(
           ParseError.OPTIONS_ERROR,
           `${display(data)}cannot use an existing alias: ${key}`,
