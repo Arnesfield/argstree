@@ -41,15 +41,17 @@ export class Node {
   readonly data: NodeData;
   readonly args: string[] = [];
   readonly children: Node[] = [];
-  readonly strict: boolean;
   /** Determines if the Node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
+  readonly strict: boolean;
 
-  // strict by default
+  /**
+   * @param strict Parent `options.strict` value.
+   */
   constructor(
     readonly options: NormalizedOptions,
     opts: Omit<NodeOptions, 'src'>,
-    strict: boolean
+    strict?: Options['strict']
   ) {
     // prettier-ignore
     const { src, range: { min, max, maxRead } } = options;
@@ -77,10 +79,11 @@ export class Node {
       );
     }
 
-    // set parent.strict to constructor param,
-    // but override using provided options.strict
-    this.strict = src.strict ?? strict;
     this.leaf = !(src.args || src.handler) && isOptionType(key, src);
+    this.strict =
+      src.strict != null
+        ? src.strict === true || src.strict === 'self'
+        : strict === true || strict === 'descendants';
   }
 
   private arg(arg: string, hasValue: boolean | undefined) {

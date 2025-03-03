@@ -42,9 +42,14 @@ export interface ParseOptions {
   min?: number | null;
   max?: number | null;
   maxRead?: number | null;
-  // TODO: note inherited
-  /** @default true */
-  strict?: boolean;
+  /**
+   * - `true` - Enable strict mode for both self and descendants.
+   * - `false` - Disable strict mode for both self and descendants.
+   * - `self` - Enable strict mode for self but disable it for descendants.
+   * - `descendants` - Disable strict mode for self but enable it for descendants.
+   * @default false
+   */
+  strict?: boolean | 'self' | 'descendants';
   handler?(
     this: this,
     arg: Arg,

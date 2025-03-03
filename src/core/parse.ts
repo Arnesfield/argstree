@@ -11,7 +11,7 @@ export function parse(
   options: ParseOptions = {}
 ): INode {
   const normalize = normalizer();
-  const root = new Node(normalize(options), {}, true);
+  const root = new Node(normalize(options), {});
   let parent = root,
     child: Node | null | undefined;
 
@@ -76,7 +76,7 @@ export function parse(
     const children = items.map(item => {
       // create child nodes from options that are validated later
       // since we want to validate them in order except the next node
-      child = new Node(normalize(item.src), item, parent.strict);
+      child = new Node(normalize(item.src), item, parent.options.src.strict);
       parent.children.push(child);
 
       // if child has args, use this as next child
@@ -98,6 +98,7 @@ export function parse(
   }
 
   function setValue(raw: string) {
+    // fallback to parent if child cannot accept anymore args due to range
     const node = child?.read() ? child : parent;
     // strict mode: throw error if arg is an option-like
     node.strict && isOption(raw) && unrecognized(`option: ${raw}`);
