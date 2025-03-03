@@ -15,7 +15,7 @@ type SpecParseOptions = RequiredPick<Options, 'args' | 'aliases'>;
 export class Spec implements ISpec {
   private opts: SpecParseOptions;
 
-  constructor(opts: Options) {
+  constructor(opts: Options = {}) {
     this.opts = {
       ...opts,
       args: { __proto__: null, ...opts.args },
