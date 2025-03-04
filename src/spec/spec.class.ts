@@ -4,7 +4,6 @@ import { parse } from '../core/parse.js';
 import { ndata } from '../lib/node.js';
 import { isOptionType } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
-import { error } from '../utils/error.utils.js';
 import { Spec as ISpec } from './spec.types.js';
 
 // NOTE: internal
@@ -38,7 +37,7 @@ export class Spec implements ISpec {
     if (opts) {
       const data = ndata(this.opts);
       const name = display(data);
-      error(
+      throw new ParseError(
         ParseError.OPTIONS_ERROR,
         (name ? name + 'c' : 'C') +
           'annot override an existing ' +
@@ -65,7 +64,7 @@ export class Spec implements ISpec {
       ) {
         const data = ndata(this.opts);
         const name = display(data);
-        error(
+        throw new ParseError(
           ParseError.OPTIONS_ERROR,
           (name ? name + 'c' : 'C') + `annot use an existing alias: ${key}`,
           data
