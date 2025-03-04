@@ -38,9 +38,12 @@ export interface ParsedNodeOptions
   extends Omit<NodeOptions, 'args'>,
     Required<Pick<NodeOptions, 'args'>> {}
 
-// create empty node data
-export function ndata(key: string | null, options: Options): NodeData {
-  return { raw: key, key, alias: null, args: [], options };
+// create empty node data for errors
+export function ndata(
+  options: Options,
+  key: string | null = null
+): Pick<NodeData, 'raw' | 'key' | 'options'> {
+  return { raw: key, key, options };
 }
 
 export class Node {
@@ -143,14 +146,6 @@ export class Node {
     return (
       typeof this.options.src.handler === 'function' &&
       this.options.src.handler(arg, this.data)
-    );
-  }
-
-  /** Check if this node can read one more argument. */
-  read(): boolean {
-    return (
-      this.options.range.maxRead == null ||
-      this.options.range.maxRead > this.args.length
     );
   }
 

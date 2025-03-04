@@ -36,7 +36,7 @@ export class Spec implements ISpec {
 
     const opts = this.opts.args[arg];
     if (opts) {
-      const data = ndata(null, this.opts);
+      const data = ndata(this.opts);
       const name = display(data);
       error(
         ParseError.OPTIONS_ERROR,
@@ -63,7 +63,7 @@ export class Spec implements ISpec {
         (Array.isArray(args) &&
           args.some(a => typeof a === 'string' || a.length > 0))
       ) {
-        const data = ndata(null, this.opts);
+        const data = ndata(this.opts);
         const name = display(data);
         error(
           ParseError.OPTIONS_ERROR,
