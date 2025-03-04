@@ -36,7 +36,7 @@ export class ParseError extends Error {
    * @param message The error message.
    * @param data The node data.
    */
-  constructor(reason: string, message: string, data?: NodeData) {
+  constructor(reason: string, message: string, data?: Partial<NodeData>) {
     super(message);
     this.reason = reason;
     // assume data includes all properties

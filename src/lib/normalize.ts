@@ -127,7 +127,7 @@ export function normalizer() {
           if (opts.aliases[key]) {
             // this node data is for current value options
             // and is not being parsed but being validated
-            const data = ndata(raw, options);
+            const data = ndata(options, raw);
 
             // assume that the display name always has value
             // since data.key is explicitly provided
