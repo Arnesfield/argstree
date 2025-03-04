@@ -96,8 +96,14 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
   }
 
   function setValue(raw: string) {
-    // fallback to parent if child cannot accept anymore args due to range
-    const node = child?.read() ? child : parent;
+    // check if child can read one more argument
+    // fallback to parent if child cannot accept anymore args
+    const node =
+      child &&
+      (child.options.range.maxRead == null ||
+        child.options.range.maxRead > child.args.length)
+        ? child
+        : parent;
     // strict mode: throw error if arg is an option-like
     node.strict && isOption(raw) && unrecognized(`option: ${raw}`);
     node.args.push(raw);
@@ -105,25 +111,26 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
 
   // create copy of args to avoid external mutation
   for (const raw of args.slice()) {
-    const arg = toArg(raw, null);
-    const hasValue = arg.value != null;
-    let parsed, aliases, split;
-
     // immediately treat as value if the current node
     // cannot actually create children
     if (!parent.options.fertile) {
       setValue(raw);
+      continue;
     }
 
+    const arg = toArg(raw, null);
+    const hasValue = arg.value != null;
+    let parsed, aliases, split;
+
     // parse options from options.args only
-    else if ((parsed = parent.parse(arg, { exact: true }))) {
+    if ((parsed = parent.parse(arg, { exact: true }))) {
       set([parsed]);
     }
 
     // at this point, if there are no parsed options, arg can be:
     // - an exact alias
     // - a merged alias
-    // - option/s from handler
+    // - options from handler
     // - a value (or, if in strict mode, an unknown option-like)
     // for this case, handle exact alias
     else if ((aliases = parent.alias([raw]))) {
@@ -148,7 +155,7 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
       // you would think it might be ideal to stop parent.split()
       // when it finds at least 1 remainder, but we'll need to display
       // the list of remainders for the error message anyway,
-      // so it's probably ok
+      // so this is probably ok
       setAlias(split.list);
     } else if (
       hasValue &&
@@ -156,7 +163,10 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
       split.remainder.length === 0
     ) {
       setAlias(split.list, arg.value);
-    } else if ((parsed = parent.handle(arg))) {
+    }
+
+    // parse options using handler
+    else if ((parsed = parent.handle(arg))) {
       set([{ raw, key: raw, src: parsed }]);
     }
 

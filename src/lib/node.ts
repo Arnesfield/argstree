@@ -146,14 +146,6 @@ export class Node {
     );
   }
 
-  /** Check if this node can read one more argument. */
-  read(): boolean {
-    return (
-      this.options.range.maxRead == null ||
-      this.options.range.maxRead > this.args.length
-    );
-  }
-
   done(): void {
     // validate assumes the node has lost reference
     // so validate range here, too
