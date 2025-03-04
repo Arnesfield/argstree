@@ -3,7 +3,6 @@ import { Node, NodeOptions, NodeSplit } from '../lib/node.js';
 import { normalizer } from '../lib/normalize.js';
 import { isOption } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
-import { error } from '../utils/error.utils.js';
 import { Node as INode, ParseOptions } from './core.types.js';
 import { ParseError } from './error.js';
 
@@ -18,7 +17,7 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
     reason = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
   ): never {
     const name = display(parent.data);
-    error(
+    throw new ParseError(
       reason,
       (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg,
       parent.data
