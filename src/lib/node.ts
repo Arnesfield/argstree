@@ -116,7 +116,7 @@ export class Node {
   parse(
     arg: Arg,
     flags: { exact?: boolean; hasValue?: boolean } = {}
-  ): ParsedNodeOptions | undefined {
+  ): ParsedNodeOptions | false | null | void {
     // scenario: -a=6
     // alias -a: --option=3, 4, 5
     // option --option: initial 1, 2
@@ -124,20 +124,20 @@ export class Node {
 
     let src,
       key = arg.raw,
-      args: string[] = [];
+      value;
 
     if ((src = this.arg(key, flags.hasValue))) {
       // do nothing
     } else if (arg.value != null && (src = this.arg(arg.key, true))) {
       key = arg.key;
-      args = [arg.value];
+      value = arg.value;
     } else if (!flags.exact) {
       src = this.handle(arg);
     }
 
-    if (src) {
-      return { raw: arg.raw, key, args, src };
-    }
+    return (
+      src && { raw: arg.raw, key, args: value != null ? [value] : [], src }
+    );
   }
 
   handle(arg: Arg): ReturnType<NonNullable<ParseOptions['handler']>> {
