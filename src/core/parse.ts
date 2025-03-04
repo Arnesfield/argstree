@@ -76,7 +76,7 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
       child = new Node(normalize(item.src), item, parent.dstrict);
       parent.children.push(child);
 
-      // if child has args, use this as next child
+      // use child as next parent if it's not a leaf node
       return child.leaf ? child : (next = child);
     });
 
@@ -100,12 +100,12 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
     const node =
       child &&
       (child.options.range.maxRead == null ||
-        child.options.range.maxRead > child.args.length)
+        child.options.range.maxRead > child.data.args.length)
         ? child
         : parent;
     // strict mode: throw error if arg is an option-like
     node.strict && isOption(raw) && unrecognized(`option: ${raw}`);
-    node.args.push(raw);
+    node.data.args.push(raw);
   }
 
   // create copy of args to avoid external mutation
@@ -117,6 +117,7 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
       continue;
     }
 
+    // assume arg.raw and raw are the same
     const arg = toArg(raw, null);
     const hasValue = arg.value != null;
     let parsed, aliases, split;

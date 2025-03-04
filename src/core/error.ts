@@ -1,7 +1,7 @@
 import { NodeData, Options } from './core.types.js';
 
 /** The parse error. */
-export class ParseError extends Error {
+export class ParseError extends Error implements NodeData {
   /**
    * The {@linkcode Options} object provided is not valid
    * (e.g. incorrect range config or duplicate aliases).
@@ -24,11 +24,11 @@ export class ParseError extends Error {
    * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
    */
   reason: string;
-  raw: string | null = null;
-  key: string | null = null;
-  alias: string | null = null;
-  args: string[] = [];
-  options: Options = {};
+  raw!: string | null;
+  key!: string | null;
+  alias!: string | null;
+  args!: string[];
+  options!: Options;
 
   /**
    * The parse error.
@@ -36,7 +36,7 @@ export class ParseError extends Error {
    * @param message The error message.
    * @param data The node data.
    */
-  constructor(reason: string, message: string, data?: Partial<NodeData>) {
+  constructor(reason: string, message: string, data: NodeData) {
     super(message);
     this.reason = reason;
     // assume data includes all properties

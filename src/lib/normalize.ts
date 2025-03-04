@@ -77,12 +77,13 @@ export function normalizer() {
     const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
     range.maxRead = ensureNumber(src.maxRead) ?? range.max;
 
-    const entries = Object.entries(src.args || {});
+    const args: Args = { __proto__: null, ...src.args };
+    const entries = Object.entries(args);
     const opts: NormalizedOptions = {
-      fertile: !!(src.handler || entries.length > 0),
+      fertile: !!src.handler || entries.length > 0,
       range,
       src,
-      args: { __proto__: null, ...src.args },
+      args,
       aliases: { __proto__: null },
       names: []
     };

@@ -26,7 +26,7 @@ export function isOptionType(
   arg: string | null,
   options: Pick<Options, 'type'>
 ): boolean {
-  // follow type if it's explicitly set, otherwise guess from arg
+  // follow type if it's explicitly set, otherwise infer the type from arg
   return (
     options.type === 'option' ||
     (options.type !== 'command' && !!arg && isOption(arg))

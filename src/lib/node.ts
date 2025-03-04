@@ -25,9 +25,9 @@ export interface NodeSplit extends Split {
 }
 
 export interface NodeOptions {
-  raw?: string | null;
-  key?: string | null;
-  alias?: string | null;
+  raw?: string;
+  key?: string;
+  alias?: string;
   args?: string[];
   src: Options | true;
 }
@@ -38,16 +38,12 @@ export interface ParsedNodeOptions
     Required<Pick<NodeOptions, 'args'>> {}
 
 // create empty node data for errors
-export function ndata(
-  options: Options,
-  key: string | null = null
-): Pick<NodeData, 'raw' | 'key' | 'options'> {
-  return { raw: key, key, options };
+export function ndata(options: Options, key: string | null = null): NodeData {
+  return { raw: key, key, alias: null, args: [], options };
 }
 
 export class Node {
   readonly data: NodeData;
-  readonly args: string[] = [];
   readonly children: Node[] = [];
   /** Determines if the Node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
@@ -66,8 +62,8 @@ export class Node {
     const { raw = null, key = null, alias = null } = opts;
 
     // data.args is a reference to this.args
-    this.args = (src.initial || []).concat(opts.args || []);
-    this.data = { raw, key, alias, args: this.args, options: src };
+    const args = (src.initial || []).concat(opts.args || []);
+    this.data = { raw, key, alias, args, options: src };
 
     // if no max, skip all checks as they all require max to be provided
     const msg =
@@ -87,17 +83,21 @@ export class Node {
       );
     }
 
-    this.leaf = !(src.args || src.handler) && isOptionType(key, src);
+    // check if can have children
+    this.leaf = !(src.args || src.handler);
 
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
     // for descendant nodes
     this.strict =
       src.strict == null
-        ? this.dstrict
+        ? dstrict
         : typeof src.strict === 'boolean'
           ? (this.dstrict = src.strict)
           : !(this.dstrict = src.strict !== 'self');
+
+    // preserve `this` for callbacks
+    typeof src.onBeforeParse === 'function' && src.onBeforeParse(this.data);
   }
 
   private arg(arg: string, hasValue: boolean | undefined) {
@@ -116,7 +116,7 @@ export class Node {
   parse(
     arg: Arg,
     flags: { exact?: boolean; hasValue?: boolean } = {}
-  ): ParsedNodeOptions | undefined {
+  ): ParsedNodeOptions | false | null | void {
     // scenario: -a=6
     // alias -a: --option=3, 4, 5
     // option --option: initial 1, 2
@@ -124,20 +124,20 @@ export class Node {
 
     let src,
       key = arg.raw,
-      args: string[] = [];
+      value;
 
     if ((src = this.arg(key, flags.hasValue))) {
       // do nothing
     } else if (arg.value != null && (src = this.arg(arg.key, true))) {
       key = arg.key;
-      args = [arg.value];
+      value = arg.value;
     } else if (!flags.exact) {
       src = this.handle(arg);
     }
 
-    if (src) {
-      return { raw: arg.raw, key, args, src };
-    }
+    return (
+      src && { raw: arg.raw, key, args: value != null ? [value] : [], src }
+    );
   }
 
   handle(arg: Arg): ReturnType<NonNullable<ParseOptions['handler']>> {
@@ -151,7 +151,7 @@ export class Node {
   done(): void {
     // validate assumes the node has lost reference
     // so validate range here, too
-    const len = this.args.length;
+    const len = this.data.args.length;
     const { min, max } = this.options.range;
     const msg: [string | number, number] | null =
       min != null && max != null && (len < min || len > max)
@@ -175,7 +175,7 @@ export class Node {
 
     // preserve `this` for callbacks
     const { src } = this.options;
-    typeof src.done === 'function' && src.done(this.data);
+    typeof src.onAfterParse === 'function' && src.onAfterParse(this.data);
   }
 
   tree(parent: INode | null, depth: number): INode {
