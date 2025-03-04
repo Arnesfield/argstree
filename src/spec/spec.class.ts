@@ -1,4 +1,4 @@
-import { Aliases, Node, Options } from '../core/core.types.js';
+import { Aliases, Args, Node, Options } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { parse } from '../core/parse.js';
 import { ndata } from '../lib/node.js';
@@ -9,17 +9,14 @@ import { Spec as ISpec } from './spec.types.js';
 // NOTE: internal
 
 type RequiredPick<T, K extends keyof T> = Omit<T, K> & Required<Pick<T, K>>;
-type SpecParseOptions = RequiredPick<Options, 'args' | 'aliases'>;
+type SpecOptions = RequiredPick<Options, 'aliases'>;
 
 export class Spec implements ISpec {
-  private opts: SpecParseOptions;
+  private readonly opts: SpecOptions;
+  private args: Args | undefined;
 
   constructor(opts: Options = {}) {
-    this.opts = {
-      ...opts,
-      args: { __proto__: null, ...opts.args },
-      aliases: { __proto__: null, ...opts.aliases }
-    };
+    this.opts = { ...opts, aliases: { __proto__: null, ...opts.aliases } };
   }
 
   options(): Options {
@@ -33,7 +30,13 @@ export class Spec implements ISpec {
         ? (o as ISpec).options()
         : (o as Options);
 
-    const opts = this.opts.args[arg];
+    // only set this.opts.args if needed since the
+    // existence of options.args is checked
+    if (!this.args) {
+      this.opts.args = this.args = { __proto__: null, ...this.opts.args };
+    }
+
+    const opts = this.args[arg];
     if (opts) {
       const data = ndata(this.opts);
       const name = display(data);
@@ -49,7 +52,7 @@ export class Spec implements ISpec {
       );
     }
 
-    this.opts.args[arg] = options;
+    this.args[arg] = options;
     return this;
   }
 

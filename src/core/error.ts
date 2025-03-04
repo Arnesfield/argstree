@@ -1,7 +1,7 @@
 import { NodeData, Options } from './core.types.js';
 
 /** The parse error. */
-export class ParseError extends Error {
+export class ParseError extends Error implements NodeData {
   /**
    * The {@linkcode Options} object provided is not valid
    * (e.g. incorrect range config or duplicate aliases).
