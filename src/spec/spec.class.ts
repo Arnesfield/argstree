@@ -23,6 +23,29 @@ export class Spec implements ISpec {
     return this.opts;
   }
 
+  alias(aliases: Aliases): this {
+    for (const [key, value] of Object.entries(aliases)) {
+      const args = this.opts.aliases[key];
+      // make sure alias args does not actually have value
+      if (
+        typeof args === 'string' ||
+        (Array.isArray(args) &&
+          args.some(a => typeof a === 'string' || a.length > 0))
+      ) {
+        const data = ndata(this.opts);
+        const name = display(data);
+        throw new ParseError(
+          ParseError.OPTIONS_ERROR,
+          (name ? name + 'c' : 'C') + `annot use an existing alias: ${key}`,
+          data
+        );
+      }
+
+      this.opts.aliases[key] = value;
+    }
+    return this;
+  }
+
   arg(arg: string, options: Options | (() => ISpec | Options) = {}): this {
     const o = typeof options === 'function' ? options() : options;
     options =
@@ -53,29 +76,6 @@ export class Spec implements ISpec {
     }
 
     this.args[arg] = options;
-    return this;
-  }
-
-  alias(aliases: Aliases): this {
-    for (const [key, value] of Object.entries(aliases)) {
-      const args = this.opts.aliases[key];
-      // make sure alias args does not actually have value
-      if (
-        typeof args === 'string' ||
-        (Array.isArray(args) &&
-          args.some(a => typeof a === 'string' || a.length > 0))
-      ) {
-        const data = ndata(this.opts);
-        const name = display(data);
-        throw new ParseError(
-          ParseError.OPTIONS_ERROR,
-          (name ? name + 'c' : 'C') + `annot use an existing alias: ${key}`,
-          data
-        );
-      }
-
-      this.opts.aliases[key] = value;
-    }
     return this;
   }
 

@@ -1,25 +1,34 @@
 export interface Arg {
+  /** The unparsed argument. */
   readonly raw: string;
+  // NOTE: same doc as NodeData.key
+  /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
   readonly key: string;
+  /**
+   * The alias used when this argument was parsed through an alias,
+   * otherwise the value is `null`.
+   */
   readonly alias: string | null;
+  /** The parsed value from the argument (e.g. `value` from `--option=value`). */
   readonly value: string | null;
-}
-
-export interface Args {
-  [arg: string]: Options | boolean | null | undefined;
 }
 
 export interface Aliases {
   [alias: string]: string | string[] | string[][] | null | undefined;
 }
 
+export interface Args {
+  [arg: string]: Options | boolean | null | undefined;
+}
+
 /** The node data. */
 export interface NodeData {
-  /** The parsed argument. The value is `null` for the root node. */
+  /** The unparsed argument. The value is `null` for the root node. */
   raw: string | null;
+  // NOTE: same doc as Arg.key
   /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
   key: string | null;
-  /** The alias used to parse the options for this node. Otherwise, the value is `null`. */
+  /** The alias used to parse the options for this node, otherwise the value is `null`. */
   alias: string | null;
   /** The arguments for this node. */
   args: string[];
@@ -28,7 +37,10 @@ export interface NodeData {
 }
 
 export interface ParseOptions {
-  id?: string | null | ((data: NodeData) => string | null | undefined);
+  id?:
+    | string
+    | null
+    | ((this: this, data: NodeData) => string | null | undefined | void);
   name?: string;
   type?: 'option' | 'command';
   aliases?: Aliases;
@@ -50,7 +62,8 @@ export interface ParseOptions {
     arg: Arg,
     data: NodeData
   ): ParseOptions | boolean | null | undefined | void;
-  done?(this: this, data: NodeData): void;
+  onBeforeParse?(this: this, data: NodeData): void;
+  onAfterParse?(this: this, data: NodeData): void;
 }
 
 export interface Options extends ParseOptions {

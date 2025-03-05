@@ -47,7 +47,6 @@ export function ndata(
 
 export class Node {
   readonly data: NodeData;
-  readonly args: string[] = [];
   readonly children: Node[] = [];
   /** Determines if the Node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
@@ -66,8 +65,8 @@ export class Node {
     const { raw = null, key = null, alias = null } = opts;
 
     // data.args is a reference to this.args
-    this.args = (src.initial || []).concat(opts.args || []);
-    this.data = { raw, key, alias, args: this.args, options: src };
+    const args = (src.initial || []).concat(opts.args || []);
+    this.data = { raw, key, alias, args, options: src };
 
     // if no max, skip all checks as they all require max to be provided
     const msg =
@@ -98,6 +97,9 @@ export class Node {
         : typeof src.strict === 'boolean'
           ? (this.dstrict = src.strict)
           : !(this.dstrict = src.strict !== 'self');
+
+    // preserve `this` for callbacks
+    typeof src.onBeforeParse === 'function' && src.onBeforeParse(this.data);
   }
 
   private arg(arg: string, hasValue: boolean | undefined) {
@@ -151,7 +153,7 @@ export class Node {
   done(): void {
     // validate assumes the node has lost reference
     // so validate range here, too
-    const len = this.args.length;
+    const len = this.data.args.length;
     const { min, max } = this.options.range;
     const msg: [string | number, number] | null =
       min != null && max != null && (len < min || len > max)
@@ -175,7 +177,7 @@ export class Node {
 
     // preserve `this` for callbacks
     const { src } = this.options;
-    typeof src.done === 'function' && src.done(this.data);
+    typeof src.onAfterParse === 'function' && src.onAfterParse(this.data);
   }
 
   tree(parent: INode | null, depth: number): INode {
