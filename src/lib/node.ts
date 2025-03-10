@@ -1,13 +1,9 @@
-import {
-  Arg,
-  Node as INode,
-  NodeData,
-  Options,
-  ParseOptions
-} from '../core/core.types.js';
+import { Arg, Node as INode, NodeData } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { Split } from '../core/split.js';
-import { isAlias, isOption, isOptionType } from '../utils/arg.utils.js';
+import { Schema } from '../schema/schema.class.js';
+import { SchemaConfig } from '../schema/schema.types.js';
+import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { slice } from '../utils/slice.js';
 import { NormalizedOptions } from './normalize.js';
@@ -29,7 +25,7 @@ export interface NodeOptions {
   key?: string;
   alias?: string;
   args?: string[];
-  src: Options | true;
+  src: SchemaConfig;
 }
 
 // required args
@@ -37,16 +33,9 @@ export interface ParsedNodeOptions
   extends Omit<NodeOptions, 'args'>,
     Required<Pick<NodeOptions, 'args'>> {}
 
-// create empty node data for errors
-export function ndata(options: Options, key: string | null = null): NodeData {
-  return { raw: key, key, alias: null, args: [], options };
-}
-
 export class Node {
   readonly data: NodeData;
   readonly children: Node[] = [];
-  /** Determines if the Node is a leaf node and cannot have descendants. */
-  readonly leaf: boolean;
   readonly strict: boolean | undefined;
 
   /**
@@ -58,12 +47,12 @@ export class Node {
     readonly dstrict?: boolean
   ) {
     // prettier-ignore
-    const { src, range: { min, max, maxRead } } = options;
+    const { type, src, range: { min, max, maxRead } } = options;
     const { raw = null, key = null, alias = null } = opts;
 
     // data.args is a reference to this.args
     const args = (src.initial || []).concat(opts.args || []);
-    this.data = { raw, key, alias, args, options: src };
+    this.data = { type, raw, key, alias, args, options: src };
 
     // if no max, skip all checks as they all require max to be provided
     const msg =
@@ -83,9 +72,6 @@ export class Node {
       );
     }
 
-    // check if can have children
-    this.leaf = !(src.args || src.handler);
-
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
     // for descendant nodes
@@ -104,12 +90,10 @@ export class Node {
     // check if assignable if has value
     let opts;
     return (
-      (opts = this.options.args[arg]) &&
-      (!hasValue ||
-        (typeof opts === 'object'
-          ? (opts.assign ?? isOptionType(arg, opts))
-          : isOption(arg))) &&
-      opts
+      this.options.schemas[arg] ||
+      ((opts = this.options.args[arg]) &&
+        (!hasValue || (opts.options.assign ?? opts.type === 'option')) &&
+        (this.options.schemas[arg] = new Schema(opts).config()))
     );
   }
 
@@ -140,11 +124,13 @@ export class Node {
     );
   }
 
-  handle(arg: Arg): ReturnType<NonNullable<ParseOptions['handler']>> {
+  handle(arg: Arg): SchemaConfig | false | null | undefined | void {
     // preserve `this` for callbacks
+    let schema;
     return (
       typeof this.options.src.handler === 'function' &&
-      this.options.src.handler(arg, this.data)
+      (schema = this.options.src.handler(arg, this.data)) &&
+      schema.config()
     );
   }
 
@@ -180,13 +166,14 @@ export class Node {
 
   tree(parent: INode | null, depth: number): INode {
     const { src } = this.options;
-    const { raw, key, alias, args } = this.data;
+    const { raw, key, alias, type, args } = this.data;
     const node: INode = {
       id: (typeof src.id === 'function' ? src.id(this.data) : src.id) ?? key,
       name: src.name ?? key,
       raw,
       key,
       alias,
+      type,
       depth,
       args,
       // prepare ancestors before checking children and descendants

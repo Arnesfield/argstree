@@ -27,6 +27,7 @@ export class ParseError extends Error implements NodeData {
   raw!: string | null;
   key!: string | null;
   alias!: string | null;
+  type!: NodeData['type'];
   args!: string[];
   options!: Options;
 

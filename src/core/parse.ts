@@ -1,12 +1,15 @@
 import { toArg } from '../lib/arg.js';
 import { Node, NodeOptions, NodeSplit } from '../lib/node.js';
 import { normalizer } from '../lib/normalize.js';
+import { SchemaConfig } from '../schema/schema.types.js';
 import { isOption } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
-import { Node as INode, ParseOptions } from './core.types.js';
+import { Node as INode } from './core.types.js';
 import { ParseError } from './error.js';
 
-export function parse(args: readonly string[], options?: ParseOptions): INode {
+// NOTE: internal
+
+export function parse(args: readonly string[], options: SchemaConfig): INode {
   const normalize = normalizer();
   const root = new Node(normalize(options), {});
   let parent = root,
@@ -77,7 +80,7 @@ export function parse(args: readonly string[], options?: ParseOptions): INode {
       parent.children.push(child);
 
       // use child as next parent if it's not a leaf node
-      return child.leaf ? child : (next = child);
+      return child.options.leaf ? child : (next = child);
     });
 
     // validate all children except next or latest child

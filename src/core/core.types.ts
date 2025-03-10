@@ -1,3 +1,5 @@
+import { Schema } from '../schema/schema.types.js';
+
 export interface Arg {
   /** The unparsed argument. */
   readonly raw: string;
@@ -17,10 +19,6 @@ export interface Aliases {
   [alias: string]: string | string[] | string[][] | null | undefined;
 }
 
-export interface Args {
-  [arg: string]: Options | boolean | null | undefined;
-}
-
 /** The node data. */
 export interface NodeData {
   /** The unparsed argument. The value is `null` for the root node. */
@@ -30,20 +28,26 @@ export interface NodeData {
   key: string | null;
   /** The alias used to parse the options for this node, otherwise the value is `null`. */
   alias: string | null;
+  /** The type of node. */
+  type: 'option' | 'command';
   /** The arguments for this node. */
   args: string[];
   /** The options for this node. */
   options: Options;
 }
 
+// TODO: rename?
 export interface ParseOptions {
   id?:
     | string
     | null
     | ((this: this, data: NodeData) => string | null | undefined | void);
   name?: string;
-  type?: 'option' | 'command';
+  // TODO: remove
+  // type?: 'option' | 'command';
+  // TODO: rename to args?
   initial?: string[];
+  // TODO: remove nulls?
   min?: number | null;
   max?: number | null;
   maxRead?: number | null;
@@ -55,13 +59,24 @@ export interface ParseOptions {
    * @default false
    */
   strict?: boolean | 'self' | 'descendants';
-  aliases?: Aliases | null;
-  args?: Args | null;
+  /**
+   * When enabled, parsed nodes are considered leaf nodes.
+   * If additional options or commands are configured for the schema,
+   * this value is ignored.
+   *
+   * Default value is `true` for `option` types and `false` for `command` types.
+   */
+  leaf?: boolean;
+  // TODO: remove
+  // aliases?: Aliases | null;
+  // args?: Args | null;
+  setup?(schema: Schema): void;
+  // TODO: remove this
   handler?(
     this: this,
     arg: Arg,
     data: NodeData
-  ): ParseOptions | boolean | null | undefined | void;
+  ): Schema | null | undefined | void;
   onBeforeParse?(this: this, data: NodeData): void;
   onAfterParse?(this: this, data: NodeData): void;
 }
