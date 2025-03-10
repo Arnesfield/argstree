@@ -1,13 +1,16 @@
-import { Aliases, Node, Options } from '../core/core.types.js';
+import { Aliases, Node, NodeData, Options } from '../core/core.types.js';
 import { parse } from '../core/parse.js';
 import { Config, Schema as ISchema } from './schema.types.js';
 
 // NOTE: internal
 
 export class Schema implements ISchema {
-  constructor(private readonly cfg: Config) {
+  private readonly cfg: Config;
+
+  constructor(type: NodeData['type'], options: Options = {}) {
+    this.cfg = { type, options };
     // only call setup once all states are ready
-    typeof cfg.options.setup === 'function' && cfg.options.setup(this);
+    typeof options.setup === 'function' && options.setup(this);
   }
 
   option(arg: string, options: Options = {}): this {

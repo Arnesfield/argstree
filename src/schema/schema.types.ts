@@ -1,6 +1,6 @@
 import { Aliases, Node, NodeData, Options } from '../core/core.types.js';
 
-export interface ArgConfig extends Config {
+export interface ArgConfig extends Pick<Config, 'type' | 'options'> {
   arg: string;
 }
 

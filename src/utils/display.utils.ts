@@ -1,10 +1,8 @@
-import { NodeData, Options } from '../core/core.types.js';
+import { NodeData } from '../core/core.types.js';
 
-export interface DisplayOptions extends Pick<NodeData, 'type' | 'key'> {
-  options: Pick<Options, 'name'>;
-}
-
-export function display(opts: DisplayOptions): string {
+export function display(
+  opts: Pick<NodeData, 'type' | 'key' | 'options'>
+): string {
   const name = opts.options.name ?? opts.key;
   return name == null
     ? ''

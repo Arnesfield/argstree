@@ -95,7 +95,10 @@ export class Node {
       this.options.schemas[arg] ||
       ((opts = this.options.args[arg]) &&
         (!hasValue || (opts.options.assign ?? opts.type === 'option')) &&
-        (this.options.schemas[arg] = new Schema(opts).config()))
+        (this.options.schemas[arg] = new Schema(
+          opts.type,
+          opts.options
+        ).config()))
     );
   }
 
