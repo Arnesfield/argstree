@@ -1,6 +1,6 @@
 import { Aliases, NodeData, Options } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
-import { SchemaArgs, SchemaConfig } from '../schema/schema.types.js';
+import { ArgConfig, Config } from '../schema/schema.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
@@ -25,9 +25,9 @@ export interface NormalizedOptions {
   };
   readonly src: Options;
   /** Safe args object. */
-  readonly args: { [arg: string]: SchemaArgs | null | undefined };
+  readonly args: { [arg: string]: ArgConfig | null | undefined };
   /** Same as `args` but resolved configs. */
-  readonly schemas: { [arg: string]: SchemaConfig | null | undefined };
+  readonly schemas: { [arg: string]: Config | null | undefined };
   /** Safe aliases object. */
   readonly aliases: { [alias: string]: NormalizedAlias | null | undefined };
   /** A sorted list of splittable alias names without the `-` prefix. */
@@ -56,7 +56,7 @@ function getArgs(alias: Aliases[string]) {
 }
 
 // create empty node data for errors
-function ndata(cfg: SchemaConfig): NodeData {
+function ndata(cfg: Config & { arg?: string }): NodeData {
   const key = cfg.arg ?? null;
   const { type, options } = cfg;
   return { raw: key, key, alias: null, type, args: [], options };
@@ -70,13 +70,13 @@ function ndata(cfg: SchemaConfig): NodeData {
  * @returns The normalize function that normalizes the provided options.
  */
 export function normalizer() {
-  const map = new WeakMap<SchemaConfig, NormalizedOptions>();
+  const map = new WeakMap<Config, NormalizedOptions>();
 
-  return (config: SchemaConfig): NormalizedOptions => {
+  return (config: Config): NormalizedOptions => {
     // reuse existing normalized options
-    const exists = map.get(config);
-    if (exists) {
-      return exists;
+    const found = map.get(config);
+    if (found) {
+      return found;
     }
 
     const src = config.options;
@@ -86,8 +86,8 @@ export function normalizer() {
     const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
     range.maxRead = ensureNumber(src.maxRead) ?? range.max;
 
-    const args = config.args || [];
-    const fertile = !!src.handler || args.length > 0;
+    const cfgs = config.args || [];
+    const fertile = !!src.handler || cfgs.length > 0;
 
     const opts: NormalizedOptions = {
       type: config.type,
@@ -102,7 +102,7 @@ export function normalizer() {
     };
     map.set(config, opts);
 
-    function setAlias(cfg: SchemaConfig, key: string, args: NormalizedAlias) {
+    function setAlias(cfg: Config, key: string, args: NormalizedAlias) {
       if (opts.aliases[key]) {
         const data = ndata(cfg);
         const name = display(data);
@@ -128,8 +128,8 @@ export function normalizer() {
     }
 
     // apply args and their aliases
-    for (const value of args) {
-      const { arg, options } = value;
+    for (const cfg of cfgs) {
+      const { arg, options } = cfg;
       const exists = opts.args[arg];
       if (exists) {
         const data = ndata(config);
@@ -142,7 +142,7 @@ export function normalizer() {
         );
       }
 
-      opts.args[arg] = value;
+      opts.args[arg] = cfg;
 
       // use `alias[0]` as alias and `arg` as arg
       const aliases =
@@ -157,7 +157,7 @@ export function normalizer() {
         const arr =
           typeof item === 'string' ? [item] : Array.isArray(item) ? item : [];
         if (arr.length > 0) {
-          setAlias(value, arr[0], [[arg].concat(arr.slice(1))] as [
+          setAlias(cfg, arr[0], [[arg].concat(arr.slice(1))] as [
             [string, ...string[]]
           ]);
         }

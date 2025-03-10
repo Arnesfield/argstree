@@ -1,7 +1,7 @@
 import { toArg } from '../lib/arg.js';
 import { Node, NodeOptions, NodeSplit } from '../lib/node.js';
 import { normalizer } from '../lib/normalize.js';
-import { SchemaConfig } from '../schema/schema.types.js';
+import { Config } from '../schema/schema.types.js';
 import { isOption } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { Node as INode } from './core.types.js';
@@ -9,7 +9,7 @@ import { ParseError } from './error.js';
 
 // NOTE: internal
 
-export function parse(args: readonly string[], options: SchemaConfig): INode {
+export function parse(args: readonly string[], options: Config): INode {
   const normalize = normalizer();
   const root = new Node(normalize(options), {});
   let parent = root,
@@ -76,7 +76,7 @@ export function parse(args: readonly string[], options: SchemaConfig): INode {
     const children = items.map(item => {
       // create child nodes from options that are validated later
       // since we want to validate them in order except the next node
-      child = new Node(normalize(item.src), item, parent.dstrict);
+      child = new Node(normalize(item.cfg), item, parent.dstrict);
       parent.children.push(child);
 
       // use child as next parent if it's not a leaf node
@@ -170,7 +170,7 @@ export function parse(args: readonly string[], options: SchemaConfig): INode {
 
     // parse options using handler
     else if ((parsed = parent.handle(arg))) {
-      set([{ raw, key: raw, src: parsed }]);
+      set([{ raw, key: raw, cfg: parsed }]);
     }
 
     // split can be unset by the 2nd parent.split() call

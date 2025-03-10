@@ -1,22 +1,20 @@
 import { Aliases, Node, NodeData, Options } from '../core/core.types.js';
 
-// TODO: rename type
-export interface SchemaArgs extends SchemaConfig {
+export interface ArgConfig extends Config {
   arg: string;
 }
 
-export interface SchemaConfig {
-  arg?: string | null;
+export interface Config {
   type: NodeData['type'];
   options: Options;
-  args?: SchemaArgs[];
+  args?: ArgConfig[];
   aliases?: Aliases[];
 }
 
 export interface Schema {
-  config(): SchemaConfig;
   option(arg: string, options?: Options): this;
   command(arg: string, options?: Options): this;
   alias(aliases: Aliases): this;
+  config(): Config;
   parse(args: readonly string[]): Node;
 }

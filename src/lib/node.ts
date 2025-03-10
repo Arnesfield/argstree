@@ -2,7 +2,7 @@ import { Arg, Node as INode, NodeData } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { Split } from '../core/split.js';
 import { Schema } from '../schema/schema.class.js';
-import { SchemaConfig } from '../schema/schema.types.js';
+import { Config } from '../schema/schema.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { slice } from '../utils/slice.js';
@@ -25,7 +25,7 @@ export interface NodeOptions {
   key?: string;
   alias?: string;
   args?: string[];
-  src: SchemaConfig;
+  cfg: Config;
 }
 
 // required args
@@ -43,7 +43,7 @@ export class Node {
    */
   constructor(
     readonly options: NormalizedOptions,
-    opts: Omit<NodeOptions, 'src'>,
+    opts: Omit<NodeOptions, 'cfg'>,
     readonly dstrict?: boolean
   ) {
     // prettier-ignore
@@ -87,7 +87,9 @@ export class Node {
   }
 
   private arg(arg: string, hasValue: boolean | undefined) {
-    // check if assignable if has value
+    // check if assignable if has value.
+    // also only create schema when needed since
+    // it is possible to have recursive setup functions
     let opts;
     return (
       this.options.schemas[arg] ||
@@ -106,31 +108,29 @@ export class Node {
     // option --option: initial 1, 2
     // order of args: [options.initial, arg assigned, alias.args, alias assigned]
 
-    let src,
+    let cfg,
       key = arg.raw,
       value;
 
-    if ((src = this.arg(key, flags.hasValue))) {
+    if ((cfg = this.arg(key, flags.hasValue))) {
       // do nothing
-    } else if (arg.value != null && (src = this.arg(arg.key, true))) {
+    } else if (arg.value != null && (cfg = this.arg(arg.key, true))) {
       key = arg.key;
       value = arg.value;
     } else if (!flags.exact) {
-      src = this.handle(arg);
+      cfg = this.handle(arg);
     }
 
     return (
-      src && { raw: arg.raw, key, args: value != null ? [value] : [], src }
+      cfg && { raw: arg.raw, key, args: value != null ? [value] : [], cfg }
     );
   }
 
-  handle(arg: Arg): SchemaConfig | false | null | undefined | void {
+  handle(arg: Arg): Config | false | undefined {
     // preserve `this` for callbacks
-    let schema;
     return (
       typeof this.options.src.handler === 'function' &&
-      (schema = this.options.src.handler(arg, this.data)) &&
-      schema.config()
+      this.options.src.handler(arg, this.data)?.config()
     );
   }
 
