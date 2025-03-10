@@ -13,9 +13,10 @@ export function parse(args: readonly string[], options: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
   function n(config: Config) {
-    let opts = map.get(config);
-    !opts && map.set(config, (opts = normalize(config)));
-    return opts;
+    let opts;
+    return (
+      map.get(config) || (map.set(config, (opts = normalize(config))), opts)
+    );
   }
 
   const root = new Node(n(options), {});

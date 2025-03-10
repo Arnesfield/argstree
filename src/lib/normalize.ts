@@ -43,9 +43,7 @@ function getArgs(alias: Aliases[string]) {
 
   for (const arg of args) {
     if (typeof arg === 'string') {
-      if (!strs?.push(arg)) {
-        list.push((strs = [arg]));
-      }
+      strs ? strs.push(arg) : list.push((strs = [arg]));
     } else if (Array.isArray(arg) && arg.length > 0) {
       // filter out empty array
       list.push(arg as [string, ...string[]]);
