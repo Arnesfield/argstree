@@ -33,7 +33,7 @@ export default tseslint.config(
         'warn',
         { argsIgnorePattern: '^_' }
       ],
-      curly: 'warn',
+      curly: ['warn', 'multi-line'],
       eqeqeq: ['warn', 'always', { null: 'ignore' }],
       'no-constant-condition': 'warn',
       'no-empty': 'warn',
