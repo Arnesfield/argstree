@@ -70,8 +70,10 @@ export function normalize(config: Config): NormalizedOptions {
   const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
   range.maxRead = ensureNumber(src.maxRead) ?? range.max;
 
+  // fertile is when the node has args or aliases
   const cfgs = config.args || [];
-  const fertile = !!src.handler || cfgs.length > 0;
+  const aliases = config.aliases || [];
+  const fertile = !!src.handler || cfgs.length > 0 || aliases.length > 0;
 
   const opts: NormalizedOptions = {
     type: config.type,
@@ -103,8 +105,8 @@ export function normalize(config: Config): NormalizedOptions {
   }
 
   // apply aliases
-  for (const aliases of config.aliases || []) {
-    for (const [arg, alias] of Object.entries(aliases)) {
+  for (const all of aliases) {
+    for (const [arg, alias] of Object.entries(all)) {
       const args = getArgs(alias);
       args.length > 0 && setAlias(config, arg, args as NormalizedAlias);
     }
@@ -128,13 +130,13 @@ export function normalize(config: Config): NormalizedOptions {
     opts.args[arg] = cfg;
 
     // use `alias[0]` as alias and `arg` as arg
-    const aliases =
+    const items =
       typeof options.alias === 'string'
         ? [options.alias]
         : Array.isArray(options.alias)
           ? options.alias
           : [];
-    for (const item of aliases) {
+    for (const item of items) {
       // each item is an alias
       // if item is an array, item[0] is an alias
       const arr =
