@@ -55,117 +55,101 @@ function getArgs(alias: Aliases[string]) {
   return list;
 }
 
+type PartialPick<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
 // create empty node data for errors
-function ndata(cfg: Config & { arg?: string }): NodeData {
+function ndata(cfg: PartialPick<ArgConfig, 'arg'>): NodeData {
   const key = cfg.arg ?? null;
   const { type, options } = cfg;
   return { raw: key, key, alias: null, type, args: [], options };
 }
 
-/**
- * Create a normalizer function to normalize the provided options.
- *
- * A reference to the options object is tracked and is only ever normalized once.
- * Succeeding normalize calls will reuse existing normalized options.
- * @returns The normalize function that normalizes the provided options.
- */
-export function normalizer() {
-  const map = new WeakMap<Config, NormalizedOptions>();
+export function normalize(config: Config): NormalizedOptions {
+  const src = config.options;
 
-  return (config: Config): NormalizedOptions => {
-    // reuse existing normalized options
-    const found = map.get(config);
-    if (found) {
-      return found;
-    }
+  // get and validate range only after setting the fields above
+  type R = NormalizedOptions['range'];
+  const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
+  range.maxRead = ensureNumber(src.maxRead) ?? range.max;
 
-    const src = config.options;
+  const cfgs = config.args || [];
+  const fertile = !!src.handler || cfgs.length > 0;
 
-    // get and validate range only after setting the fields above
-    type R = NormalizedOptions['range'];
-    const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
-    range.maxRead = ensureNumber(src.maxRead) ?? range.max;
-
-    const cfgs = config.args || [];
-    const fertile = !!src.handler || cfgs.length > 0;
-
-    const opts: NormalizedOptions = {
-      type: config.type,
-      leaf: !fertile && (src.leaf ?? config.type === 'option'),
-      fertile,
-      range,
-      src,
-      args: { __proto__: null },
-      schemas: { __proto__: null },
-      aliases: { __proto__: null },
-      names: []
-    };
-    map.set(config, opts);
-
-    function setAlias(cfg: Config, key: string, args: NormalizedAlias) {
-      if (opts.aliases[key]) {
-        const data = ndata(cfg);
-        const name = display(data);
-        throw new ParseError(
-          ParseError.OPTIONS_ERROR,
-          (name ? name + 'c' : 'C') + `annot use an existing alias: ${key}`,
-          data
-        );
-      }
-
-      opts.aliases[key] = args;
-      // skip command aliases since we don't need to split them
-      // and remove `-` prefix
-      isAlias(key) && opts.names.push(key.slice(1));
-    }
-
-    // apply aliases
-    for (const aliases of config.aliases || []) {
-      for (const [arg, alias] of Object.entries(aliases)) {
-        const args = getArgs(alias);
-        args.length > 0 && setAlias(config, arg, args as NormalizedAlias);
-      }
-    }
-
-    // apply args and their aliases
-    for (const cfg of cfgs) {
-      const { arg, options } = cfg;
-      const exists = opts.args[arg];
-      if (exists) {
-        const data = ndata(config);
-        const name = display(data);
-        throw new ParseError(
-          ParseError.OPTIONS_ERROR,
-          (name ? name + 'c' : 'C') +
-            `annot override an existing ${exists.type}: ${arg}`,
-          data
-        );
-      }
-
-      opts.args[arg] = cfg;
-
-      // use `alias[0]` as alias and `arg` as arg
-      const aliases =
-        typeof options.alias === 'string'
-          ? [options.alias]
-          : Array.isArray(options.alias)
-            ? options.alias
-            : [];
-      for (const item of aliases) {
-        // each item is an alias
-        // if item is an array, item[0] is an alias
-        const arr =
-          typeof item === 'string' ? [item] : Array.isArray(item) ? item : [];
-        if (arr.length > 0) {
-          setAlias(cfg, arr[0], [[arg].concat(arr.slice(1))] as [
-            [string, ...string[]]
-          ]);
-        }
-      }
-    }
-
-    // sort by length desc for splitting later on
-    opts.names.sort((a, b) => b.length - a.length);
-    return opts;
+  const opts: NormalizedOptions = {
+    type: config.type,
+    leaf: !fertile && (src.leaf ?? config.type === 'option'),
+    fertile,
+    range,
+    src,
+    args: { __proto__: null },
+    schemas: { __proto__: null },
+    aliases: { __proto__: null },
+    names: []
   };
+
+  function setAlias(cfg: Config, key: string, args: NormalizedAlias) {
+    if (opts.aliases[key]) {
+      const data = ndata(cfg);
+      const name = display(data);
+      throw new ParseError(
+        ParseError.OPTIONS_ERROR,
+        (name ? name + 'c' : 'C') + `annot use an existing alias: ${key}`,
+        data
+      );
+    }
+
+    opts.aliases[key] = args;
+    // skip command aliases since we don't need to split them
+    // and remove `-` prefix
+    isAlias(key) && opts.names.push(key.slice(1));
+  }
+
+  // apply aliases
+  for (const aliases of config.aliases || []) {
+    for (const [arg, alias] of Object.entries(aliases)) {
+      const args = getArgs(alias);
+      args.length > 0 && setAlias(config, arg, args as NormalizedAlias);
+    }
+  }
+
+  // apply args and their aliases
+  for (const cfg of cfgs) {
+    const { arg, options } = cfg;
+    const exists = opts.args[arg];
+    if (exists) {
+      const data = ndata(config);
+      const name = display(data);
+      throw new ParseError(
+        ParseError.OPTIONS_ERROR,
+        (name ? name + 'c' : 'C') +
+          `annot override an existing ${exists.type}: ${arg}`,
+        data
+      );
+    }
+
+    opts.args[arg] = cfg;
+
+    // use `alias[0]` as alias and `arg` as arg
+    const aliases =
+      typeof options.alias === 'string'
+        ? [options.alias]
+        : Array.isArray(options.alias)
+          ? options.alias
+          : [];
+    for (const item of aliases) {
+      // each item is an alias
+      // if item is an array, item[0] is an alias
+      const arr =
+        typeof item === 'string' ? [item] : Array.isArray(item) ? item : [];
+      if (arr.length > 0) {
+        setAlias(cfg, arr[0], [[arg].concat(arr.slice(1))] as [
+          [string, ...string[]]
+        ]);
+      }
+    }
+  }
+
+  // sort by length desc for splitting later on
+  opts.names.sort((a, b) => b.length - a.length);
+  return opts;
 }

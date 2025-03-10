@@ -1,6 +1,6 @@
 import { toArg } from '../lib/arg.js';
 import { Node, NodeOptions, NodeSplit } from '../lib/node.js';
-import { normalizer } from '../lib/normalize.js';
+import { normalize, NormalizedOptions } from '../lib/normalize.js';
 import { Config } from '../schema/schema.types.js';
 import { isOption } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
@@ -10,8 +10,15 @@ import { ParseError } from './error.js';
 // NOTE: internal
 
 export function parse(args: readonly string[], options: Config): INode {
-  const normalize = normalizer();
-  const root = new Node(normalize(options), {});
+  // keep track of and reuse existing normalized options
+  const map = new WeakMap<Config, NormalizedOptions>();
+  function n(config: Config) {
+    let opts = map.get(config);
+    !opts && map.set(config, (opts = normalize(config)));
+    return opts;
+  }
+
+  const root = new Node(n(options), {});
   let parent = root,
     child: Node | null | undefined;
 
@@ -76,7 +83,7 @@ export function parse(args: readonly string[], options: Config): INode {
     const children = items.map(item => {
       // create child nodes from options that are validated later
       // since we want to validate them in order except the next node
-      child = new Node(normalize(item.cfg), item, parent.dstrict);
+      child = new Node(n(item.cfg), item, parent.dstrict);
       parent.children.push(child);
 
       // use child as next parent if it's not a leaf node

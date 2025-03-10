@@ -14,12 +14,12 @@ export class Schema implements ISchema {
   }
 
   option(arg: string, options: Options = {}): this {
-    (this.cfg.args ||= []).push({ type: 'option', arg, options });
+    (this.cfg.args ||= []).push({ arg, type: 'option', options });
     return this;
   }
 
   command(arg: string, options: Options = {}): this {
-    (this.cfg.args ||= []).push({ type: 'command', arg, options });
+    (this.cfg.args ||= []).push({ arg, type: 'command', options });
     return this;
   }
 
