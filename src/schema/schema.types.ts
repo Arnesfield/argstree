@@ -7,8 +7,13 @@ export interface ArgConfig extends Pick<Config, 'type' | 'options'> {
 export interface Config {
   type: NodeData['type'];
   options: Options;
-  args?: ArgConfig[];
-  aliases?: Aliases[];
+  args?: { [arg: string]: ArgConfig | null | undefined };
+  aliases?: {
+    [alias: string]:
+      | [[string, ...string[]], ...[string, ...string[]][]]
+      | null
+      | undefined;
+  };
 }
 
 export interface Schema {
