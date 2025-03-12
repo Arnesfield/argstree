@@ -38,10 +38,7 @@ export interface NodeData {
 
 // TODO: rename?
 export interface ParseOptions {
-  id?:
-    | string
-    | null
-    | ((this: this, data: NodeData) => string | null | undefined | void);
+  id?: string | null | ((data: NodeData) => string | null | undefined | void);
   name?: string;
   // TODO: remove
   // type?: 'option' | 'command';
@@ -67,18 +64,10 @@ export interface ParseOptions {
    * Default value is `true` for `option` types and `false` for `command` types.
    */
   leaf?: boolean;
-  // TODO: remove
-  // aliases?: Aliases | null;
-  // args?: Args | null;
   setup?(schema: Schema): void;
-  // TODO: remove this
-  handler?(
-    this: this,
-    arg: Arg,
-    data: NodeData
-  ): Schema | null | undefined | void;
-  onBeforeParse?(this: this, data: NodeData): void;
-  onAfterParse?(this: this, data: NodeData): void;
+  handler?(arg: Arg, data: NodeData): Schema | null | undefined | void;
+  preParse?(data: NodeData): void;
+  postParse?(data: NodeData): void;
 }
 
 export interface Options extends ParseOptions {

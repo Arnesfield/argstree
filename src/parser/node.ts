@@ -84,7 +84,7 @@ export class Node {
           : !(this.dstrict = src.strict !== 'self');
 
     // preserve `this` for callbacks
-    typeof src.onBeforeParse === 'function' && src.onBeforeParse(this.data);
+    typeof src.preParse === 'function' && src.preParse(this.data);
   }
 
   private arg(arg: string, hasValue: boolean | undefined) {
@@ -164,7 +164,7 @@ export class Node {
 
     // preserve `this` for callbacks
     const { src } = this.options;
-    typeof src.onAfterParse === 'function' && src.onAfterParse(this.data);
+    typeof src.postParse === 'function' && src.postParse(this.data);
   }
 
   tree(parent: INode | null, depth: number): INode {
