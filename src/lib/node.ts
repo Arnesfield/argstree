@@ -2,7 +2,7 @@ import { Arg, Node as INode, NodeData } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { Split } from '../core/split.js';
 import { Schema } from '../schema/schema.class.js';
-import { Config } from '../schema/schema.types.js';
+import { ArgConfig, Config } from '../schema/schema.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { slice } from '../utils/slice.js';
@@ -90,15 +90,14 @@ export class Node {
     // check if assignable if has value.
     // also only create schema when needed since
     // it is possible to have recursive setup functions
+    // note that having args and aliases means that the schema was already configured
     let opts;
     return (
-      this.options.schemas[arg] ||
-      ((opts = this.options.args[arg]) &&
-        (!hasValue || (opts.options.assign ?? opts.type === 'option')) &&
-        (this.options.schemas[arg] = new Schema(
-          opts.type,
-          opts.options
-        ).config()))
+      (opts = this.options.args[arg]) &&
+      (!hasValue || (opts.options.assign ?? opts.type === 'option')) &&
+      (opts.args && opts.aliases
+        ? (opts as Config)
+        : new Schema(opts as ArgConfig).config())
     );
   }
 

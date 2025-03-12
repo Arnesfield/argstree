@@ -1,24 +1,60 @@
 import { Aliases, Node, NodeData, Options } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { parse } from '../core/parse.js';
-import { getArgs, ndata, NormalizedAlias } from '../lib/normalize.js';
 import { display } from '../utils/display.utils.js';
-import { Config, Schema as ISchema } from './schema.types.js';
+import {
+  ArgConfig,
+  Config,
+  ConfigAlias,
+  Schema as ISchema
+} from './schema.types.js';
 
 // NOTE: internal
+
+function getArgs(alias: Aliases[string]): [string, ...string[]][] {
+  /** List of strings in `args`. */
+  let strs: [string, ...string[]] | undefined;
+  const list: [string, ...string[]][] = [];
+  const args =
+    typeof alias === 'string' ? [alias] : Array.isArray(alias) ? alias : [];
+
+  for (const arg of args) {
+    if (typeof arg === 'string') {
+      strs ? strs.push(arg) : list.push((strs = [arg]));
+    } else if (Array.isArray(arg) && arg.length > 0) {
+      // filter out empty array
+      list.push(arg as [string, ...string[]]);
+    }
+  }
+
+  return list;
+}
+
+interface PartialConfig
+  extends Omit<ArgConfig, 'key'>,
+    Partial<Pick<ArgConfig, 'key'>> {}
+
+// create empty node data for errors
+function ndata(cfg: PartialConfig): NodeData {
+  const { key = null, type, options } = cfg;
+  return { raw: key, key, alias: null, type, args: [], options };
+}
 
 export class Schema implements ISchema {
   private readonly cfg: Config;
 
-  constructor(type: NodeData['type'], options: Options = {}) {
-    this.cfg = { type, options };
+  constructor(cfg: PartialConfig) {
+    // NOTE: intentional cfg object mutation to update existing ArgConfig object
+    // always replace args and aliases
+    cfg.args = { __proto__: null };
+    cfg.aliases = { __proto__: null };
+    this.cfg = cfg as Config;
+
     // only call setup once all states are ready
-    typeof options.setup === 'function' && options.setup(this);
+    typeof cfg.options.setup === 'function' && cfg.options.setup(this);
   }
 
-  private setAlias(cfg: Config, key: string, args: NormalizedAlias) {
-    this.cfg.aliases ||= { __proto__: null };
-
+  private setAlias(cfg: PartialConfig, key: string, args: ConfigAlias) {
     if (this.cfg.aliases[key]) {
       const data = ndata(cfg);
       const name = display(data);
@@ -30,27 +66,22 @@ export class Schema implements ISchema {
     }
 
     this.cfg.aliases[key] = args;
-    // // skip command aliases since we don't need to split them
-    // // and remove `-` prefix
-    // isAlias(key) && opts.names.push(key.slice(1));
   }
 
-  private add(type: NodeData['type'], arg: string, options: Options = {}) {
-    this.cfg.args ||= { __proto__: null };
-
-    const exists = this.cfg.args[arg];
+  private add(type: NodeData['type'], key: string, options: Options = {}) {
+    const exists = this.cfg.args[key];
     if (exists) {
       const data = ndata(this.cfg);
       const name = display(data);
       throw new ParseError(
         ParseError.OPTIONS_ERROR,
         (name ? name + 'c' : 'C') +
-          `annot override an existing ${exists.type}: ${arg}`,
+          `annot override an existing ${exists.type}: ${key}`,
         data
       );
     }
 
-    const cfg = (this.cfg.args[arg] = { arg, type, options });
+    const cfg: ArgConfig = (this.cfg.args[key] = { key, type, options });
 
     // use `alias[0]` as alias and `arg` as arg
     const items =
@@ -65,7 +96,7 @@ export class Schema implements ISchema {
       const arr =
         typeof item === 'string' ? [item] : Array.isArray(item) ? item : [];
       if (arr.length > 0) {
-        this.setAlias(cfg, arr[0], [[arg].concat(arr.slice(1))] as [
+        this.setAlias(cfg, arr[0], [[key].concat(arr.slice(1))] as [
           [string, ...string[]]
         ]);
       }
@@ -85,7 +116,7 @@ export class Schema implements ISchema {
   alias(aliases: Aliases): this {
     for (const [arg, alias] of Object.entries(aliases)) {
       const args = getArgs(alias);
-      args.length > 0 && this.setAlias(this.cfg, arg, args as NormalizedAlias);
+      args.length > 0 && this.setAlias(this.cfg, arg, args as ConfigAlias);
     }
     return this;
   }

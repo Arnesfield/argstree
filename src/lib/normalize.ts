@@ -1,14 +1,9 @@
-import { Aliases, NodeData, Options } from '../core/core.types.js';
-import { ArgConfig, Config } from '../schema/schema.types.js';
+import { NodeData, Options } from '../core/core.types.js';
+import { Config } from '../schema/schema.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
 
 // NOTE: internal
-
-export type NormalizedAlias = [
-  [string, ...string[]],
-  ...[string, ...string[]][]
-];
 
 export interface NormalizedOptions {
   readonly type: NodeData['type'];
@@ -23,41 +18,11 @@ export interface NormalizedOptions {
   };
   readonly src: Options;
   /** Safe args object. */
-  readonly args: { [arg: string]: ArgConfig | null | undefined };
-  /** Same as `args` but resolved configs. */
-  readonly schemas: { [arg: string]: Config | null | undefined };
+  readonly args: Config['args'];
   /** Safe aliases object. */
-  readonly aliases: { [alias: string]: NormalizedAlias | null | undefined };
+  readonly aliases: Config['aliases'];
   /** A sorted list of splittable alias names without the `-` prefix. */
   readonly names: string[];
-}
-
-export function getArgs(alias: Aliases[string]): [string, ...string[]][] {
-  /** List of strings in `args`. */
-  let strs: [string, ...string[]] | undefined;
-  const list: [string, ...string[]][] = [];
-  const args =
-    typeof alias === 'string' ? [alias] : Array.isArray(alias) ? alias : [];
-
-  for (const arg of args) {
-    if (typeof arg === 'string') {
-      strs ? strs.push(arg) : list.push((strs = [arg]));
-    } else if (Array.isArray(arg) && arg.length > 0) {
-      // filter out empty array
-      list.push(arg as [string, ...string[]]);
-    }
-  }
-
-  return list;
-}
-
-type PartialPick<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-
-// create empty node data for errors
-export function ndata(cfg: PartialPick<ArgConfig, 'arg'>): NodeData {
-  const key = cfg.arg ?? null;
-  const { type, options } = cfg;
-  return { raw: key, key, alias: null, type, args: [], options };
 }
 
 export function normalize(config: Config): NormalizedOptions {
@@ -70,9 +35,9 @@ export function normalize(config: Config): NormalizedOptions {
 
   const args = { __proto__: null, ...config.args };
   const aliases = { __proto__: null, ...config.aliases };
-  const aliasKeys = Object.keys(aliases);
+  const names = Object.keys(aliases);
   const fertile =
-    !!src.handler || aliasKeys.length > 0 || Object.keys(args).length > 0;
+    !!src.handler || names.length > 0 || Object.keys(args).length > 0;
 
   // sort by length desc for splitting later on
   return {
@@ -82,9 +47,8 @@ export function normalize(config: Config): NormalizedOptions {
     range,
     src,
     args,
-    schemas: { __proto__: null },
     aliases,
-    names: aliasKeys
+    names: names
       .reduce((keys: string[], key) => {
         // skip command aliases since we don't need to split them
         // and remove `-` prefix

@@ -1,19 +1,18 @@
 import { Aliases, Node, NodeData, Options } from '../core/core.types.js';
 
-export interface ArgConfig extends Pick<Config, 'type' | 'options'> {
-  arg: string;
-}
+export type ConfigAlias = [[string, ...string[]], ...[string, ...string[]][]];
 
 export interface Config {
   type: NodeData['type'];
   options: Options;
-  args?: { [arg: string]: ArgConfig | null | undefined };
-  aliases?: {
-    [alias: string]:
-      | [[string, ...string[]], ...[string, ...string[]][]]
-      | null
-      | undefined;
-  };
+  args: { [arg: string]: Config | ArgConfig | null | undefined };
+  aliases: { [alias: string]: ConfigAlias | null | undefined };
+}
+
+export interface ArgConfig
+  extends Omit<Config, 'args' | 'aliases'>,
+    Partial<Pick<Config, 'args' | 'aliases'>> {
+  key: string;
 }
 
 export interface Schema {
