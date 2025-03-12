@@ -43,16 +43,16 @@ export class Node {
    * @param dstrict The strict mode value for descendants.
    */
   constructor(
-    readonly options: NormalizedOptions,
-    opts: Omit<NodeOptions, 'cfg'>,
+    readonly opts: NormalizedOptions,
+    options: Omit<NodeOptions, 'cfg'>,
     dstrict?: boolean
   ) {
     // prettier-ignore
-    const { type, src, range: { min, max, maxRead } } = options;
-    const { raw = null, key = null, alias = null } = opts;
+    const { type, src, range: { min, max, maxRead } } = opts;
+    const { raw = null, key = null, alias = null } = options;
 
     // data.args is a reference to this.args
-    const args = (src.initial || []).concat(opts.args || []);
+    const args = (src.initial || []).concat(options.args || []);
     this.data = { type, raw, key, alias, args, options: src };
 
     // if no max, skip all checks as they all require max to be provided
@@ -94,7 +94,7 @@ export class Node {
     // note that having args and aliases means that the schema was already configured
     let opts;
     return (
-      (opts = this.options.args[arg]) &&
+      (opts = this.opts.args[arg]) &&
       (!hasValue || (opts.options.assign ?? opts.type === 'option')) &&
       (opts.args && opts.aliases
         ? (opts as Config)
@@ -132,8 +132,8 @@ export class Node {
   handle(arg: Arg): Config | false | undefined {
     // preserve `this` for callbacks
     return (
-      typeof this.options.src.handler === 'function' &&
-      this.options.src.handler(arg, this.data)?.config()
+      typeof this.opts.src.handler === 'function' &&
+      this.opts.src.handler(arg, this.data)?.config()
     );
   }
 
@@ -141,7 +141,7 @@ export class Node {
     // validate assumes the node has lost reference
     // so validate range here, too
     const len = this.data.args.length;
-    const { min, max } = this.options.range;
+    const { min, max } = this.opts.range;
     const msg: [string | number, number] | null =
       min != null && max != null && (len < min || len > max)
         ? min === max
@@ -163,12 +163,12 @@ export class Node {
     }
 
     // preserve `this` for callbacks
-    const { src } = this.options;
+    const { src } = this.opts;
     typeof src.postParse === 'function' && src.postParse(this.data);
   }
 
   tree(parent: INode | null, depth: number): INode {
-    const { src } = this.options;
+    const { src } = this.opts;
     const { raw, key, alias, type, args } = this.data;
     const node: INode = {
       id: (typeof src.id === 'function' ? src.id(this.data) : src.id) ?? key,
@@ -206,7 +206,7 @@ export class Node {
     let data;
     if (
       isAlias(arg) &&
-      (data = slice(arg.slice(1), this.options.names) as PartialNodeSplit) &&
+      (data = slice(arg.slice(1), this.opts.names) as PartialNodeSplit) &&
       (data.list = this.alias(data.values, '-'))
     ) {
       // list should have value here
@@ -219,7 +219,7 @@ export class Node {
     const all: AliasItem[] = [];
     for (let name of aliases) {
       name = prefix + name;
-      for (const args of this.options.aliases[name] || []) {
+      for (const args of this.opts.aliases[name] || []) {
         all.push({ name, args });
       }
     }

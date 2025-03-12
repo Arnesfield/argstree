@@ -88,7 +88,7 @@ export function parse(args: readonly string[], options: Config): INode {
       parent.children.push(child);
 
       // use child as next parent if it's not a leaf node
-      return child.options.leaf ? child : (next = child);
+      return child.opts.leaf ? child : (next = child);
     });
 
     // validate all children except next or latest child
@@ -110,8 +110,8 @@ export function parse(args: readonly string[], options: Config): INode {
     // fallback to parent if child cannot accept anymore args
     const node =
       child &&
-      (child.options.range.maxRead == null ||
-        child.options.range.maxRead > child.data.args.length)
+      (child.opts.range.maxRead == null ||
+        child.opts.range.maxRead > child.data.args.length)
         ? child
         : parent;
     // strict mode: throw error if arg is an option-like
@@ -123,7 +123,7 @@ export function parse(args: readonly string[], options: Config): INode {
   for (const raw of args.slice()) {
     // immediately treat as value if the current node
     // cannot actually create children
-    if (!parent.options.fertile) {
+    if (!parent.opts.fertile) {
       setValue(raw);
       continue;
     }
