@@ -1,5 +1,5 @@
 import { Aliases, Node, Options } from '../core/core.types.js';
-import { parse } from '../core/parse.js';
+import { parse } from '../parser/parse.js';
 import { obj } from '../utils/object.utils.js';
 import { ArgConfig, Config, Schema as ISchema } from './schema.types.js';
 
