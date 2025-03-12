@@ -37,6 +37,7 @@ export class Node {
   readonly data: NodeData;
   readonly children: Node[] = [];
   readonly strict: boolean | undefined;
+  readonly dstrict: boolean | undefined;
 
   /**
    * @param dstrict The strict mode value for descendants.
@@ -44,7 +45,7 @@ export class Node {
   constructor(
     readonly options: NormalizedOptions,
     opts: Omit<NodeOptions, 'cfg'>,
-    readonly dstrict?: boolean
+    dstrict?: boolean
   ) {
     // prettier-ignore
     const { type, src, range: { min, max, maxRead } } = options;
@@ -77,7 +78,7 @@ export class Node {
     // for descendant nodes
     this.strict =
       src.strict == null
-        ? dstrict
+        ? (this.dstrict = dstrict)
         : typeof src.strict === 'boolean'
           ? (this.dstrict = src.strict)
           : !(this.dstrict = src.strict !== 'self');
