@@ -1,4 +1,9 @@
-import { Aliases, Node, NodeData, Options } from '../core/core.types.js';
+import { Node, NodeData } from '../types/node.types.js';
+import { Options } from '../types/options.types.js';
+
+export interface Aliases {
+  [alias: string]: string | string[] | string[][] | null | undefined;
+}
 
 export type AliasArgs = [[string, ...string[]], ...[string, ...string[]][]];
 

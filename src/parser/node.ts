@@ -1,8 +1,8 @@
-import { Arg, Node as INode, NodeData } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
 import { Split } from '../core/split.js';
 import { Schema } from '../schema/schema.class.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
+import { Arg, Node as INode, NodeData } from '../types/node.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { slice } from '../utils/slice.js';
@@ -46,7 +46,7 @@ export class Node {
     const { raw = null, key = null, alias = null } = options;
 
     // data.args is a reference to this.args
-    const args = (src.initial || []).concat(options.args || []);
+    const args = (src.args || []).concat(options.args || []);
     this.data = { type, raw, key, alias, args, options: src };
 
     // throw range error

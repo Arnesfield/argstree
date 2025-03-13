@@ -1,11 +1,17 @@
-import { Aliases, Node, Options } from '../core/core.types.js';
 import { parse } from '../parser/parse.js';
+import { Node } from '../types/node.types.js';
+import { Options } from '../types/options.types.js';
 import { obj } from '../utils/object.utils.js';
-import { ArgConfig, Config, Schema as ISchema } from './schema.types.js';
+import {
+  Aliases,
+  ArgConfig,
+  Config,
+  Schema as ISchema
+} from './schema.types.js';
 
 // NOTE: internal
 
-interface PartialConfig
+export interface PartialConfig
   extends Omit<ArgConfig, 'arg'>,
     Partial<Pick<ArgConfig, 'arg'>> {}
 

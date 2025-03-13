@@ -1,4 +1,4 @@
-import { Arg } from '../core/core.types.js';
+import { Arg } from '../types/node.types.js';
 
 export function toArg(raw: string, alias: string | null): Arg {
   const index = raw.lastIndexOf('=');

@@ -1,1 +1,1 @@
-export { isAlias, isOption } from './arg.utils.js';
+export * from './arg.utils.js';

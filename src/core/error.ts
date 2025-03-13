@@ -1,4 +1,5 @@
-import { NodeData, Options } from './core.types.js';
+import { NodeData } from '../types/node.types.js';
+import { Options } from '../types/options.types.js';
 
 /** The parse error. */
 export class ParseError extends Error implements NodeData {

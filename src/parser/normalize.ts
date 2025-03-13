@@ -1,6 +1,12 @@
-import { Aliases, NodeData, Options } from '../core/core.types.js';
 import { ParseError } from '../core/error.js';
-import { AliasArgs, ArgConfig, Config } from '../schema/schema.types.js';
+import {
+  AliasArgs,
+  Aliases,
+  ArgConfig,
+  Config
+} from '../schema/schema.types.js';
+import { NodeData } from '../types/node.types.js';
+import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';

@@ -1,4 +1,4 @@
-import { NodeData } from '../core/core.types.js';
+import { NodeData } from '../types/node.types.js';
 
 export function display(
   opts: Pick<NodeData, 'type' | 'key' | 'options'>

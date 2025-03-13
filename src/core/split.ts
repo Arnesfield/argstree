@@ -23,7 +23,7 @@ export interface Split {
  *
  * Note that the {@linkcode matches} array needs to be sorted
  * by length in descending order so that longer match strings
- * take priority and are split first.
+ * will take priority and are split first.
  * @param value The combined value.
  * @param matches The list of matches to split.
  * @returns The split result.
