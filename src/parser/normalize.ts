@@ -24,6 +24,7 @@ export interface NormalizedOptions {
     min?: number | null;
     max?: number | null;
     maxRead?: number | null;
+    error?: string | null;
   };
   readonly src: Options;
   /** Safe args object. */
@@ -56,10 +57,23 @@ function getArgs(alias: Aliases[string]): [string, ...string[]][] {
 export function normalize(config: Config): NormalizedOptions {
   const src = config.options;
 
-  // get and validate range only after setting the fields above
+  // get and validate range
   type R = NormalizedOptions['range'];
   const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
   range.maxRead = ensureNumber(src.maxRead) ?? range.max;
+
+  // this might look out of place,
+  // but this ensures that the range check is done only once.
+  // if no max, skip all checks as they all require max to be provided
+  const { min, max, maxRead } = range;
+  range.error =
+    max == null
+      ? null
+      : min != null && min > max
+        ? `min and max range: ${min}-${max}`
+        : maxRead != null && max < maxRead
+          ? `max and maxRead range: ${max} >= ${maxRead}`
+          : null;
 
   // save splittable aliases to names array
   const names: string[] = [];

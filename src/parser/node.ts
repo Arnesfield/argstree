@@ -42,27 +42,19 @@ export class Node {
     dstrict?: boolean
   ) {
     // prettier-ignore
-    const { type, src, range: { min, max, maxRead } } = opts;
+    const { type, src, range: { error } } = opts;
     const { raw = null, key = null, alias = null } = options;
 
     // data.args is a reference to this.args
     const args = (src.initial || []).concat(options.args || []);
     this.data = { type, raw, key, alias, args, options: src };
 
-    // if no max, skip all checks as they all require max to be provided
-    const msg =
-      max == null
-        ? null
-        : min != null && min > max
-          ? `min and max range: ${min}-${max}`
-          : maxRead != null && max < maxRead
-            ? `max and maxRead range: ${max} >= ${maxRead}`
-            : null;
-    if (msg) {
+    // throw range error
+    if (error) {
       const name = display(this.data);
       throw new ParseError(
         ParseError.OPTIONS_ERROR,
-        (name ? name + 'has i' : 'I') + `nvalid ${msg}`,
+        (name ? name + 'has i' : 'I') + `nvalid ${error}`,
         this.data
       );
     }
