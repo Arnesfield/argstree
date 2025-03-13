@@ -178,7 +178,9 @@ export function parse(args: readonly string[], options: Config): INode {
 
     // parse options using handler
     else if ((parsed = parent.handle(arg))) {
-      set([{ raw, key: raw, cfg: parsed }]);
+      // use arg.key as key here despite not using arg.value
+      // assume that the consumer handles arg.value manually
+      set([{ raw, key: arg.key, cfg: parsed }]);
     }
 
     // split can be unset by the 2nd parent.split() call
