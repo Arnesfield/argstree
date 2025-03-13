@@ -94,9 +94,7 @@ export function normalize(config: Config): NormalizedOptions {
 
   // apply aliases from args
   const cfgs = Object.entries(config.args);
-  for (const [key, cfg] of cfgs) {
-    const { type, options } = cfg;
-
+  for (const [key, { type, options }] of cfgs) {
     // use `alias[0]` as alias and `arg` as arg
     const items =
       typeof options.alias === 'string'
