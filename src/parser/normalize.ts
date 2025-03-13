@@ -21,9 +21,9 @@ export interface NormalizedOptions {
   };
   readonly src: Options;
   /** Safe args object. */
-  readonly args: { [arg: string]: Config | ArgConfig | null | undefined };
+  readonly args: { [arg: string]: Config | ArgConfig | undefined };
   /** Safe aliases object. */
-  readonly aliases: { [alias: string]: AliasArgs | null | undefined };
+  readonly aliases: { [alias: string]: AliasArgs };
   /** A sorted list of splittable alias names without the `-` prefix. */
   readonly names: string[];
 }

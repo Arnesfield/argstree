@@ -131,7 +131,7 @@ export function parse(args: readonly string[], options: Config): INode {
     // assume arg.raw and raw are the same
     const arg = toArg(raw, null);
     const hasValue = arg.value != null;
-    let parsed, aliases, split;
+    let parsed, split;
 
     // parse options from options.args only
     if ((parsed = parent.parse(arg, { exact: true }))) {
@@ -144,10 +144,10 @@ export function parse(args: readonly string[], options: Config): INode {
     // - options from handler
     // - a value (or, if in strict mode, an unknown option-like)
     // for this case, handle exact alias
-    else if ((aliases = parent.alias([raw]))) {
-      setAlias(aliases);
-    } else if (hasValue && (aliases = parent.alias([arg.key]))) {
-      setAlias(aliases, arg.value);
+    else if (raw in parent.opts.aliases) {
+      setAlias(parent.alias([raw]));
+    } else if (hasValue && arg.key in parent.opts.aliases) {
+      setAlias(parent.alias([arg.key]), arg.value);
     }
 
     // now, arg cannot be an exact alias.

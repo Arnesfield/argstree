@@ -196,33 +196,36 @@ export class Node {
 
   // aliases
 
-  split(arg: string): NodeSplit | undefined {
-    // accept false for split.list (internal to Node only)
-    type PartialNodeSplit = Split & { list: NodeSplit['list'] | false };
+  split(arg: string): NodeSplit | false {
+    // accept optional for split.list (internal only)
+    interface PartialNodeSplit
+      extends Split,
+        Partial<Pick<NodeSplit, 'list'>> {}
 
     // only accept aliases
     // remove first `-` for alias
-    // considered as split only if alias args were found
-    let data;
-    if (
+    // considered as split only if alias args were found.
+    // note that split.values would always exist as keys in opts.aliases
+    // as we use opts.names for splitting which is derived from opts.aliases
+    let data: PartialNodeSplit | undefined;
+    return (
       isAlias(arg) &&
-      (data = slice(arg.slice(1), this.opts.names) as PartialNodeSplit) &&
-      (data.list = this.alias(data.values, '-'))
-    ) {
-      // list should have value here
-      return data as NodeSplit;
-    }
+      (data = slice(arg.slice(1), this.opts.names)).values.length > 0 &&
+      ((data.list = this.alias(data.values, '-')), data as NodeSplit)
+    );
   }
 
-  alias(aliases: string[], prefix = ''): NodeSplit['list'] | false {
+  // assume alias keys always exist in opts.aliases
+  alias(aliases: string[], prefix = ''): NodeSplit['list'] {
     // get args per alias
     const all: AliasItem[] = [];
     for (let name of aliases) {
       name = prefix + name;
-      for (const args of this.opts.aliases[name] || []) {
+      // assume name always exists
+      for (const args of this.opts.aliases[name]) {
         all.push({ name, args });
       }
     }
-    return all.length > 0 && (all as NodeSplit['list']);
+    return all as NodeSplit['list'];
   }
 }
