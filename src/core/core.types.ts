@@ -64,7 +64,7 @@ export interface ParseOptions {
    * Default value is `true` for `option` types and `false` for `command` types.
    */
   leaf?: boolean;
-  setup?(schema: Schema): void;
+  init?(schema: Schema): void;
   handler?(arg: Arg, data: NodeData): Schema | null | undefined | void;
   preParse?(data: NodeData): void;
   postParse?(data: NodeData): void;

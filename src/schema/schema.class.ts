@@ -19,8 +19,8 @@ export class Schema implements ISchema {
     cfg.aliases = obj();
     this.cfg = cfg as Config;
 
-    // only call setup once all states are ready
-    typeof cfg.options.setup === 'function' && cfg.options.setup(this);
+    // only call init once all states are ready
+    typeof cfg.options.init === 'function' && cfg.options.init(this);
   }
 
   option(arg: string, options: Options = {}): this {
