@@ -6,18 +6,12 @@ import { ArgConfig, Config } from '../schema/schema.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { slice } from '../utils/slice.js';
-import { NormalizedOptions } from './normalize.js';
+import { Alias, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
 
-export interface AliasItem {
-  /** Alias name. */
-  name: string;
-  args: [string, ...string[]];
-}
-
 export interface NodeSplit extends Split {
-  list: [AliasItem, ...AliasItem[]];
+  list: [Alias, ...Alias[]];
 }
 
 export interface NodeOptions {
@@ -218,13 +212,10 @@ export class Node {
   // assume alias keys always exist in opts.aliases
   alias(aliases: string[], prefix = ''): NodeSplit['list'] {
     // get args per alias
-    const all: AliasItem[] = [];
-    for (let name of aliases) {
-      name = prefix + name;
+    const all: Alias[] = [];
+    for (const name of aliases) {
       // assume name always exists
-      for (const args of this.opts.aliases[name]) {
-        all.push({ name, args });
-      }
+      all.push(...this.opts.aliases[prefix + name]);
     }
     return all as NodeSplit['list'];
   }

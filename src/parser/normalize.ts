@@ -8,6 +8,12 @@ import { obj } from '../utils/object.utils.js';
 
 // NOTE: internal
 
+export interface Alias {
+  /** Alias name. */
+  name: string;
+  args: [string, ...string[]];
+}
+
 export interface NormalizedOptions {
   readonly type: NodeData['type'];
   /** Determines if the Node is a leaf node and cannot have descendants. */
@@ -23,7 +29,7 @@ export interface NormalizedOptions {
   /** Safe args object. */
   readonly args: { [arg: string]: Config | ArgConfig | undefined };
   /** Safe aliases object. */
-  readonly aliases: { [alias: string]: AliasArgs };
+  readonly aliases: { [alias: string]: Alias[] };
   /** A sorted list of splittable alias names without the `-` prefix. */
   readonly names: string[];
 }
@@ -55,14 +61,15 @@ export function normalize(config: Config): NormalizedOptions {
   const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
   range.maxRead = ensureNumber(src.maxRead) ?? range.max;
 
+  // save splittable aliases to names array
   const names: string[] = [];
   const aliases: NormalizedOptions['aliases'] = obj();
 
-  function setAlias(key: string, args: AliasArgs) {
-    aliases[key] = args;
+  function setAlias(name: string, val: AliasArgs) {
+    aliases[name] = val.map((args): Alias => ({ name, args }));
     // skip command aliases since we don't need to split them
     // and remove `-` prefix
-    isAlias(key) && names.push(key.slice(1));
+    isAlias(name) && names.push(name.slice(1));
   }
 
   // apply aliases
