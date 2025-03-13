@@ -14,18 +14,28 @@ describe('split', () => {
   });
 
   it('should split value by provided matches', () => {
-    const result = split('abca', ['a', 'bc']);
-    expect(result.values).to.deep.equal(['a', 'bc', 'a']);
-    expect(result.remainder).to.have.length(0);
+    const result = split('cabacb', ['ab', 'a', 'c']);
+    expect(result.values).to.deep.equal(['c', 'ab', 'a', 'c']);
+    expect(result.remainder).to.deep.equal(['b']);
   });
 
-  it('should prioritize long matches in order', () => {
-    let result = split('abcada', ['ab', 'bc', 'a', 'ca', 'ad', 'da']);
-    expect(result.values).to.deep.equal(['ab', 'ca', 'da']);
-    expect(result.remainder).to.have.length(0);
+  it('should split in order of the provided matches', () => {
+    const value = 'abcada';
 
-    result = split('abcada', ['bc', 'ab', 'a', 'ca', 'ad', 'da']);
-    expect(result.values).to.deep.equal(['a', 'bc', 'ad', 'a']);
+    let result = split(value, ['bc', 'ab', 'a', 'ca', 'ad', 'da']);
+    expect(result.values).to.deep.equal(['a', 'bc', 'a', 'a']);
+    expect(result.remainder).to.deep.equal(['d']);
+
+    const matches = ['ab', 'bc', 'a', 'ca', 'ad', 'da'];
+    result = split(value, matches);
+    expect(result.values).to.deep.equal(['ab', 'a', 'a']);
+    expect(result.remainder).to.deep.equal(['c', 'd']);
+
+    result = split(
+      value,
+      matches.slice().sort((a, b) => b.length - a.length)
+    );
+    expect(result.values).to.deep.equal(['ab', 'ca', 'da']);
     expect(result.remainder).to.have.length(0);
   });
 
@@ -45,6 +55,10 @@ describe('split', () => {
     expect(result.remainder).to.have.length(0);
 
     result = split('ab cd ', ['', ' ']);
+    expect(result.values).to.deep.equal(['', '', ' ', '', '', '', ' ']);
+    expect(result.remainder).to.deep.equal(['a', 'b', 'c', 'd']);
+
+    result = split('ab cd ', [' ', '']);
     expect(result.values).to.deep.equal(['', ' ', '', ' ']);
     expect(result.remainder).to.deep.equal(['a', 'b', 'c', 'd']);
 
