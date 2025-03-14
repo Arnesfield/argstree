@@ -32,11 +32,9 @@ export class Node {
   readonly data: NodeData;
   readonly children: Node[] = [];
   readonly strict: boolean | undefined;
+  /** The strict mode value for descendants. */
   readonly dstrict: boolean | undefined;
 
-  /**
-   * @param dstrict The strict mode value for descendants.
-   */
   constructor(
     readonly opts: NormalizedOptions,
     options: Omit<NodeOptions, 'cfg'>,
