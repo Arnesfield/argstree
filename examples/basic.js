@@ -1,5 +1,7 @@
-import { spec } from '../lib/index.js';
+// @ts-check
+import { command, isOption, option } from '../lib/index.js';
 
+/** @returns {never} */
 function help() {
   console.log(
     'Usage: node examples/basic.js hello --opt value --list a,b,c --no-bool -- -a -b'
@@ -9,11 +11,7 @@ function help() {
 
 try {
   const args = process.argv.slice(2);
-  if (args.length === 0) {
-    help();
-  } else {
-    run(args);
-  }
+  args.length > 0 ? run(args) : help();
 } catch (error) {
   console.error(error + '');
   process.exitCode = 1;
@@ -21,45 +19,34 @@ try {
 
 /** @param {string[]} args */
 function run(args) {
-  const cmd = spec()
-    .command('--')
-    .option('--help', { maxRead: 0, validate: help })
-    .alias('-h')
-    .args((arg, data) => {
-      // ignore anything from alias
-      const { alias } = data.options;
-      if (
-        (alias && arg in alias) ||
-        !arg.startsWith('-') ||
-        arg.includes('=')
-      ) {
-        return;
+  const cmd = command({
+    handler(arg) {
+      if (isOption(arg.key)) {
+        return option({
+          id: arg.key.replace(/^--?/, ''),
+          args: arg.value != null ? [arg.value] : []
+        });
       }
-      // get index to slice off hyphens
-      const start =
-        arg.length > 1 && arg[1] !== '-'
-          ? 1
-          : arg.length > 2 && arg.startsWith('--') && arg[2] !== '-'
-            ? 2
-            : null;
-      if (start !== null) {
-        return { id: arg.slice(start) };
-      }
-    });
+    }
+  })
+    .option('--help', { alias: '-h', maxRead: 0, preParse: help })
+    .command('--', { strict: false });
 
   const root = cmd.parse(args);
   const object = { __proto__: null, _: root.args.slice() };
   for (const node of root.children) {
     const { args } = node;
-    const id = camelCase(node.id);
-    if (node.id === '--' || id === '_') {
+    const nodeId = node.id || '';
+    const id = camelCase(nodeId);
+
+    if (nodeId === '--' || id === '_') {
       // handle positional args
       object._.push(...args);
     } else if (args.length === 0) {
       // handle boolean
       const match = 'no-';
-      const negate = node.id.startsWith(match);
-      const prop = camelCase(negate ? node.id.slice(match.length) : node.id);
+      const negate = nodeId.startsWith(match);
+      const prop = camelCase(negate ? nodeId.slice(match.length) : nodeId);
       object[prop] = !negate;
     } else if (args.length === 1 && args[0].includes(',')) {
       // handle comma separated values
@@ -74,18 +61,21 @@ function run(args) {
   console.log(JSON.stringify(object, undefined, 2));
 }
 
+/**
+ * @param {string} value
+ * @param {(firstChar: string) => string} char
+ */
+function map(value, char) {
+  return value.length > 0 ? char(value[0]) + value.slice(1) : value;
+}
+
 // naive camelCase transform
-/** @param {string | null} id  */
+/** @param {string } id  */
 function camelCase(id) {
-  if (typeof id !== 'string') {
-    return id;
-  }
   const value = id
     .split('-')
-    .map(part => {
-      return part.length === 0 ? part : part[0].toUpperCase() + part.slice(1);
-    })
+    .map(part => map(part, c => c.toUpperCase()))
     .join('')
     .trim();
-  return value.length > 0 ? value[0].toLowerCase() + value.slice(1) : value;
+  return map(value, c => c.toLowerCase());
 }
