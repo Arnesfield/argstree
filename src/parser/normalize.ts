@@ -26,6 +26,8 @@ export interface NormalizedOptions {
   readonly leaf: boolean;
   /** Determines if the Node can actually have children. */
   readonly fertile: boolean;
+  /** Determines if the {@linkcode names} have no equal signs (`=`). */
+  readonly safeAlias: boolean;
   readonly range: {
     min?: number | null;
     max?: number | null;
@@ -82,6 +84,7 @@ export function normalize(config: Config): NormalizedOptions {
           : null;
 
   // save splittable aliases to names array
+  let safeAlias = true;
   const names: string[] = [];
   const aliases: NormalizedOptions['aliases'] = obj();
 
@@ -89,7 +92,10 @@ export function normalize(config: Config): NormalizedOptions {
     aliases[name] = val.map((args): Alias => ({ name, args }));
     // skip command aliases since we don't need to split them
     // and remove `-` prefix
-    isAlias(name) && names.push(name.slice(1));
+    if (isAlias(name)) {
+      names.push(name.slice(1));
+      safeAlias &&= !name.includes('=');
+    }
   }
 
   // apply aliases
@@ -142,6 +148,7 @@ export function normalize(config: Config): NormalizedOptions {
     type: config.type,
     leaf: !fertile && (src.leaf ?? config.type === 'option'),
     fertile,
+    safeAlias,
     range,
     src,
     args: obj(config.args),

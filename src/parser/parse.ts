@@ -166,7 +166,10 @@ export function parse(args: readonly string[], options: Config): INode {
     // otherwise, treat as value
     // if value is an option-like with strict mode, throw error
     // otherwise, save value to node.args
+
+    // only perform this first split if aliases have equal signs (unsafe alias)
     else if (
+      (!hasValue || !parent.opts.safeAlias) &&
       (split = parent.split(raw)) &&
       split.remainder.length === 0 &&
       setAlias(split.list)
