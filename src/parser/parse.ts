@@ -167,9 +167,17 @@ export function parse(args: readonly string[], options: Config): INode {
     // if value is an option-like with strict mode, throw error
     // otherwise, save value to node.args
 
-    // only perform this first split if aliases have equal signs (unsafe alias)
+    // split cases:
+    // - raw no equal sign, same key (-abc, -abc, null)
+    // - raw equal sign, different key no equal sign (-abc=1, -abc, 1)
+    // - raw equal sign, different key equal sign (-abc=a=1, -abc=a, 1)
+
+    // if safe alias (no alias equal signs),
+    // then there is no reason to split raw as raw could contain an equal sign
+    // if unsafe, split raw
+    // if unsafe, split arg.key only if it does not match raw (hasValue)
     else if (
-      (!hasValue || !parent.opts.safeAlias) &&
+      !parent.opts.safeAlias &&
       (split = parent.split(raw)) &&
       split.remainder.length === 0 &&
       setAlias(split.list)
@@ -180,7 +188,7 @@ export function parse(args: readonly string[], options: Config): INode {
       // so this is probably ok.
       // also set alias was successful, do nothing and go to next iteration
     } else if (
-      hasValue &&
+      (parent.opts.safeAlias || hasValue) &&
       (split = parent.split(arg.key)) &&
       split.remainder.length === 0 &&
       setAlias(split.list, arg.value)
