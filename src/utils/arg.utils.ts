@@ -1,5 +1,5 @@
 /**
- * Determines if the argument looks like an alias (e.g. `-o`, `-op`).
+ * Determines if the argument looks like an alias (e.g. `-o`, `-opt`).
  * @param arg The argument to check.
  * @returns `true` if the argument is an alias.
  */
@@ -9,7 +9,7 @@ export function isAlias(arg: string): boolean {
 
 /**
  * Determines if the argument looks like an option
- * (e.g. `-o`, `-op`, `--o`, `--option`).
+ * (e.g. `-o`, `-opt`, `--o`, `--option`).
  * @param arg The argument to check.
  * @returns `true` if {@linkcode arg} is an option.
  */
