@@ -74,21 +74,6 @@ export class Node {
     typeof src.preParse === 'function' && src.preParse(this.data);
   }
 
-  private arg(arg: string, hasValue: boolean | undefined) {
-    // check if assignable if has value.
-    // also only create schema when needed since
-    // it is possible to have recursive setup functions
-    // note that having args and aliases means that the schema was already configured
-    let opts;
-    return (
-      (opts = this.opts.args[arg]) &&
-      (!hasValue || (opts.options.assign ?? opts.type === 'option')) &&
-      (opts.args && opts.aliases
-        ? (opts as Config)
-        : new Schema(opts as ArgConfig).config())
-    );
-  }
-
   parse(
     arg: Arg,
     flags: { exact?: boolean; hasValue?: boolean } = {}
@@ -98,17 +83,40 @@ export class Node {
     // option --option: initial 1, 2
     // order of args: [options.initial, arg assigned, alias.args, alias assigned]
 
-    let cfg,
-      key = arg.raw,
-      value;
+    let key = arg.raw,
+      value,
+      opts,
+      cfg;
 
-    if ((cfg = this.arg(key, flags.hasValue))) {
-      // do nothing
-    } else if (arg.value != null && (cfg = this.arg(arg.key, true))) {
+    // first, find exact options match
+    if ((opts = this.opts.args[key])) {
+      // ok
+    } else if (arg.value != null && (opts = this.opts.args[arg.key])) {
       key = arg.key;
       value = arg.value;
-    } else if (!flags.exact) {
-      cfg = this.handle(arg);
+    }
+
+    // if no exact match, fallback to handler
+    // no need to check if this is assignable
+    // since the consumer would have already handled the value
+    if (!opts) {
+      !flags.exact && (cfg = this.handle(arg));
+    }
+
+    // if exact match was found, check assignable only if
+    // - for arg.raw match (value == null): check with flags.hasValue
+    // - for arg.key match: always check
+    else if (
+      (value == null && !flags.hasValue) ||
+      (opts.options.assign ?? opts.type === 'option')
+    ) {
+      // also only create schema when needed since
+      // it is possible to have recursive init functions
+      // note that having args and aliases means that the schema was already configured
+      cfg =
+        opts.args && opts.aliases
+          ? (opts as Config)
+          : new Schema(opts as ArgConfig).config();
     }
 
     return (

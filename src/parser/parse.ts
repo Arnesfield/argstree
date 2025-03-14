@@ -48,9 +48,7 @@ export function parse(args: readonly string[], options: Config): INode {
     const lastParsed = parent.parse(lastArg, { hasValue });
 
     // skip if assiging a value to alias but no parsed last options
-    if (hasValue && !lastParsed) {
-      return;
-    }
+    if (hasValue && !lastParsed) return;
 
     // at this point, if a value is assigned, lastParsed would always be set
     // otherwise, lastParsed was parsed normally like the loop below.
@@ -74,6 +72,8 @@ export function parse(args: readonly string[], options: Config): INode {
       return item;
     });
     set(items);
+
+    return true;
   }
 
   function set(items: NodeOptions[]) {
@@ -144,10 +144,14 @@ export function parse(args: readonly string[], options: Config): INode {
     // - options from handler
     // - a value (or, if in strict mode, an unknown option-like)
     // for this case, handle exact alias
-    else if (raw in parent.opts.aliases) {
-      setAlias(parent.alias([raw]));
-    } else if (hasValue && arg.key in parent.opts.aliases) {
-      setAlias(parent.alias([arg.key]), arg.value);
+    else if (raw in parent.opts.aliases && setAlias(parent.alias([raw]))) {
+      // setAlias was successful, do nothing and go to next iteration
+    } else if (
+      hasValue &&
+      arg.key in parent.opts.aliases &&
+      setAlias(parent.alias([arg.key]), arg.value)
+    ) {
+      // setAlias was successful, do nothing and go to next iteration
     }
 
     // now, arg cannot be an exact alias.
@@ -162,18 +166,23 @@ export function parse(args: readonly string[], options: Config): INode {
     // otherwise, treat as value
     // if value is an option-like with strict mode, throw error
     // otherwise, save value to node.args
-    else if ((split = parent.split(raw)) && split.remainder.length === 0) {
+    else if (
+      (split = parent.split(raw)) &&
+      split.remainder.length === 0 &&
+      setAlias(split.list)
+    ) {
       // you would think it might be ideal to stop parent.split()
       // when it finds at least 1 remainder, but we'll need to display
       // the list of remainders for the error message anyway,
-      // so this is probably ok
-      setAlias(split.list);
+      // so this is probably ok.
+      // also set alias was successful, do nothing and go to next iteration
     } else if (
       hasValue &&
       (split = parent.split(arg.key)) &&
-      split.remainder.length === 0
+      split.remainder.length === 0 &&
+      setAlias(split.list, arg.value)
     ) {
-      setAlias(split.list, arg.value);
+      // setAlias was successful, do nothing and go to next iteration
     }
 
     // parse options using handler
@@ -185,8 +194,7 @@ export function parse(args: readonly string[], options: Config): INode {
 
     // split can be unset by the 2nd parent.split() call
     // which is ok since it would be weird to show remainders from raw
-    // also assume split.remainder has values
-    else if (split) {
+    else if (split && split.remainder.length > 0) {
       unrecognized(
         'alias' +
           (split.remainder.length === 1 ? '' : 'es') +
