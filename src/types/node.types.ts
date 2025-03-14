@@ -3,34 +3,34 @@ import { Options } from './options.types.js';
 /** The parsed argument. */
 export interface Arg {
   /** The unparsed argument. */
-  readonly raw: string;
+  raw: string;
   // NOTE: same doc as NodeData.key
   /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
-  readonly key: string;
+  key: string;
   /**
    * The alias used when this argument was parsed through an alias,
    * otherwise the value is `null`.
    */
-  readonly alias: string | null;
+  alias: string | null;
   /** The parsed value from the argument (e.g. `value` from `--option=value`). */
-  readonly value: string | null;
+  value: string | null;
 }
 
 /** The node data. */
 export interface NodeData {
   /** The unparsed argument. The value is `null` for the root node. */
-  readonly raw: string | null;
+  raw: string | null;
   // NOTE: same doc as Arg.key
   /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
-  readonly key: string | null;
+  key: string | null;
   /** The alias used to parse the options for this node, otherwise the value is `null`. */
-  readonly alias: string | null;
+  alias: string | null;
   /** The type of node. */
-  readonly type: 'option' | 'command';
+  type: 'option' | 'command';
   /** The arguments for this node. */
-  readonly args: string[];
+  args: string[];
   /** The options for this node. */
-  readonly options: Options;
+  options: Options;
 }
 
 /** The node object. */
