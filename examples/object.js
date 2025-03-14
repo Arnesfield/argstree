@@ -1,5 +1,7 @@
-import { spec } from '../lib/index.js';
+// @ts-check
+import { command, option } from '../lib/index.js';
 
+/** @returns {never} */
 function help() {
   console.log(
     "Usage: node examples/object.js .name='John Doe' .email=john.doe@example.com .roles.name=Admin"
@@ -9,11 +11,7 @@ function help() {
 
 try {
   const args = process.argv.slice(2);
-  if (args.length === 0) {
-    help();
-  } else {
-    run(args);
-  }
+  args.length > 0 ? run(args) : help();
 } catch (error) {
   console.error(error + '');
   process.exitCode = 1;
@@ -21,25 +19,24 @@ try {
 
 /** @param {string[]} args */
 function run(args) {
-  const cmd = spec({ max: 0, strict: true })
-    .option('--help', { maxRead: 0, validate: help })
-    .alias('-h')
-    .args(arg => {
-      if (!arg.startsWith('.')) {
-        return;
+  const cmd = command({
+    max: 0,
+    strict: true,
+    handler(arg) {
+      if (arg.key.startsWith('.')) {
+        return option({
+          maxRead: 0,
+          args: arg.value != null ? [arg.value] : []
+        });
       }
-      // manually split by equal sign to manipulate initial args
-      const index = arg.indexOf('=');
-      const [id, initial] =
-        index > -1 ? [arg.slice(0, index), [arg.slice(index + 1)]] : [arg, []];
-      return { id, maxRead: 0, initial };
-    });
+    }
+  }).option('--help', { alias: '-h', maxRead: 0, preParse: help });
 
   const root = cmd.parse(args);
   const object = Object.create(null);
   for (const node of root.children) {
     const hasArgs = node.args.length > 0;
-    const props = node.id.split('.').slice(1);
+    const props = node.id ? node.id.split('.').slice(1) : [];
     const last = hasArgs ? props.pop() : null;
 
     // this is just an example, but it could probably be better
@@ -54,7 +51,8 @@ function run(args) {
         curr = curr[prop];
       } else {
         throw new Error(
-          `Cannot set '${node.id}' because '.${read.join('.')}' is not an object.`
+          `Cannot set '${node.id}' because '.${read.join('.')}' ` +
+            `is of data type: ${typeof curr[prop]}`
         );
       }
     }
@@ -63,7 +61,7 @@ function run(args) {
     if (hasArgs && last != null) {
       const value = node.args[0];
       curr[last] =
-        isFinite(value) || ['null', 'false', 'true'].includes(value)
+        isFinite(Number(value)) || ['null', 'false', 'true'].includes(value)
           ? JSON.parse(value)
           : value;
     }
