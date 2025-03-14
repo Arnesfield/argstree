@@ -16,14 +16,13 @@ export interface PartialConfig
     Partial<Pick<ArgConfig, 'arg'>> {}
 
 export class Schema implements ISchema {
-  private readonly cfg: Config;
-
-  constructor(cfg: PartialConfig) {
+  // expose as PartialConfig but use Config internally
+  constructor(cfg: PartialConfig);
+  constructor(private readonly cfg: Config) {
     // NOTE: intentional cfg object mutation to update existing ArgConfig object
     // always replace args and aliases
     cfg.args = obj();
     cfg.aliases = obj();
-    this.cfg = cfg as Config;
 
     // only call init once all states are ready
     typeof cfg.options.init === 'function' && cfg.options.init(this);
