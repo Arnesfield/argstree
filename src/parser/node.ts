@@ -6,6 +6,7 @@ import { Arg, Node as INode, NodeData } from '../types/node.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { slice } from '../utils/slice.js';
+import { json } from './json.js';
 import { Alias, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
@@ -169,7 +170,8 @@ export class Node {
       parent,
       children: [],
       ancestors: parent ? parent.ancestors.concat(parent) : [],
-      descendants: []
+      descendants: [],
+      json
     };
     for (const sub of this.children) {
       const child = sub.tree(node, depth + 1);
