@@ -29,7 +29,8 @@ export interface SchemaOptions {
   handler?(arg: Arg, data: NodeData): Schema | null | undefined | void;
   preParse?(data: NodeData): void;
   postParse?(data: NodeData): void;
-  done?(data: NodeData): void;
+  preValidate?(data: NodeData): void;
+  postValidate?(data: NodeData): void;
 }
 
 export interface Options extends SchemaOptions {

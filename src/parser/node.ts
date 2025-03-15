@@ -133,13 +133,13 @@ export class Node {
 
   parsed(): void {
     // preserve `this` for callbacks
-    const { src } = this.opts;
-    typeof src.postParse === 'function' && src.postParse(this.data);
+    typeof this.opts.src.postParse === 'function' &&
+      this.opts.src.postParse(this.data);
   }
 
   // build tree and validate nodes (children are validated first)
   tree(parent: INode | null, depth: number): INode {
-    const { src } = this.opts;
+    const { src, range } = this.opts;
     const { raw, key, alias, type, args } = this.data;
     const node: INode = {
       id: (typeof src.id === 'function' ? src.id(this.data) : src.id) ?? key,
@@ -166,9 +166,10 @@ export class Node {
     }
 
     // validate children before parent
-    validateNode(this.data, this.opts.range);
     // preserve `this` for callbacks
-    typeof src.done === 'function' && src.done(this.data);
+    typeof src.preValidate === 'function' && src.preValidate(this.data);
+    validateNode(this.data, range);
+    typeof src.postValidate === 'function' && src.postValidate(this.data);
 
     return node;
   }
