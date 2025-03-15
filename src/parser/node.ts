@@ -6,6 +6,7 @@ import { Arg, Node as INode, NodeData } from '../types/node.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { slice } from '../utils/slice.js';
+import { validateNode } from '../utils/validate-node.js';
 import { json } from './json.js';
 import { Alias, NormalizedOptions } from './normalize.js';
 
@@ -136,36 +137,6 @@ export class Node {
     typeof src.postParse === 'function' && src.postParse(this.data);
   }
 
-  private done(): void {
-    // validate assumes the node has lost reference
-    // so validate range here, too
-    const len = this.data.args.length;
-    const { min, max } = this.opts.range;
-    const msg: [string | number, number] | null =
-      min != null && max != null && (len < min || len > max)
-        ? min === max
-          ? [min, min]
-          : [`${min}-${max}`, 2]
-        : min != null && len < min
-          ? [`at least ${min}`, min]
-          : max != null && len > max
-            ? [max && `up to ${max}`, max]
-            : null;
-    if (msg) {
-      const name = display(this.data);
-      throw new ParseError(
-        ParseError.RANGE_ERROR,
-        (name ? name + 'e' : 'E') +
-          `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`,
-        this.data
-      );
-    }
-
-    // preserve `this` for callbacks
-    const { src } = this.opts;
-    typeof src.done === 'function' && src.done(this.data);
-  }
-
   // build tree and validate nodes (children are validated first)
   tree(parent: INode | null, depth: number): INode {
     const { src } = this.opts;
@@ -186,14 +157,19 @@ export class Node {
       descendants: [],
       json
     };
+
     for (const sub of this.children) {
       const child = sub.tree(node, depth + 1);
       node.children.push(child);
       // also save descendants of child
       node.descendants.push(child, ...child.descendants);
     }
+
     // validate children before parent
-    this.done();
+    validateNode(this.data, this.opts.range);
+    // preserve `this` for callbacks
+    typeof src.done === 'function' && src.done(this.data);
+
     return node;
   }
 

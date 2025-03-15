@@ -10,6 +10,7 @@ import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
 import { ensureNumber } from '../utils/ensure-number.js';
+import { getRange } from '../utils/get-range.js';
 import { obj } from '../utils/object.utils.js';
 
 // NOTE: internal
@@ -20,6 +21,13 @@ export interface Alias {
   args: [string, ...string[]];
 }
 
+export interface Range {
+  min: number | null;
+  max: number | null;
+  maxRead?: number | null;
+  error?: string | null;
+}
+
 export interface NormalizedOptions {
   readonly type: NodeData['type'];
   /** Determines if the Node is a leaf node and cannot have descendants. */
@@ -28,12 +36,7 @@ export interface NormalizedOptions {
   readonly fertile: boolean;
   /** Determines if the {@linkcode names} have no equal signs (`=`). */
   readonly safeAlias: boolean;
-  readonly range: {
-    min?: number | null;
-    max?: number | null;
-    maxRead?: number | null;
-    error?: string | null;
-  };
+  readonly range: Range;
   readonly src: Options;
   /** Safe args object. */
   readonly args: { [arg: string]: Config | ArgConfig | undefined };
@@ -66,8 +69,7 @@ export function normalize(config: Config): NormalizedOptions {
   const src = config.options;
 
   // get and validate range
-  type R = NormalizedOptions['range'];
-  const range: R = { min: ensureNumber(src.min), max: ensureNumber(src.max) };
+  const range: Range = getRange(src);
   range.maxRead = ensureNumber(src.maxRead) ?? range.max;
 
   // this might look out of place,
