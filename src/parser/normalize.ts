@@ -9,8 +9,8 @@ import { NodeData } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.utils.js';
 import { display } from '../utils/display.utils.js';
-import { ensureNumber } from '../utils/ensure-number.js';
 import { getRange } from '../utils/get-range.js';
+import { number } from '../utils/number.js';
 import { obj } from '../utils/object.utils.js';
 
 // NOTE: internal
@@ -70,7 +70,7 @@ export function normalize(config: Config): NormalizedOptions {
 
   // get and validate range
   const range: Range = getRange(src);
-  range.maxRead = ensureNumber(src.maxRead) ?? range.max;
+  range.maxRead = number(src.maxRead) ?? range.max;
 
   // this might look out of place,
   // but this ensures that the range check is done only once.
