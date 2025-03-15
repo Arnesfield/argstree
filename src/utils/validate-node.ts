@@ -1,7 +1,7 @@
 import { ParseError } from '../core/error.js';
 import { Range } from '../parser/normalize.js';
 import { NodeData } from '../types/node.types.js';
-import { display } from './display.utils.js';
+import { display } from './display.js';
 
 export function validateNode(
   data: NodeData,

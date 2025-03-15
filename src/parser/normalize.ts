@@ -7,11 +7,11 @@ import {
 } from '../schema/schema.types.js';
 import { NodeData } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
-import { isAlias } from '../utils/arg.utils.js';
-import { display } from '../utils/display.utils.js';
+import { isAlias } from '../utils/arg.js';
+import { display } from '../utils/display.js';
 import { getRange } from '../utils/get-range.js';
 import { number } from '../utils/number.js';
-import { obj } from '../utils/object.utils.js';
+import { obj } from '../utils/obj.js';
 
 // NOTE: internal
 

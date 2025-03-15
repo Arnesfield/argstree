@@ -1,7 +1,7 @@
 import { parse } from '../parser/parse.js';
 import { Node } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
-import { obj } from '../utils/object.utils.js';
+import { obj } from '../utils/obj.js';
 import {
   Aliases,
   ArgConfig,

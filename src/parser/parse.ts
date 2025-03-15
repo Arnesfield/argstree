@@ -1,8 +1,8 @@
 import { ParseError } from '../core/error.js';
 import { Config } from '../schema/schema.types.js';
 import { Node as INode } from '../types/node.types.js';
-import { isOption } from '../utils/arg.utils.js';
-import { display } from '../utils/display.utils.js';
+import { isOption } from '../utils/arg.js';
+import { display } from '../utils/display.js';
 import { toArg } from './arg.js';
 import { Node, NodeOptions, NodeSplit } from './node.js';
 import { normalize, NormalizedOptions } from './normalize.js';

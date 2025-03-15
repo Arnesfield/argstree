@@ -1,5 +1,5 @@
 import { Node, NodeJson } from '../types/node.types.js';
-import { obj } from '../utils/object.utils.js';
+import { obj } from '../utils/obj.js';
 
 export function json(this: Node): NodeJson {
   type J = NodeJson;
