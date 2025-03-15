@@ -141,8 +141,12 @@ export class Node {
   tree(parent: INode | null, depth: number): INode {
     const { src, range } = this.opts;
     const { raw, key, alias, type, args } = this.data;
+    // always prioritize options.id
+    // only fallback to key if undefined (accept nulls)
+    const id = typeof src.id === 'function' ? src.id(this.data) : src.id;
+
     const node: INode = {
-      id: (typeof src.id === 'function' ? src.id(this.data) : src.id) ?? key,
+      id: typeof id !== 'undefined' ? id : key,
       name: src.name ?? key,
       raw,
       key,

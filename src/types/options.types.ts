@@ -3,7 +3,7 @@ import { Arg, NodeData } from './node.types.js';
 
 /** The schema options. */
 export interface SchemaOptions {
-  id?: string | null | ((data: NodeData) => string | null | undefined | void);
+  id?: string | null | ((data: NodeData) => string | null | void);
   name?: string;
   args?: string[];
   min?: number;
@@ -26,7 +26,7 @@ export interface SchemaOptions {
    */
   leaf?: boolean;
   init?(schema: Schema): void;
-  handler?(arg: Arg, data: NodeData): Schema | null | undefined | void;
+  handler?(arg: Arg, data: NodeData): Schema | null | void;
   preParse?(data: NodeData): void;
   postParse?(data: NodeData): void;
   preValidate?(data: NodeData): void;
