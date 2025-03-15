@@ -77,13 +77,12 @@ export function parse(args: readonly string[], options: Config): INode {
   }
 
   function set(items: NodeOptions[]) {
-    // validate existing child then make new child
-    child?.done();
+    // mark existing child as parsed then make new children
+    child?.parsed();
 
     let next: Node | undefined;
     const children = items.map(item => {
-      // create child nodes from options that are validated later
-      // since we want to validate them in order except the next node
+      // create child nodes from options that are marked as parsed later
       child = new Node(n(item.cfg), item, parent.dstrict);
       parent.children.push(child);
 
@@ -91,15 +90,15 @@ export function parse(args: readonly string[], options: Config): INode {
       return child.opts.leaf ? child : (next = child);
     });
 
-    // validate all children except next or latest child
+    // mark all children as parsed except next parent or latest child
     for (const c of children) {
-      c !== (next || child) && c.done();
+      c !== (next || child) && c.parsed();
     }
 
     // if this child has args, switch it for next parse iteration
     if (next) {
-      // since we're removing reference to parent, validate it now
-      parent.done();
+      // since we're removing reference to parent, mark it as parsed
+      parent.parsed();
       parent = next;
       child = null;
     }
@@ -223,8 +222,8 @@ export function parse(args: readonly string[], options: Config): INode {
     }
   }
 
-  // finally, make sure to validate the rest of the nodes
-  child?.done();
-  parent.done();
+  // finally, mark nodes as parsed then build tree and validate nodes
+  child?.parsed();
+  parent.parsed();
   return root.tree(null, 0);
 }

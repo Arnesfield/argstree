@@ -130,7 +130,13 @@ export class Node {
     );
   }
 
-  done(): void {
+  parsed(): void {
+    // preserve `this` for callbacks
+    const { src } = this.opts;
+    typeof src.postParse === 'function' && src.postParse(this.data);
+  }
+
+  private done(): void {
     // validate assumes the node has lost reference
     // so validate range here, too
     const len = this.data.args.length;
@@ -157,9 +163,10 @@ export class Node {
 
     // preserve `this` for callbacks
     const { src } = this.opts;
-    typeof src.postParse === 'function' && src.postParse(this.data);
+    typeof src.done === 'function' && src.done(this.data);
   }
 
+  // build tree and validate nodes (children are validated first)
   tree(parent: INode | null, depth: number): INode {
     const { src } = this.opts;
     const { raw, key, alias, type, args } = this.data;
@@ -185,6 +192,8 @@ export class Node {
       // also save descendants of child
       node.descendants.push(child, ...child.descendants);
     }
+    // validate children before parent
+    this.done();
     return node;
   }
 
