@@ -34,6 +34,8 @@ export class Node {
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
   readonly dstrict: boolean | undefined;
+  /** Parse error for `postParse`. */
+  private error: ParseError | null | unknown = null;
 
   constructor(
     readonly opts: NormalizedOptions,
@@ -130,18 +132,10 @@ export class Node {
     );
   }
 
-  parsed(): void {
-    // preserve `this` for callbacks
-    typeof this.opts.src.postParse === 'function' &&
-      this.opts.src.postParse(this.data);
-  }
-
-  private validate(): void | never {
+  // mark as parsed. throw error later unless postParse throws early
+  done(): void {
     // prettier-ignore
     const { src, range: { min, max } } = this.opts;
-
-    // preserve `this` for callbacks
-    typeof src.preValidate === 'function' && src.preValidate(this.data);
 
     // validate node
     const len = this.data.args.length;
@@ -155,9 +149,10 @@ export class Node {
           : max != null && len > max
             ? [max && `up to ${max}`, max]
             : null;
+
     if (msg) {
       const name = display(this.data);
-      throw new ParseError(
+      this.error = new ParseError(
         ParseError.RANGE_ERROR,
         (name ? name + 'e' : 'E') +
           `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`,
@@ -166,7 +161,13 @@ export class Node {
     }
 
     // preserve `this` for callbacks
-    typeof src.postValidate === 'function' && src.postValidate(this.data);
+    if (typeof src.postParse === 'function') {
+      const value = src.postParse(this.error as ParseError | null, this.data);
+
+      // if return value is null, remove error
+      // or use result as error if it's truthy
+      this.error = value || value === null ? value : this.error;
+    }
   }
 
   // build tree and validate nodes (children are validated first)
@@ -201,8 +202,9 @@ export class Node {
       node.descendants.push(child, ...child.descendants);
     }
 
-    // validate children before parent
-    this.validate();
+    // throw error if any
+    if (this.error) throw this.error;
+
     return node;
   }
 

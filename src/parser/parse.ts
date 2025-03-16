@@ -78,7 +78,7 @@ export function parse(args: readonly string[], options: Config): INode {
 
   function set(items: NodeOptions[]) {
     // mark existing child as parsed then make new children
-    child?.parsed();
+    child?.done();
 
     let next: Node | undefined;
     const children = items.map(item => {
@@ -92,13 +92,13 @@ export function parse(args: readonly string[], options: Config): INode {
 
     // mark all children as parsed except next parent or latest child
     for (const c of children) {
-      c !== (next || child) && c.parsed();
+      c !== (next || child) && c.done();
     }
 
     // if this child has args, switch it for next parse iteration
     if (next) {
       // since we're removing reference to parent, mark it as parsed
-      parent.parsed();
+      parent.done();
       parent = next;
       child = null;
     }
@@ -223,7 +223,7 @@ export function parse(args: readonly string[], options: Config): INode {
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
-  child?.parsed();
-  parent.parsed();
+  child?.done();
+  parent.done();
   return root.tree(null, 0);
 }

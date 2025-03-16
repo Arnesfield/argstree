@@ -1,3 +1,4 @@
+import { ParseError } from '../core/error.js';
 import { Schema } from '../schema/schema.types.js';
 import { Arg, NodeData } from './node.types.js';
 
@@ -28,9 +29,7 @@ export interface SchemaOptions {
   init?(schema: Schema): void;
   handler?(arg: Arg, data: NodeData): Schema | null | void;
   preParse?(data: NodeData): void;
-  postParse?(data: NodeData): void;
-  preValidate?(data: NodeData): void;
-  postValidate?(data: NodeData): void;
+  postParse?(error: ParseError | null, data: NodeData): unknown | null | void;
 }
 
 export interface Options extends SchemaOptions {
