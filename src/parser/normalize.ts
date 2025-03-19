@@ -5,7 +5,7 @@ import {
   ArgConfig,
   Config
 } from '../schema/schema.types.js';
-import { NodeData } from '../types/node.types.js';
+import { NodeData, NodeType } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
@@ -29,7 +29,7 @@ export interface Range {
 }
 
 export interface NormalizedOptions {
-  readonly type: NodeData['type'];
+  readonly type: NodeType;
   /** Determines if the Node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
   /** Determines if the Node can actually have children. */

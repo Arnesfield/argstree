@@ -1,4 +1,4 @@
-import { Node, NodeData } from '../types/node.types.js';
+import { Node, NodeType } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 
 export interface Aliases {
@@ -8,7 +8,7 @@ export interface Aliases {
 export type AliasArgs = [[string, ...string[]], ...[string, ...string[]][]];
 
 export interface Config {
-  type: NodeData['type'];
+  type: NodeType;
   options: Options;
   args: { [arg: string]: ArgConfig };
   aliases: { [alias: string]: AliasArgs };

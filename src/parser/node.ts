@@ -2,7 +2,7 @@ import { ParseError } from '../core/error.js';
 import { Split } from '../core/split.js';
 import { Schema } from '../schema/schema.class.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
-import { Arg, Node as INode, NodeData } from '../types/node.types.js';
+import { Arg, Node as INode, NodeData, NodeType } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
@@ -27,7 +27,7 @@ export interface NodeOptions {
 export function ndata(
   opts: Pick<NodeOptions, 'raw' | 'key' | 'alias'>,
   options: Options,
-  type: NodeData['type'],
+  type: NodeType,
   args: string[]
 ): NodeData {
   const { raw = null, key = null, alias = null } = opts;

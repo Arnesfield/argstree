@@ -16,6 +16,8 @@ export interface Arg {
   value: string | null;
 }
 
+export type NodeType = 'option' | 'command';
+
 /** The node data. */
 export interface NodeData {
   /** The unparsed argument. The value is `null` for the root node. */
@@ -26,7 +28,7 @@ export interface NodeData {
   /** The alias used to parse the options for this node, otherwise the value is `null`. */
   alias: string | null;
   /** The type of node. */
-  type: 'option' | 'command';
+  type: NodeType;
   /** The arguments for this node. */
   args: string[];
   /** The options for this node. */
