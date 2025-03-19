@@ -1,6 +1,6 @@
 import { ParseError } from '../core/error.js';
 import { Schema } from '../schema/schema.types.js';
-import { Arg, NodeData } from './node.types.js';
+import { Arg, Node, NodeData } from './node.types.js';
 
 /** The schema options. */
 export interface SchemaOptions {
@@ -28,8 +28,11 @@ export interface SchemaOptions {
   leaf?: boolean;
   init?(schema: Schema): void;
   handler?(arg: Arg, data: NodeData): Schema | null | void;
-  preParse?(data: NodeData): void;
-  postParse?(error: ParseError | null, data: NodeData): unknown | null | void;
+  preData?(data: NodeData): void;
+  postData?(error: ParseError | null, data: NodeData): void;
+  preParse?(error: ParseError | null, node: Node): void;
+  // TODO: node contains complete references but other references may not be complete
+  postParse?(node: Node): void;
 }
 
 export interface Options extends SchemaOptions {

@@ -3,6 +3,7 @@ import { Split } from '../core/split.js';
 import { Schema } from '../schema/schema.class.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
 import { Arg, Node as INode, NodeData } from '../types/node.types.js';
+import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
 import { slice } from '../utils/slice.js';
@@ -23,6 +24,16 @@ export interface NodeOptions {
   cfg: Config;
 }
 
+export function ndata(
+  opts: Pick<NodeOptions, 'raw' | 'key' | 'alias'>,
+  options: Options,
+  type: NodeData['type'],
+  args: string[]
+): NodeData {
+  const { raw = null, key = null, alias = null } = opts;
+  return { raw, key, alias, type, args, options };
+}
+
 // required args
 export interface ParsedNodeOptions
   extends Omit<NodeOptions, 'args'>,
@@ -35,30 +46,21 @@ export class Node {
   /** The strict mode value for descendants. */
   readonly dstrict: boolean | undefined;
   /** Parse error for `postParse`. */
-  private error: ParseError | null | unknown = null;
+  private error: ParseError | null = null;
 
   constructor(
     readonly opts: NormalizedOptions,
     options: Omit<NodeOptions, 'cfg'>,
     dstrict?: boolean
   ) {
-    // prettier-ignore
-    const { type, src, range: { error } } = opts;
-    const { raw = null, key = null, alias = null } = options;
+    const { src } = opts;
 
-    // data.args is a reference to this.args
-    const args = (src.args || []).concat(options.args || []);
-    this.data = { type, raw, key, alias, args, options: src };
-
-    // throw range error
-    if (error) {
-      const name = display(this.data);
-      throw new ParseError(
-        ParseError.OPTIONS_ERROR,
-        (name ? name + 'has i' : 'I') + `nvalid ${error}`,
-        this.data
-      );
-    }
+    this.data = ndata(
+      options,
+      src,
+      opts.type,
+      (src.args || []).concat(options.args || [])
+    );
 
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
@@ -71,7 +73,7 @@ export class Node {
           : !(this.dstrict = src.strict !== 'self');
 
     // preserve `this` for callbacks
-    typeof src.preParse === 'function' && src.preParse(this.data);
+    typeof src.preData === 'function' && src.preData(this.data);
   }
 
   parse(
@@ -161,13 +163,7 @@ export class Node {
     }
 
     // preserve `this` for callbacks
-    if (typeof src.postParse === 'function') {
-      const value = src.postParse(this.error as ParseError | null, this.data);
-
-      // if return value is null, remove error
-      // or use result as error if it's truthy
-      this.error = value || value === null ? value : this.error;
-    }
+    typeof src.postData === 'function' && src.postData(this.error, this.data);
   }
 
   // build tree and validate nodes (children are validated first)
@@ -195,6 +191,9 @@ export class Node {
       json
     };
 
+    // preserve `this` for callbacks
+    typeof src.preParse === 'function' && src.preParse(this.error, node);
+
     for (const sub of this.children) {
       const child = sub.tree(node, depth + 1);
       node.children.push(child);
@@ -204,6 +203,9 @@ export class Node {
 
     // throw error if any
     if (this.error) throw this.error;
+
+    // preserve `this` for callbacks
+    typeof src.postParse === 'function' && src.postParse(node);
 
     return node;
   }

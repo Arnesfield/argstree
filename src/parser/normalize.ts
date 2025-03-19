@@ -12,6 +12,7 @@ import { display } from '../utils/display.js';
 import { getRange } from '../utils/get-range.js';
 import { number } from '../utils/number.js';
 import { obj } from '../utils/obj.js';
+import { ndata, NodeOptions } from './node.js';
 
 // NOTE: internal
 
@@ -25,7 +26,6 @@ export interface Range {
   min: number | null;
   max: number | null;
   maxRead?: number | null;
-  error?: string | null;
 }
 
 export interface NormalizedOptions {
@@ -65,18 +65,17 @@ function getArgs(alias: Aliases[string]): [string, ...string[]][] {
   return list;
 }
 
-export function normalize(config: Config): NormalizedOptions {
-  const src = config.options;
+export function normalize(opts: NodeOptions): NormalizedOptions {
+  const { cfg } = opts;
+  const src = cfg.options;
 
   // get and validate range
   const range: Range = getRange(src);
   range.maxRead = number(src.maxRead) ?? range.max;
 
-  // this might look out of place,
-  // but this ensures that the range check is done only once.
   // if no max, skip all checks as they all require max to be provided
   const { min, max, maxRead } = range;
-  range.error =
+  const error =
     max == null
       ? null
       : min != null && min > max
@@ -84,6 +83,16 @@ export function normalize(config: Config): NormalizedOptions {
         : maxRead != null && max < maxRead
           ? `max and maxRead range: ${max} >= ${maxRead}`
           : null;
+
+  if (error) {
+    const data = ndata(opts, src, cfg.type, []);
+    const name = display(data);
+    throw new ParseError(
+      ParseError.OPTIONS_ERROR,
+      (name ? name + 'has i' : 'I') + `nvalid ${error}`,
+      data
+    );
+  }
 
   // save splittable aliases to names array
   let safeAlias = true;
@@ -101,13 +110,13 @@ export function normalize(config: Config): NormalizedOptions {
   }
 
   // apply aliases
-  for (const [key, alias] of Object.entries(config.aliases)) {
+  for (const [key, alias] of Object.entries(cfg.aliases)) {
     const args = getArgs(alias);
     args.length > 0 && setAlias(key, args as AliasArgs);
   }
 
   // apply aliases from args
-  const cfgs = Object.entries(config.args);
+  const cfgs = Object.entries(cfg.args);
   for (const [key, { type, options }] of cfgs) {
     // use `alias[0]` as alias and `arg` as arg
     const items =
@@ -147,13 +156,13 @@ export function normalize(config: Config): NormalizedOptions {
     !!src.handler || cfgs.length > 0 || Object.keys(aliases).length > 0;
 
   return {
-    type: config.type,
-    leaf: !fertile && (src.leaf ?? config.type === 'option'),
+    type: cfg.type,
+    leaf: !fertile && (src.leaf ?? cfg.type === 'option'),
     fertile,
     safeAlias,
     range,
     src,
-    args: obj(config.args),
+    args: obj(cfg.args),
     aliases,
     // sort by length desc for splitting later on
     names: names.sort((a, b) => b.length - a.length)

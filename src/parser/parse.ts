@@ -9,17 +9,16 @@ import { normalize, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
 
-export function parse(args: readonly string[], options: Config): INode {
+export function parse(args: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
-  function n(config: Config) {
-    let opts;
-    return (
-      map.get(config) || (map.set(config, (opts = normalize(config))), opts)
-    );
+  function node(opts: NodeOptions, dstrict?: boolean) {
+    let nOpts;
+    (nOpts = map.get(opts.cfg)) || map.set(opts.cfg, (nOpts = normalize(opts)));
+    return new Node(nOpts, opts, dstrict);
   }
 
-  const root = new Node(n(options), {});
+  const root = node({ cfg });
   let parent = root,
     child: Node | null | undefined;
 
@@ -83,8 +82,7 @@ export function parse(args: readonly string[], options: Config): INode {
     let next: Node | undefined;
     const children = items.map(item => {
       // create child nodes from options that are marked as parsed later
-      child = new Node(n(item.cfg), item, parent.dstrict);
-      parent.children.push(child);
+      parent.children.push((child = node(item, parent.dstrict)));
 
       // use child as next parent if it's not a leaf node
       return child.opts.leaf ? child : (next = child);
@@ -107,15 +105,15 @@ export function parse(args: readonly string[], options: Config): INode {
   function setValue(raw: string) {
     // check if child can read one more argument
     // fallback to parent if child cannot accept anymore args
-    const node =
+    const curr =
       child &&
       (child.opts.range.maxRead == null ||
         child.opts.range.maxRead > child.data.args.length)
         ? child
         : parent;
     // strict mode: throw error if arg is an option-like
-    node.strict && isOption(raw) && unrecognized(`option: ${raw}`);
-    node.data.args.push(raw);
+    curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
+    curr.data.args.push(raw);
   }
 
   // create copy of args to avoid external mutation
