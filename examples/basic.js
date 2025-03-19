@@ -6,7 +6,7 @@ function help() {
   console.log(
     'Usage: node examples/basic.js hello --opt value --list a,b,c --no-bool -- -a -b'
   );
-  process.exit(0);
+  process.exit();
 }
 
 try {

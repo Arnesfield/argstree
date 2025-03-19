@@ -6,7 +6,7 @@ function help() {
   console.log(
     "Usage: node examples/object.js .name='John Doe' .email=john.doe@example.com .roles.name=Admin"
   );
-  process.exit(0);
+  process.exit();
 }
 
 try {

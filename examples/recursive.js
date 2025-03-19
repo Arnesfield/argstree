@@ -6,7 +6,7 @@ function help() {
   console.log(
     'Usage: node examples/recursive.js hello --name world -o 1 2 3 cmd:run command --option cmd:subcommand --option'
   );
-  process.exit(0);
+  process.exit();
 }
 
 try {

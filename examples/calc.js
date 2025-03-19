@@ -7,7 +7,7 @@ function help() {
     'Usage: node examples/calc.js 3 + 1 + 2 x 3 + 2 / 2 + 1 x 2 x 3 + 3\n' +
       'Note: No MDAS rules apply for this example.'
   );
-  process.exit(0);
+  process.exit();
 }
 
 try {
