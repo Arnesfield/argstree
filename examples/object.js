@@ -30,7 +30,7 @@ function run(args) {
         });
       }
     }
-  }).option('--help', { alias: '-h', maxRead: 0, preParse: help });
+  }).option('--help', { alias: '-h', maxRead: 0, preData: help });
 
   const root = cmd.parse(args);
   const object = Object.create(null);

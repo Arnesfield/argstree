@@ -26,7 +26,7 @@ function run(args) {
     .option('-', { min: 1, max: 1, assign: false })
     .option('x', { min: 1, max: 1, assign: false })
     .option('/', { min: 1, max: 1, assign: false })
-    .option('--help', { alias: '-h', maxRead: 0, preParse: help });
+    .option('--help', { alias: '-h', maxRead: 0, preData: help });
 
   const root = cmd.parse(args);
   let result = parseFloat(root.args[0]);

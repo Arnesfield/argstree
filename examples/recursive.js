@@ -4,7 +4,7 @@ import { command, isOption, option } from '../lib/index.js';
 /** @returns {never} */
 function help() {
   console.log(
-    'Usage: node examples/recursive.js hello --name world -o 1 2 3 cmd:run command --option cmd:subcommand --option'
+    'Usage: node examples/recursive.js hello --name world cmd:run command --option value cmd:subcommand --option -- foo bar baz'
   );
   process.exit();
 }
@@ -30,7 +30,7 @@ function run(args) {
   /** @type {import('../lib/index.js').SchemaOptions['init']} */
   const init = schema => {
     schema
-      .option('--help', { alias: '-h', preParse: help })
+      .option('--help', { alias: '-h', preData: help })
       .command('--', { strict: false });
   };
 
@@ -46,7 +46,10 @@ function run(args) {
     }
   };
 
-  const cmd = command({ init, handler });
-  const node = cmd.parse(args);
-  console.log(JSON.stringify(node.json(), undefined, 2));
+  const cmd = command({ id: 'root', init, handler });
+  const root = cmd.parse(args);
+
+  for (const node of [root].concat(root.descendants)) {
+    console.log('%s%s:', '  '.repeat(node.depth), node.id, node.args);
+  }
 }
