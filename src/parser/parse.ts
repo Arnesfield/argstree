@@ -65,14 +65,16 @@ export function parse(argv: readonly string[], cfg: Config): INode {
         unrecognized(`argument from alias '${alias.name}': ${arg.raw}`);
       }
 
-      const args = alias.args.slice(1);
       parsed.forEach((item, i) => {
         item.alias = alias.name;
-        item.args.push(...args);
-        // add value to the last item (assume last item is assignable)
-        if (last && hasValue && i >= parsed.length - 1) {
-          item.args.push(value);
+        if (i >= parsed.length - 1) {
+          item.args.push(...alias.args.slice(1));
+          // add value to the last item (assume last item is assignable)
+          if (last && hasValue) {
+            item.args.push(value);
+          }
         }
+
         items.push(item);
       });
     });
