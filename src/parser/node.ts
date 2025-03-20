@@ -79,16 +79,16 @@ export class Node {
   parse(
     arg: Arg,
     flags: { exact?: boolean; hasValue?: boolean } = {}
-  ): ParsedNodeOptions | false | null | void {
+  ): ParsedNodeOptions[] | undefined {
     // scenario: -a=6
     // alias -a: --option=3, 4, 5
     // option --option: initial 1, 2
     // order of args: [options.initial, arg assigned, alias.args, alias assigned]
 
+    // use arg.raw as key if not using arg.value or if parsing via handler
     let key = arg.raw,
       value,
-      opts,
-      cfg;
+      opts;
 
     // first, find exact options match
     if ((opts = this.opts.args[key])) {
@@ -102,7 +102,7 @@ export class Node {
     // no need to check if this is assignable
     // since the consumer would have already handled the value
     if (!opts) {
-      !flags.exact && (cfg = this.handle(arg));
+      if (!flags.exact) return this.handle(arg);
     }
 
     // if exact match was found, check assignable only if
@@ -115,23 +115,30 @@ export class Node {
       // also only create schema when needed since
       // it is possible to have recursive init functions
       // note that having args and aliases means that the schema was already configured
-      cfg =
+      const cfg =
         opts.args && opts.aliases
           ? (opts as Config)
           : new Schema(opts as ArgConfig).config();
+      if (cfg) {
+        return [{ raw: arg.raw, key, args: value != null ? [value] : [], cfg }];
+      }
     }
-
-    return (
-      cfg && { raw: arg.raw, key, args: value != null ? [value] : [], cfg }
-    );
   }
 
-  handle(arg: Arg): Config | false | undefined {
+  handle(arg: Arg): ParsedNodeOptions[] | undefined {
     // preserve `this` for callbacks
-    return (
+    let schemas;
+    if (
       typeof this.opts.src.handler === 'function' &&
-      this.opts.src.handler(arg, this.data)?.config()
-    );
+      (schemas = this.opts.src.handler(arg, this.data)) &&
+      (schemas = Array.isArray(schemas) ? schemas : [schemas]).length > 0
+    ) {
+      return schemas.map((schema): ParsedNodeOptions => {
+        // use arg.key as key here despite not using arg.value
+        // since we assume that the consumer will handle arg.value manually
+        return { raw: arg.raw, key: arg.key, args: [], cfg: schema.config() };
+      });
+    }
   }
 
   // mark as parsed. throw error later unless postParse throws early

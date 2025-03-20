@@ -4,12 +4,12 @@ import { Node as INode } from '../types/node.types.js';
 import { isOption } from '../utils/arg.js';
 import { display } from '../utils/display.js';
 import { toArg } from './arg.js';
-import { Node, NodeOptions, NodeSplit } from './node.js';
+import { Node, NodeOptions, NodeSplit, ParsedNodeOptions } from './node.js';
 import { normalize, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
 
-export function parse(args: readonly string[], cfg: Config): INode {
+export function parse(argv: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
   function node(opts: NodeOptions, dstrict?: boolean) {
@@ -53,22 +53,28 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // otherwise, lastParsed was parsed normally like the loop below.
     // this ensures that the options.handler call is not called twice
 
-    const items = aliases.map((alias, index) => {
+    const items: ParsedNodeOptions[] = [];
+    aliases.forEach((alias, index) => {
       const last = index >= aliases.length - 1;
       const arg = last ? lastArg : toArg(alias.args[0], alias.name);
       // no need to check assignable here since
       // we only need to check that for the last alias arg
-      const item = last ? lastParsed : parent.parse(arg);
+      const parsed = last ? lastParsed : parent.parse(arg);
 
-      if (!item) {
+      if (!parsed) {
         unrecognized(`argument from alias '${alias.name}': ${arg.raw}`);
       }
 
-      item.alias = alias.name;
-      item.args.push(...alias.args.slice(1));
-      // add value to the last item (assume last item is assignable)
-      last && hasValue && item.args.push(value);
-      return item;
+      const args = alias.args.slice(1);
+      parsed.forEach((item, i) => {
+        item.alias = alias.name;
+        item.args.push(...args);
+        // add value to the last item (assume last item is assignable)
+        if (last && hasValue && i >= parsed.length - 1) {
+          item.args.push(value);
+        }
+        items.push(item);
+      });
     });
     set(items);
 
@@ -117,7 +123,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
   }
 
   // create copy of args to avoid external mutation
-  for (const raw of args.slice()) {
+  for (const raw of argv.slice()) {
     // immediately treat as value if the current node
     // cannot actually create children
     if (!parent.opts.fertile) {
@@ -132,7 +138,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
     // parse options from options.args only
     if ((parsed = parent.parse(arg, { exact: true }))) {
-      set([parsed]);
+      set(parsed);
     }
 
     // at this point, if there are no parsed options, arg can be:
@@ -197,7 +203,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     else if ((parsed = parent.handle(arg))) {
       // use arg.key as key here despite not using arg.value
       // assume that the consumer handles arg.value manually
-      set([{ raw, key: arg.key, cfg: parsed }]);
+      set(parsed);
     }
 
     // split can be unset by the 2nd parent.split() call

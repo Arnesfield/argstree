@@ -27,7 +27,7 @@ export interface SchemaOptions {
    */
   leaf?: boolean;
   init?(schema: Schema): void;
-  handler?(arg: Arg, data: NodeData): Schema | null | void;
+  handler?(arg: Arg, data: NodeData): Schema | Schema[] | null | void;
   preData?(data: NodeData): void;
   postData?(error: ParseError | null, data: NodeData): void;
   preParse?(error: ParseError | null, node: Node): void;
