@@ -7,7 +7,6 @@ import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
 import { slice } from '../utils/slice.js';
-import { json } from './json.js';
 import { Alias, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
@@ -194,8 +193,7 @@ export class Node {
       parent,
       children: [],
       ancestors: parent ? parent.ancestors.concat(parent) : [],
-      descendants: [],
-      json
+      descendants: []
     };
 
     // preserve `this` for callbacks

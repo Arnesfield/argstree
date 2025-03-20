@@ -51,17 +51,4 @@ export interface Node extends Omit<NodeData, 'options'> {
   ancestors: Node[];
   /** The descendant nodes starting from the children nodes down to the leaf nodes. */
   descendants: Node[];
-  /**
-   * Transforms the node into a simplified object,
-   * using the {@linkcode id} or {@linkcode key} values as property names for
-   * {@linkcode NodeJson.options options} and {@linkcode NodeJson.commands commands}.
-   * @returns The node JSON.
-   */
-  json(): NodeJson;
-}
-
-export interface NodeJson {
-  args: string[];
-  options: { [id: string]: NodeJson | undefined };
-  commands: { [id: string]: NodeJson | undefined };
 }
