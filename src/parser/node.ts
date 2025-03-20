@@ -78,7 +78,7 @@ export class Node {
   parse(
     arg: Arg,
     flags: { exact?: boolean; hasValue?: boolean } = {}
-  ): ParsedNodeOptions[] | undefined {
+  ): ParsedNodeOptions[] | false | undefined {
     // scenario: -a=6
     // alias -a: --option=3, 4, 5
     // option --option: initial 1, 2
@@ -87,7 +87,8 @@ export class Node {
     // use arg.raw as key if not using arg.value or if parsing via handler
     let key = arg.raw,
       value,
-      opts;
+      opts,
+      cfg;
 
     // first, find exact options match
     if ((opts = this.opts.args[key])) {
@@ -100,27 +101,26 @@ export class Node {
     // if no exact match, fallback to handler
     // no need to check if this is assignable
     // since the consumer would have already handled the value
-    if (!opts) {
-      if (!flags.exact) return this.handle(arg);
+    else {
+      // 'opts' is undefined at this point
+      return !flags.exact && this.handle(arg);
     }
 
     // if exact match was found, check assignable only if
     // - for arg.raw match (value == null): check with flags.hasValue
     // - for arg.key match: always check
-    else if (
-      (value == null && !flags.hasValue) ||
-      (opts.options.assign ?? opts.type === 'option')
+    if (
+      ((value == null && !flags.hasValue) ||
+        (opts.options.assign ?? opts.type === 'option')) &&
+      (cfg =
+        opts.args && opts.aliases
+          ? (opts as Config)
+          : new Schema(opts as ArgConfig).config())
     ) {
       // also only create schema when needed since
       // it is possible to have recursive init functions
       // note that having args and aliases means that the schema was already configured
-      const cfg =
-        opts.args && opts.aliases
-          ? (opts as Config)
-          : new Schema(opts as ArgConfig).config();
-      if (cfg) {
-        return [{ raw: arg.raw, key, args: value != null ? [value] : [], cfg }];
-      }
+      return [{ raw: arg.raw, key, args: value != null ? [value] : [], cfg }];
     }
   }
 
