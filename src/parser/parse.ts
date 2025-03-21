@@ -4,7 +4,7 @@ import { Node as INode } from '../types/node.types.js';
 import { isOption } from '../utils/arg.js';
 import { display } from '../utils/display.js';
 import { toArg } from './arg.js';
-import { Node, NodeOptions, NodeSplit, ParsedNodeOptions } from './node.js';
+import { Node, NodeOptions, NodeSplit } from './node.js';
 import { normalize, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
@@ -53,8 +53,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // otherwise, lastParsed was parsed normally like the loop below.
     // this ensures that the options.handler call is not called twice
 
-    const items: ParsedNodeOptions[] = [];
-    aliases.forEach((alias, index) => {
+    const items = aliases.flatMap((alias, index) => {
       const last = index >= aliases.length - 1;
       const arg = last ? lastArg : toArg(alias.args[0], alias.name);
       // no need to check assignable here since
@@ -72,7 +71,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
       // add value to the last item (assume last item is assignable)
       last && hasValue && item.args.push(value);
 
-      items.push(...parsed);
+      return parsed;
     });
     set(items);
 

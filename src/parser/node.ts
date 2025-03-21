@@ -237,13 +237,9 @@ export class Node {
   }
 
   // assume alias keys always exist in opts.aliases
-  alias(aliases: string[], prefix = ''): NodeSplit['list'] {
-    // get args per alias
-    const all: Alias[] = [];
-    for (const name of aliases) {
-      // assume name always exists
-      all.push(...this.opts.aliases[prefix + name]);
-    }
-    return all as NodeSplit['list'];
+  alias(names: string[], prefix = ''): NodeSplit['list'] {
+    // get args per alias and assume name always exists
+    type L = NodeSplit['list'];
+    return names.flatMap(name => this.opts.aliases[prefix + name]) as L;
   }
 }
