@@ -18,7 +18,7 @@ export interface NodeSplit extends Split {
 export interface NodeOptions {
   raw?: string;
   key?: string;
-  alias?: string;
+  alias?: string | null;
   args?: string[];
   cfg: Config;
 }
@@ -78,7 +78,7 @@ export class Node {
   parse(
     arg: Arg,
     flags: { exact?: boolean; hasValue?: boolean } = {}
-  ): ParsedNodeOptions[] | false | undefined {
+  ): [ParsedNodeOptions, ...ParsedNodeOptions[]] | false | undefined {
     // scenario: -a=6
     // alias -a: --option=3, 4, 5
     // option --option: initial 1, 2
@@ -87,12 +87,11 @@ export class Node {
     // use arg.raw as key if not using arg.value or if parsing via handler
     let key = arg.raw,
       value,
-      opts,
-      cfg;
+      opts;
 
     // first, find exact options match
     if ((opts = this.opts.args[key])) {
-      // ok
+      // ok, use arg.raw as key
     } else if (arg.value != null && (opts = this.opts.args[arg.key])) {
       key = arg.key;
       value = arg.value;
@@ -110,21 +109,21 @@ export class Node {
     // - for arg.raw match (value == null): check with flags.hasValue
     // - for arg.key match: always check
     if (
-      ((value == null && !flags.hasValue) ||
-        (opts.options.assign ?? opts.type === 'option')) &&
-      (cfg =
+      (value == null && !flags.hasValue) ||
+      (opts.options.assign ?? opts.type === 'option')
+    ) {
+      // only create schema when needed to handle recursive init functions
+      // having args and aliases means that the schema was already configured
+      const { raw, alias } = arg;
+      const cfg =
         opts.args && opts.aliases
           ? (opts as Config)
-          : new Schema(opts as ArgConfig).config())
-    ) {
-      // also only create schema when needed since
-      // it is possible to have recursive init functions
-      // note that having args and aliases means that the schema was already configured
-      return [{ raw: arg.raw, key, args: value != null ? [value] : [], cfg }];
+          : new Schema(opts as ArgConfig).config();
+      return [{ raw, key, alias, args: value != null ? [value] : [], cfg }];
     }
   }
 
-  handle(arg: Arg): ParsedNodeOptions[] | undefined {
+  handle(arg: Arg): [ParsedNodeOptions, ...ParsedNodeOptions[]] | undefined {
     // preserve `this` for callbacks
     let schemas;
     if (
@@ -132,11 +131,12 @@ export class Node {
       (schemas = this.opts.src.handler(arg, this.data)) &&
       (schemas = Array.isArray(schemas) ? schemas : [schemas]).length > 0
     ) {
+      const { raw, key, alias } = arg;
       return schemas.map((schema): ParsedNodeOptions => {
         // use arg.key as key here despite not using arg.value
         // since we assume that the consumer will handle arg.value manually
-        return { raw: arg.raw, key: arg.key, args: [], cfg: schema.config() };
-      });
+        return { raw, key, alias, args: [], cfg: schema.config() };
+      }) as [ParsedNodeOptions, ...ParsedNodeOptions[]];
     }
   }
 

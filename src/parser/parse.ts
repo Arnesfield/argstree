@@ -9,7 +9,7 @@ import { normalize, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
 
-export function parse(argv: readonly string[], cfg: Config): INode {
+export function parse(args: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
   function node(opts: NodeOptions, dstrict?: boolean) {
@@ -65,18 +65,14 @@ export function parse(argv: readonly string[], cfg: Config): INode {
         unrecognized(`argument from alias '${alias.name}': ${arg.raw}`);
       }
 
-      parsed.forEach((item, i) => {
-        item.alias = alias.name;
-        if (i >= parsed.length - 1) {
-          item.args.push(...alias.args.slice(1));
-          // add value to the last item (assume last item is assignable)
-          if (last && hasValue) {
-            item.args.push(value);
-          }
-        }
+      // assume parsed always contains at least 1 item
+      // save alias args to the last item only
+      const item = parsed[parsed.length - 1];
+      item.args.push(...alias.args.slice(1));
+      // add value to the last item (assume last item is assignable)
+      last && hasValue && item.args.push(value);
 
-        items.push(item);
-      });
+      items.push(...parsed);
     });
     set(items);
 
@@ -97,8 +93,9 @@ export function parse(argv: readonly string[], cfg: Config): INode {
     });
 
     // mark all children as parsed except next parent or latest child
+    const except = next || child;
     for (const c of children) {
-      c !== (next || child) && c.done();
+      c !== except && c.done();
     }
 
     // if this child has args, switch it for next parse iteration
@@ -124,8 +121,7 @@ export function parse(argv: readonly string[], cfg: Config): INode {
     curr.data.args.push(raw);
   }
 
-  // create copy of args to avoid external mutation
-  for (const raw of argv.slice()) {
+  for (const raw of args) {
     // immediately treat as value if the current node
     // cannot actually create children
     if (!parent.opts.fertile) {

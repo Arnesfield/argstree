@@ -48,6 +48,7 @@ export class Schema implements ISchema {
   }
 
   parse(args: readonly string[]): Node {
-    return parse(args, this.cfg);
+    // create copy of args to avoid external mutation
+    return parse(args.slice(), this.cfg);
   }
 }
