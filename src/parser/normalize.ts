@@ -1,15 +1,9 @@
 import { ParseError } from '../core/error.js';
-import {
-  AliasArgs,
-  Aliases,
-  ArgConfig,
-  Config
-} from '../schema/schema.types.js';
+import { AliasArgs, ArgConfig, Config } from '../schema/schema.types.js';
 import { NodeData, NodeType } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
-import { getRange } from '../utils/get-range.js';
 import { number } from '../utils/number.js';
 import { obj } from '../utils/obj.js';
 import { ndata, NodeOptions } from './node.js';
@@ -46,35 +40,16 @@ export interface NormalizedOptions {
   readonly names: string[];
 }
 
-function getArgs(alias: Aliases[string]): [string, ...string[]][] {
-  /** List of strings in `args`. */
-  let strs: [string, ...string[]] | undefined;
-  const list: [string, ...string[]][] = [];
-  const args =
-    typeof alias === 'string' ? [alias] : Array.isArray(alias) ? alias : [];
-
-  for (const arg of args) {
-    if (typeof arg === 'string') {
-      strs ? strs.push(arg) : list.push((strs = [arg]));
-    } else if (Array.isArray(arg) && arg.length > 0) {
-      // filter out empty array
-      list.push(arg as [string, ...string[]]);
-    }
-  }
-
-  return list;
-}
-
 export function normalize(opts: NodeOptions): NormalizedOptions {
   const { cfg } = opts;
   const src = cfg.options;
 
   // get and validate range
-  const range: Range = getRange(src);
-  range.maxRead = number(src.maxRead) ?? range.max;
+  const min = number(src.min);
+  const max = number(src.max);
+  const maxRead = number(src.maxRead) ?? max;
 
   // if no max, skip all checks as they all require max to be provided
-  const { min, max, maxRead } = range;
   const error =
     max == null
       ? null
@@ -111,8 +86,22 @@ export function normalize(opts: NodeOptions): NormalizedOptions {
 
   // apply aliases
   for (const [key, alias] of Object.entries(cfg.aliases)) {
-    const args = getArgs(alias);
-    args.length > 0 && setAlias(key, args as AliasArgs);
+    /** List of strings in `args`. */
+    let strs: [string, ...string[]] | undefined;
+    const all: [string, ...string[]][] = [];
+    const args =
+      typeof alias === 'string' ? [alias] : Array.isArray(alias) ? alias : [];
+
+    for (const arg of args) {
+      if (typeof arg === 'string') {
+        strs ? strs.push(arg) : all.push((strs = [arg]));
+      } else if (Array.isArray(arg) && arg.length > 0) {
+        // filter out empty array
+        all.push(arg as [string, ...string[]]);
+      }
+    }
+
+    all.length > 0 && setAlias(key, all as AliasArgs);
   }
 
   // apply aliases from args
@@ -160,7 +149,7 @@ export function normalize(opts: NodeOptions): NormalizedOptions {
     leaf: !fertile && (src.leaf ?? cfg.type === 'option'),
     fertile,
     safeAlias,
-    range,
+    range: { min, max, maxRead },
     src,
     args: obj(cfg.args),
     aliases,
