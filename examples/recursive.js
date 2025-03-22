@@ -1,5 +1,5 @@
 // @ts-check
-import { command, isOption, option } from '../lib/index.js';
+import { command, getDescendants, isOption, option } from '../lib/index.js';
 
 /** @returns {never} */
 function help() {
@@ -49,7 +49,7 @@ function run(args) {
   const cmd = command({ id: 'root', init, handler });
   const root = cmd.parse(args);
 
-  for (const node of [root].concat(root.descendants)) {
+  for (const node of [root].concat(getDescendants(root))) {
     console.log('%s%s:', '  '.repeat(node.depth), node.id, node.args);
   }
 }

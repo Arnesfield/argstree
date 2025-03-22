@@ -1,4 +1,5 @@
 export * from './core/error.js';
+export * from './core/node.utils.js';
 export * from './core/split.js';
 export * from './schema/schema.js';
 export { command as default } from './schema/schema.js';

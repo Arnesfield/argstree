@@ -189,21 +189,15 @@ export class Node {
       type,
       depth,
       args,
-      // prepare ancestors before checking children and descendants
       parent,
-      children: [],
-      ancestors: parent ? parent.ancestors.concat(parent) : [],
-      descendants: []
+      children: []
     };
 
     // preserve `this` for callbacks
     typeof src.preParse === 'function' && src.preParse(this.error, node);
 
-    for (const sub of this.children) {
-      const child = sub.tree(node, depth + 1);
-      node.children.push(child);
-      // also save descendants of child
-      node.descendants.push(child, ...child.descendants);
+    for (const child of this.children) {
+      node.children.push(child.tree(node, depth + 1));
     }
 
     // throw error if any

@@ -45,10 +45,6 @@ export interface Node extends Omit<NodeData, 'options'> {
   depth: number;
   /** The parent node. If `null`, then this is the root node. */
   parent: Node | null;
-  /** The direct children nodes. */
+  /** The child nodes. */
   children: Node[];
-  /** The ancestor nodes starting from the root node to the parent node. */
-  ancestors: Node[];
-  /** The descendant nodes starting from the children nodes down to the leaf nodes. */
-  descendants: Node[];
 }
