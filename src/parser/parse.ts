@@ -1,13 +1,23 @@
 import { ParseError } from '../core/error.js';
 import { Config } from '../schema/schema.types.js';
-import { Node as INode } from '../types/node.types.js';
+import { Arg, Node as INode } from '../types/node.types.js';
 import { isOption } from '../utils/arg.js';
 import { display } from '../utils/display.js';
-import { toArg } from './arg.js';
 import { Node, NodeOptions, NodeSplit } from './node.js';
 import { normalize, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
+
+function toArg(raw: string, alias: string | null): Arg {
+  const index = raw.lastIndexOf('=');
+  const split = index > -1;
+  return {
+    raw,
+    key: split ? raw.slice(0, index) : raw,
+    alias,
+    value: split ? raw.slice(index + 1) : null
+  };
+}
 
 export function parse(args: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
