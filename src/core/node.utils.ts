@@ -22,16 +22,15 @@ export function getAncestors(node: Node): Node[] {
  */
 export function getDescendants(node: Node): Node[] {
   const nodes: Node[] = [];
-  const stack = [node];
+  const stack: Node[] = [];
 
-  while (stack.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const curr = stack.pop()!;
-    nodes.push(curr);
-
+  for (let curr: Node | undefined = node; curr; ) {
+    // push child nodes to stack in reverse to process the last node first
     for (let i = curr.children.length - 1; i >= 0; i--) {
       stack.push(curr.children[i]);
     }
+    // save last node
+    if ((curr = stack.pop())) nodes.push(curr);
   }
 
   return nodes;
