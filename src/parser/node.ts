@@ -1,12 +1,11 @@
 import { ParseError } from '../core/error.js';
-import { Split } from '../core/split.js';
+import { split, Split } from '../core/split.js';
 import { Schema } from '../schema/schema.class.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
 import { Arg, Node as INode, NodeData, NodeType } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
-import { slice } from '../utils/slice.js';
 import { Alias, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
@@ -225,7 +224,7 @@ export class Node {
     let data: PartialNodeSplit | undefined;
     return (
       isAlias(arg) &&
-      (data = slice(arg.slice(1), this.opts.names)).values.length > 0 &&
+      (data = split(arg.slice(1), this.opts.names)).values.length > 0 &&
       ((data.list = this.alias(data.values, '-')), data as NodeSplit)
     );
   }
