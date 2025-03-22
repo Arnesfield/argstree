@@ -54,7 +54,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // this ensures that the options.handler call is not called twice
 
     const items = aliases.flatMap((alias, index) => {
-      const last = index >= aliases.length - 1;
+      const last = index === aliases.length - 1;
       const arg = last ? lastArg : toArg(alias.args[0], alias.name);
       // no need to check assignable here since
       // we only need to check that for the last alias arg
