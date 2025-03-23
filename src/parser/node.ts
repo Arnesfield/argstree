@@ -240,6 +240,13 @@ export class Node {
 
   // aliases
 
+  // assume alias keys always exist in opts.aliases
+  alias(names: string[], prefix = ''): NodeSplit['list'] {
+    // get args per alias and assume name always exists
+    type L = NodeSplit['list'];
+    return names.flatMap(name => this.opts.aliases[prefix + name]) as L;
+  }
+
   split(arg: string): NodeSplit | false {
     // accept optional for split.list (internal only)
     interface PartialNodeSplit
@@ -257,12 +264,5 @@ export class Node {
       (data = split(arg.slice(1), this.opts.names)).values.length > 0 &&
       ((data.list = this.alias(data.values, '-')), data as NodeSplit)
     );
-  }
-
-  // assume alias keys always exist in opts.aliases
-  alias(names: string[], prefix = ''): NodeSplit['list'] {
-    // get args per alias and assume name always exists
-    type L = NodeSplit['list'];
-    return names.flatMap(name => this.opts.aliases[prefix + name]) as L;
   }
 }
