@@ -14,9 +14,6 @@ export function getAncestors(node: Node): Node[] {
 
 /**
  * Get the descendant nodes of the provided node.
- * Child nodes are located beside their parent node.
- *
- * e.g. `child0`, `...child0.children`, `child1`, `...child1.children`, etc.
  * @param node The node to process.
  * @returns The descendant nodes
  */
