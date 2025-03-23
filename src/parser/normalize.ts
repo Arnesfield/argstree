@@ -4,7 +4,6 @@ import { NodeData, NodeType } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
-import { number } from '../utils/number.js';
 import { obj } from '../utils/obj.js';
 import { ndata, NodeOptions } from './node.js';
 
@@ -39,6 +38,11 @@ export interface NormalizedOptions {
   readonly aliases: { [alias: string]: Alias[] };
   /** A sorted list of splittable alias names without the `-` prefix. */
   readonly names: string[];
+}
+
+// ensure non-negative number
+function number(n: number | undefined): number | null {
+  return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
 export function normalize(opts: NodeOptions): NormalizedOptions {
