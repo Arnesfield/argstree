@@ -43,7 +43,7 @@ export class Node {
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
   readonly dstrict: boolean | undefined;
-  /** Parse error for `postParse`. */
+  /** Parse error for callbacks. */
   private error: ParseError | null = null;
 
   constructor(
@@ -199,11 +199,13 @@ export class Node {
       node.children.push(child.tree(node, depth + 1));
     }
 
-    // throw error if any
-    if (this.error) throw this.error;
-
-    // preserve `this` for callbacks
-    typeof src.postParse === 'function' && src.postParse(node);
+    if (typeof src.postParse === 'function') {
+      // preserve `this` for callbacks
+      src.postParse(this.error, node);
+    } else if (this.error) {
+      // throw error if any if no postParse
+      throw this.error;
+    }
 
     return node;
   }

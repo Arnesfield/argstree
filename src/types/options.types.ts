@@ -31,8 +31,9 @@ export interface SchemaOptions {
   preData?(data: NodeData): void;
   postData?(error: ParseError | null, data: NodeData): void;
   preParse?(error: ParseError | null, node: Node): void;
+  // NOTE: if handling postParse, handle error throw instead
   // TODO: node contains complete references but other references may not be complete
-  postParse?(node: Node): void;
+  postParse?(error: ParseError | null, node: Node): void;
 }
 
 export interface Options extends SchemaOptions {
