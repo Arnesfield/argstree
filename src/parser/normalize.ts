@@ -16,13 +16,8 @@ export interface Alias {
   args: [string, ...string[]];
 }
 
-export interface Range {
-  min: number | null;
-  max: number | null;
-  maxRead?: number | null;
-}
-
 export interface NormalizedOptions {
+  /** The node type. */
   readonly type: NodeType;
   /** Determines if the Node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
@@ -30,7 +25,13 @@ export interface NormalizedOptions {
   readonly fertile: boolean;
   /** Determines if the {@linkcode names} have no equal signs (`=`). */
   readonly safeAlias: boolean;
-  readonly range: Range;
+  /** The resolved range options. */
+  readonly range: {
+    min: number | null;
+    max: number | null;
+    maxRead: number | null;
+  };
+  /** The reference to the provided options. */
   readonly src: Options;
   /** Safe args object. */
   readonly args: { [arg: string]: Config | ArgConfig | undefined };
