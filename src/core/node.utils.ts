@@ -6,9 +6,11 @@ import { Node } from '../types/node.types.js';
  * @param node The node to process.
  * @returns The ancestor nodes.
  */
-export function getAncestors(node: Node): Node[] {
+export function getAncestors(node: Node): Node[];
+export function getAncestors(node: Node | null): Node[] {
   const nodes: Node[] = [];
-  for (let curr: Node | null = node; (curr = curr.parent); ) nodes.push(curr);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  while ((node = node!.parent)) nodes.push(node);
   return nodes;
 }
 
@@ -17,17 +19,18 @@ export function getAncestors(node: Node): Node[] {
  * @param node The node to process.
  * @returns The descendant nodes
  */
-export function getDescendants(node: Node): Node[] {
+export function getDescendants(node: Node): Node[];
+export function getDescendants(node: Node | undefined): Node[] {
   const nodes: Node[] = [];
   const stack: Node[] = [];
 
-  for (let curr: Node | undefined = node; curr; ) {
+  while (node) {
     // push child nodes to stack in reverse to process the last node first
-    for (let i = curr.children.length - 1; i >= 0; i--) {
-      stack.push(curr.children[i]);
+    for (let i = node.children.length - 1; i >= 0; i--) {
+      stack.push(node.children[i]);
     }
     // save last node
-    if ((curr = stack.pop())) nodes.push(curr);
+    if ((node = stack.pop())) nodes.push(node);
   }
 
   return nodes;
