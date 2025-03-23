@@ -171,8 +171,7 @@ export class Node {
     typeof src.postData === 'function' && src.postData(this.error, this.data);
   }
 
-  // build tree and validate nodes (children are validated first)
-  tree(parent: INode | null, depth: number): INode {
+  private node(parent: INode | null) {
     const { src } = this.opts;
     const { raw, key, alias, type, args } = this.data;
     // always prioritize options.id
@@ -186,28 +185,57 @@ export class Node {
       key,
       alias,
       type,
-      depth,
+      depth: parent ? parent.depth + 1 : 0,
       args,
       parent,
       children: []
     };
+    parent?.children.push(node);
 
     // preserve `this` for callbacks
     typeof src.preParse === 'function' && src.preParse(this.error, node);
 
-    for (const child of this.children) {
-      node.children.push(child.tree(node, depth + 1));
-    }
-
-    if (typeof src.postParse === 'function') {
-      // preserve `this` for callbacks
-      src.postParse(this.error, node);
-    } else if (this.error) {
-      // throw error if any if no postParse
-      throw this.error;
-    }
-
     return node;
+  }
+
+  tree(): INode {
+    interface StackItem {
+      tree: Node;
+      node?: INode;
+      parent: INode | null;
+    }
+    const root: StackItem = { tree: this, parent: null };
+    const stack: StackItem[] = [root];
+
+    for (let curr: StackItem | undefined; (curr = stack.pop()); ) {
+      // if node is already set, then the current stack item
+      // was repushed to the stack for validation. otherwise,
+      // repush to the stack (with node) if has children or
+      // just validate without repushing if has no children
+      const { tree } = curr;
+      if (
+        !curr.node &&
+        (curr.node = tree.node(curr.parent)) &&
+        tree.children.length > 0
+      ) {
+        stack.push(curr);
+
+        // push children in reverse order to the stack
+        for (let i = tree.children.length - 1; i >= 0; i--) {
+          stack.push({ tree: tree.children[i], parent: curr.node });
+        }
+      } else if (typeof tree.opts.src.postParse === 'function') {
+        // preserve `this` for callbacks
+        tree.opts.src.postParse(tree.error, curr.node);
+      } else if (tree.error) {
+        // throw error if any if no postParse
+        throw tree.error;
+      }
+    }
+
+    // assume root.node will always be set after loop above
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return root.node!;
   }
 
   // aliases

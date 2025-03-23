@@ -236,5 +236,5 @@ export function parse(args: readonly string[], cfg: Config): INode {
   // finally, mark nodes as parsed then build tree and validate nodes
   child?.done();
   parent.done();
-  return root.tree(null, 0);
+  return root.tree();
 }
