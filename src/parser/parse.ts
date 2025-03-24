@@ -28,13 +28,13 @@ function toArg(raw: string, alias: string | null): Arg {
 export function parse(args: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
-  function node(opts: NodeOptions, dstrict?: boolean) {
+  function n(opts: NodeOptions, dstrict?: boolean) {
     let nOpts;
     (nOpts = map.get(opts.cfg)) || map.set(opts.cfg, (nOpts = normalize(opts)));
     return new Node(nOpts, opts, dstrict);
   }
 
-  const root: Stack = { tree: node({ cfg }), parent: null };
+  const root: Stack = { tree: n({ cfg }), parent: null };
   let parent = root.tree,
     child: Node | null | undefined;
 
@@ -101,7 +101,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     let next: Node | undefined;
     const children = items.map(item => {
       // create child nodes from options that are marked as parsed later
-      parent.children.push((child = node(item, parent.dstrict)));
+      parent.children.push((child = n(item, parent.dstrict)));
 
       // use child as next parent if it's not a leaf node
       return child.opts.leaf ? child : (next = child);
@@ -243,27 +243,25 @@ export function parse(args: readonly string[], cfg: Config): INode {
   child?.done();
   parent.done();
 
-  const stack: Stack[] = [root];
-  for (let curr: Stack | undefined; (curr = stack.pop()); ) {
-    // if node is already set, then the current stack item
-    // was repushed to the stack for validation. otherwise,
-    // repush to the stack (with node) if has children or
-    // just validate without repushing if has no children
-    const { tree } = curr;
-    if (
-      !curr.node &&
-      (curr.node = tree.node(curr.parent)) &&
-      tree.children.length > 0
-    ) {
-      stack.push(curr);
+  const stack = [root];
+  for (let index = 0; index < stack.length; index++) {
+    const item = stack[index];
+    item.node = item.tree.node(item.parent);
 
-      // push children in reverse order to the stack
-      for (let i = tree.children.length - 1; i >= 0; i--) {
-        stack.push({ tree: tree.children[i], parent: curr.node });
-      }
-    } else if (typeof tree.opts.src.postParse === 'function') {
+    // insert children to stack at current index
+    const items = item.tree.children.map(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      (c): Stack => ({ tree: c, parent: item.node! })
+    );
+    stack.splice(index + 1, 0, ...items);
+  }
+
+  // validate from the end of stack
+  for (let index = stack.length - 1; index >= 0; index--) {
+    const { node, tree } = stack[index] as Required<Stack>;
+    if (typeof tree.opts.src.postParse === 'function') {
       // preserve `this` for callbacks
-      tree.opts.src.postParse(tree.error, curr.node);
+      tree.opts.src.postParse(tree.error, node);
     } else if (tree.error) {
       // throw error if any if no postParse
       throw tree.error;
