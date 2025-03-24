@@ -43,8 +43,6 @@ export class Node {
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
   readonly dstrict: boolean | undefined;
-  /** Transformed value. */
-  private value?: unknown;
   /** Parse error for callbacks. */
   error: ParseError | null = null;
 
@@ -171,13 +169,6 @@ export class Node {
 
     // preserve `this` for callbacks
     typeof src.postData === 'function' && src.postData(this.error, this.data);
-
-    let value;
-    this.value =
-      typeof src.transform === 'function' &&
-      typeof (value = src.transform(this.error, this.data)) !== 'undefined'
-        ? value
-        : this.data;
   }
 
   node(parent: INode | null): INode {
@@ -195,7 +186,6 @@ export class Node {
       alias,
       type,
       depth: parent ? parent.depth + 1 : 0,
-      value: this.value,
       args,
       parent,
       children: []

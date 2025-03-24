@@ -44,8 +44,6 @@ export interface Node extends Omit<NodeData, 'options'> {
   name: string | null;
   /** Depth of node. */
   depth: number;
-  /** The transformed value. Default value is {@linkcode args}. */
-  value: unknown;
   /** The parent node. If `null`, then this is the root node. */
   parent: Node | null;
   /** The child nodes. */

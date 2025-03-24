@@ -30,7 +30,6 @@ export interface SchemaOptions {
   handler?(arg: Arg, data: NodeData): Schema | Schema[] | null | void;
   preData?(data: NodeData): void;
   postData?(error: ParseError | null, data: NodeData): void;
-  transform?(error: ParseError | null, data: NodeData): unknown;
   preParse?(error: ParseError | null, node: Node): void;
   // NOTE: if handling postParse, handle error throw instead
   // TODO: node contains complete references but other references may not be complete
