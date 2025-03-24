@@ -54,7 +54,6 @@ export function split(value: string, matches: string[]): Split {
       const items = item.value.split(match).flatMap((part, i) => {
         const a: InternalSplitItem[] = [];
         i > 0 && a.push({ value: match, remainder: false } as SplitItem);
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         part && a.push({ value: part, index: item.index! + 1 });
         return a;
       });

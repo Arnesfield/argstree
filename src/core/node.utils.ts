@@ -9,7 +9,6 @@ import { Node } from '../types/node.types.js';
 export function getAncestors(node: Node): Node[];
 export function getAncestors(node: Node | null): Node[] {
   const nodes: Node[] = [];
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   while ((node = node!.parent)) nodes.push(node);
   return nodes;
 }

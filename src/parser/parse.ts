@@ -250,7 +250,6 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
     // insert children to stack at current index
     const items = item.tree.children.map(
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       (c): Stack => ({ tree: c, parent: item.node! })
     );
     stack.splice(index + 1, 0, ...items);
@@ -269,6 +268,5 @@ export function parse(args: readonly string[], cfg: Config): INode {
   }
 
   // assume root.node will always be set after loop above
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return root.node!;
 }
