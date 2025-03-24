@@ -69,8 +69,8 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // otherwise, lastParsed was parsed normally like the loop below.
     // this ensures that the options.handler call is not called twice
 
-    const items = aliases.flatMap((alias, index) => {
-      const last = index === aliases.length - 1;
+    const items = aliases.flatMap((alias, i) => {
+      const last = i === aliases.length - 1;
       const arg = last ? lastArg : toArg(alias.args[0], alias.name);
       // no need to check assignable here since
       // we only need to check that for the last alias arg
@@ -244,20 +244,20 @@ export function parse(args: readonly string[], cfg: Config): INode {
   parent.done();
 
   const stack = [root];
-  for (let index = 0; index < stack.length; index++) {
-    const item = stack[index];
+  for (let i = 0; i < stack.length; i++) {
+    const item = stack[i];
     item.node = item.tree.node(item.parent);
 
     // insert children to stack at current index
     const items = item.tree.children.map(
       (c): Stack => ({ tree: c, parent: item.node! })
     );
-    stack.splice(index + 1, 0, ...items);
+    stack.splice(i + 1, 0, ...items);
   }
 
   // validate from the end of stack
-  for (let index = stack.length - 1; index >= 0; index--) {
-    const { node, tree } = stack[index] as Required<Stack>;
+  for (let i = stack.length - 1; i >= 0; i--) {
+    const { node, tree } = stack[i] as Required<Stack>;
     if (typeof tree.opts.src.postParse === 'function') {
       // preserve `this` for callbacks
       tree.opts.src.postParse(tree.error, node);

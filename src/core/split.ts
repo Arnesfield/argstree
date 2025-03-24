@@ -40,8 +40,8 @@ export function split(value: string, matches: string[]): Split {
   const s: InternalSplit = { items: [], values: [], remainder: [] };
   value && s.items.push({ value, index: 0 });
 
-  for (let index = 0; index < s.items.length; index++) {
-    const item = s.items[index];
+  for (let i = 0; i < s.items.length; i++) {
+    const item = s.items[i];
     if (item.index == null) {
       s.values.push(item.value);
     } else if (item.index > matches.length - 1) {
@@ -51,15 +51,15 @@ export function split(value: string, matches: string[]): Split {
       s.remainder.push(item.value);
     } else {
       const match = matches[item.index];
-      const items = item.value.split(match).flatMap((part, i) => {
+      const items = item.value.split(match).flatMap((part, j) => {
         const a: InternalSplitItem[] = [];
-        i > 0 && a.push({ value: match, remainder: false } as SplitItem);
+        j > 0 && a.push({ value: match, remainder: false } as SplitItem);
         part && a.push({ value: part, index: item.index! + 1 });
         return a;
       });
 
       // use the same index for the next iteration
-      s.items.splice(index--, 1, ...items);
+      s.items.splice(i--, 1, ...items);
     }
   }
 
