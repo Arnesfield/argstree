@@ -8,6 +8,12 @@ import { normalize, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
 
+interface Stack {
+  tree: Node;
+  node?: INode;
+  parent: INode | null;
+}
+
 function toArg(raw: string, alias: string | null): Arg {
   const index = raw.lastIndexOf('=');
   const split = index > -1;
@@ -28,8 +34,8 @@ export function parse(args: readonly string[], cfg: Config): INode {
     return new Node(nOpts, opts, dstrict);
   }
 
-  const root = node({ cfg });
-  let parent = root,
+  const root: Stack = { tree: node({ cfg }), parent: null };
+  let parent = root.tree,
     child: Node | null | undefined;
 
   function unrecognized(
@@ -236,5 +242,35 @@ export function parse(args: readonly string[], cfg: Config): INode {
   // finally, mark nodes as parsed then build tree and validate nodes
   child?.done();
   parent.done();
-  return root.tree();
+
+  const stack: Stack[] = [root];
+  for (let curr: Stack | undefined; (curr = stack.pop()); ) {
+    // if node is already set, then the current stack item
+    // was repushed to the stack for validation. otherwise,
+    // repush to the stack (with node) if has children or
+    // just validate without repushing if has no children
+    const { tree } = curr;
+    if (
+      !curr.node &&
+      (curr.node = tree.node(curr.parent)) &&
+      tree.children.length > 0
+    ) {
+      stack.push(curr);
+
+      // push children in reverse order to the stack
+      for (let i = tree.children.length - 1; i >= 0; i--) {
+        stack.push({ tree: tree.children[i], parent: curr.node });
+      }
+    } else if (typeof tree.opts.src.postParse === 'function') {
+      // preserve `this` for callbacks
+      tree.opts.src.postParse(tree.error, curr.node);
+    } else if (tree.error) {
+      // throw error if any if no postParse
+      throw tree.error;
+    }
+  }
+
+  // assume root.node will always be set after loop above
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  return root.node!;
 }
