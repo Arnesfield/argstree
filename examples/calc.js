@@ -20,13 +20,12 @@ try {
 
 /** @param {string[]} args */
 function run(args) {
-  // safely assume each node args array will have 1 length
-  const cmd = command({ min: 1, max: 1, strict: true })
-    .option('+', { min: 1, max: 1, assign: false })
-    .option('-', { min: 1, max: 1, assign: false })
-    .option('x', { min: 1, max: 1, assign: false })
-    .option('/', { min: 1, max: 1, assign: false })
-    .option('--help', { alias: '-h', maxRead: 0, preData: help });
+  const cmd = command({ min: 1, max: 1, strict: true });
+  cmd.option('--help', { alias: '-h', maxRead: 0, preData: help });
+  for (const operation of ['+', '-', 'x', '/']) {
+    // safely assume each node will have 1 argument
+    cmd.option(operation, { min: 1, max: 1, assign: false });
+  }
 
   const root = cmd.parse(args);
   let result = parseFloat(root.args[0]);
