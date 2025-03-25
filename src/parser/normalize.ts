@@ -79,8 +79,8 @@ export function normalize(opts: NodeOptions): NormalizedOptions {
   const names: string[] = [];
   const aliases: NormalizedOptions['aliases'] = obj();
 
-  function setAlias(name: string, val: AliasArgs) {
-    aliases[name] = val.map((args): Alias => ({ name, args }));
+  function setAlias(name: string, all: AliasArgs) {
+    aliases[name] = all.map((args): Alias => ({ name, args }));
     // skip command aliases since we don't need to split them
     // and remove `-` prefix
     if (isAlias(name)) {
