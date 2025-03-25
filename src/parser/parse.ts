@@ -98,26 +98,29 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // mark existing child as parsed then make new children
     child?.done();
 
-    let next: Node | undefined;
-    const children = items.map(item => {
-      // create child nodes from options that are marked as parsed later
-      parent.children.push((child = n(item, parent.dstrict)));
+    // consider items: [option1, command1, option2, command2, option3]
+    // the previous implementation would only get
+    // the last child that can have children (command2)
+    // now, only the last child is checked if it can have children (option3)
+    // why? it may be unfair for command1 if command2 is chosen
+    // just because it was the last child that can do so.
+    // handling this edge case probably has no practical use
+    // and just adds more complexity for building the tree later
 
-      // use child as next parent if it's not a leaf node
-      return child.opts.leaf ? child : (next = child);
-    });
+    for (let i = 0; i < items.length; i++) {
+      // create child nodes from options
+      parent.children.push((child = n(items[i], parent.dstrict)));
 
-    // mark all children as parsed except next parent or latest child
-    const except = next || child;
-    for (const c of children) {
-      c !== except && c.done();
+      // mark all children as parsed except the last child
+      i < items.length - 1 && child.done();
     }
 
-    // if this child has args, switch it for next parse iteration
-    if (next) {
+    // assume child always exists (items has length)
+    // use child as next parent if it's not a leaf node
+    if (!child!.opts.leaf) {
       // since we're removing reference to parent, mark it as parsed
       parent.done();
-      parent = next;
+      parent = child!;
       child = null;
     }
   }
