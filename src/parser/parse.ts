@@ -3,7 +3,7 @@ import { Config } from '../schema/schema.types.js';
 import { Arg, Node as INode } from '../types/node.types.js';
 import { isOption } from '../utils/arg.js';
 import { display } from '../utils/display.js';
-import { Node, NodeOptions, NodeSplit } from './node.js';
+import { ndata, Node, NodeOptions, NodeSplit } from './node.js';
 import { normalize, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
@@ -31,7 +31,15 @@ export function parse(args: readonly string[], cfg: Config): INode {
   function n(opts: NodeOptions, dstrict?: boolean) {
     let nOpts;
     (nOpts = map.get(opts.cfg)) || map.set(opts.cfg, (nOpts = normalize(opts)));
-    return new Node(nOpts, opts, dstrict);
+
+    const data = ndata(
+      opts,
+      nOpts.src,
+      opts.cfg.type,
+      (nOpts.src.args || []).concat(opts.args || [])
+    );
+
+    return new Node(nOpts, data, dstrict);
   }
 
   const root: Stack = { tree: n({ cfg }), parent: null };
@@ -137,6 +145,9 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // strict mode: throw error if arg is an option-like
     curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
     curr.data.args.push(raw);
+
+    // if saving to parent, save args to the value node
+    curr === parent && curr.value(raw);
   }
 
   for (const raw of args) {
@@ -259,14 +270,8 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
   // validate from the end of the stack
   for (let i = stack.length - 1; i >= 0; i--) {
-    const { node, tree } = stack[i] as Required<Stack>;
-    if (typeof tree.opts.src.postParse === 'function') {
-      // preserve `this` for callbacks
-      tree.opts.src.postParse(tree.error, node);
-    } else if (tree.error) {
-      // throw error if any if no postParse
-      throw tree.error;
-    }
+    const item = stack[i] as Required<Stack>;
+    item.tree.parsed(item.node);
   }
 
   // assume root.node will always be set after the first stack loop above

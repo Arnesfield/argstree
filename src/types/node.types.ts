@@ -17,7 +17,7 @@ export interface Arg {
 }
 
 /** The node type. */
-export type NodeType = 'option' | 'command';
+export type NodeType = 'option' | 'command' | 'value';
 
 /** The node data. */
 export interface NodeData {

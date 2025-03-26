@@ -15,8 +15,8 @@ export interface NodeSplit extends Split {
 }
 
 export interface NodeOptions {
-  raw?: string;
-  key?: string;
+  raw?: string | null;
+  key?: string | null;
   alias?: string | null;
   args?: string[];
   cfg: Config;
@@ -38,40 +38,32 @@ export interface ParsedNodeOptions
     Required<Pick<NodeOptions, 'args'>> {}
 
 export class Node {
-  readonly data: NodeData;
   readonly children: Node[] = [];
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
   readonly dstrict: boolean | undefined;
   /** Parse error for callbacks. */
-  error: ParseError | null = null;
+  private error: ParseError | null = null;
 
   constructor(
     readonly opts: NormalizedOptions,
-    options: Omit<NodeOptions, 'cfg'>,
+    readonly data: NodeData,
     dstrict?: boolean
   ) {
-    const { src } = opts;
-
-    this.data = ndata(
-      options,
-      src,
-      opts.type,
-      (src.args || []).concat(options.args || [])
-    );
-
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
     // for descendant nodes
     this.strict =
-      src.strict == null
+      opts.src.strict == null
         ? (this.dstrict = dstrict)
-        : typeof src.strict === 'boolean'
-          ? (this.dstrict = src.strict)
-          : !(this.dstrict = src.strict !== 'self');
+        : typeof opts.src.strict === 'boolean'
+          ? (this.dstrict = opts.src.strict)
+          : !(this.dstrict = opts.src.strict !== 'self');
 
-    // preserve `this` for callbacks
-    typeof src.preData === 'function' && src.preData(this.data);
+    // preserve `this` for callbacks, skip for value nodes
+    data.type !== 'value' &&
+      typeof opts.src.preData === 'function' &&
+      opts.src.preData(data);
   }
 
   parse(
@@ -139,6 +131,21 @@ export class Node {
     }
   }
 
+  // save arg to the last value child node
+  value(arg: string): void {
+    let node;
+    if (
+      this.children.length > 0 &&
+      (node = this.children[this.children.length - 1]).data.type === 'value'
+    ) {
+      node.data.args.push(arg);
+    } else {
+      this.children.push(
+        new Node(this.opts, ndata(this.data, this.opts.src, 'value', [arg]))
+      );
+    }
+  }
+
   // mark as parsed. throw error later unless postParse throws early
   done(): void {
     // prettier-ignore
@@ -167,6 +174,7 @@ export class Node {
       );
     }
 
+    // assume done() is never called for value nodes
     // preserve `this` for callbacks
     typeof src.postData === 'function' && src.postData(this.error, this.data);
   }
@@ -192,10 +200,24 @@ export class Node {
     };
     parent?.children.push(node);
 
-    // preserve `this` for callbacks
-    typeof src.preParse === 'function' && src.preParse(this.error, node);
+    // preserve `this` for callbacks, skip for value nodes
+    type !== 'value' &&
+      typeof src.preParse === 'function' &&
+      src.preParse(this.error, node);
 
     return node;
+  }
+
+  parsed(node: INode): void {
+    if (node.type === 'value') {
+      // skip postParse for value nodes
+    } else if (typeof this.opts.src.postParse === 'function') {
+      // preserve `this` for callbacks
+      this.opts.src.postParse(this.error, node);
+    } else if (this.error) {
+      // throw error if any if no postParse
+      throw this.error;
+    }
   }
 
   // aliases

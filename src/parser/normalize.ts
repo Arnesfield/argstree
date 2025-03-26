@@ -1,6 +1,6 @@
 import { ParseError } from '../core/error.js';
 import { AliasArgs, ArgConfig, Config } from '../schema/schema.types.js';
-import { NodeData, NodeType } from '../types/node.types.js';
+import { NodeData } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
@@ -16,8 +16,6 @@ export interface Alias {
 }
 
 export interface NormalizedOptions {
-  /** The node type. */
-  readonly type: NodeType;
   /** Determines if the Node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
   /** Determines if the Node can actually have children. */
@@ -150,7 +148,6 @@ export function normalize(opts: NodeOptions): NormalizedOptions {
     !!src.handler || cfgs.length > 0 || Object.keys(aliases).length > 0;
 
   return {
-    type: cfg.type,
     leaf: !fertile && (src.leaf ?? cfg.type === 'option'),
     fertile,
     safeAlias,
