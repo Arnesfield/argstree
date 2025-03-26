@@ -7,9 +7,9 @@ export interface SchemaOptions {
   id?: string | null | ((data: NodeData) => string | null | void);
   name?: string;
   args?: string[];
-  min?: number;
-  max?: number;
-  maxRead?: number;
+  min?: number | null;
+  max?: number | null;
+  maxRead?: number | null;
   /**
    * - `true` - Enable strict mode for both self and descendants.
    * - `false` - Disable strict mode for both self and descendants.

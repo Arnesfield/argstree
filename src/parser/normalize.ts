@@ -41,7 +41,7 @@ export interface NormalizedOptions {
 }
 
 // ensure non-negative number
-function number(n: number | undefined): number | null {
+function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
