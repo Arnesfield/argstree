@@ -1,5 +1,5 @@
 import { ParseError } from '../core/error.js';
-import { AliasArgs, ArgConfig, Config } from '../schema/schema.types.js';
+import { ArgConfig, Config } from '../schema/schema.types.js';
 import { NodeData } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
@@ -9,10 +9,12 @@ import { ndata, NodeOptions } from './node.js';
 
 // NOTE: internal
 
+export type AliasArgs = [[string, ...string[]], ...[string, ...string[]][]];
+
 export interface Alias {
   /** Alias name. */
   name: string;
-  args: [string, ...string[]];
+  args: AliasArgs[number];
 }
 
 export interface NormalizedOptions {
