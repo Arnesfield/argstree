@@ -1,7 +1,7 @@
 import { Node } from '../types/node.types.js';
 
 /**
- * Get the ancestor nodes of the provided node
+ * Gets the ancestor nodes of the provided node
  * starting from the parent node to the root node.
  * @param node The node to process.
  * @returns The ancestor nodes.
@@ -14,7 +14,7 @@ export function getAncestors(node: Node | null): Node[] {
 }
 
 /**
- * Get the descendant nodes of the provided node.
+ * Gets the descendant nodes of the provided node.
  * @param node The node to process.
  * @returns The descendant nodes
  */

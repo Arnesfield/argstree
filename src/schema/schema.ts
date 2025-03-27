@@ -3,7 +3,7 @@ import { Schema as SchemaClass } from './schema.class.js';
 import { Schema } from './schema.types.js';
 
 /**
- * Create an option schema.
+ * Creates an option schema.
  * @param options The schema options.
  * @returns The schema object.
  */
@@ -12,7 +12,7 @@ export function option(options: SchemaOptions = {}): Schema {
 }
 
 /**
- * Create a command schema.
+ * Creates a command schema.
  * @param options The schema options.
  * @returns The schema object.
  */

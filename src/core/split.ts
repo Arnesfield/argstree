@@ -1,4 +1,4 @@
-/** Split item. */
+/** The split item. */
 export interface SplitItem {
   /** The split value. */
   value: string;
@@ -6,24 +6,23 @@ export interface SplitItem {
   remainder: boolean;
 }
 
-/** Split result. */
+/** The split result. */
 export interface Split {
   /** All split items in order. */
   items: SplitItem[];
   /** The split values. */
   values: string[];
-  /** The leftover values from split. */
+  /** The remaining values that were not matched. */
   remainder: string[];
 }
 
 /**
- * Split the combined value string based on the provided matches.
+ * Splits the string based on the provided matches in order.
  *
- * Note that the {@linkcode matches} array needs to be sorted
- * by length in descending order so that longer match strings
- * will take priority and are split first.
- * @param value The combined value.
- * @param matches The list of matches to split.
+ * Consider sorting the {@linkcode matches} array by length in
+ * descending order to ensure that longer matches are split first.
+ * @param value The string to split.
+ * @param matches The list of matches.
  * @returns The split result.
  */
 export function split(value: string, matches: string[]): Split {

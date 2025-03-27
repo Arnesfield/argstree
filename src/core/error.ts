@@ -4,7 +4,7 @@ import { Options } from '../types/options.types.js';
 /** The parse error. */
 export class ParseError extends Error implements NodeData {
   /**
-   * The {@linkcode Options} object provided is not valid
+   * The {@linkcode Options} object provided is invalid
    * (e.g. incorrect range config or duplicate aliases).
    */
   static readonly OPTIONS_ERROR = 'options';
