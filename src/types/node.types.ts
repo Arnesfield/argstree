@@ -8,7 +8,7 @@ export interface Arg {
   /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
   key: string;
   /**
-   * The alias used when this argument was parsed through an alias,
+   * The alias used when the argument was parsed through an alias,
    * otherwise the value is `null`.
    */
   alias: string | null;
@@ -26,25 +26,25 @@ export interface NodeData {
   // NOTE: same doc as Arg.key
   /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
   key: string | null;
-  /** The alias used to parse the options for this node, otherwise the value is `null`. */
+  /** The alias used to get the options for the node, otherwise the value is `null`. */
   alias: string | null;
   /** The node type. */
   type: NodeType;
-  /** The arguments for this node. */
+  /** The node arguments. */
   args: string[];
-  /** The options for this node. */
+  /** The options for the node. */
   options: Options;
 }
 
 /** The node object. */
 export interface Node extends Omit<NodeData, 'options'> {
-  /** The provided {@linkcode Options.id} or the parsed argument. */
+  /** The provided {@linkcode Options.id} or the {@linkcode Node.key}. */
   id: string | null;
-  /** The provided {@linkcode Options.name}. */
+  /** The provided {@linkcode Options.name} or the {@linkcode Node.key}. */
   name: string | null;
-  /** Depth of node. */
+  /** The node depth. */
   depth: number;
-  /** The parent node. If `null`, then this is the root node. */
+  /** The parent node. If `null`, then the node is a root node. */
   parent: Node | null;
   /** The child nodes. */
   children: Node[];

@@ -13,12 +13,12 @@ export interface Config {
   /** The schema options. */
   options: Options;
   /**
-   * List of options and commands and their config.
+   * The list of configs for the options and commands.
    *
-   * Note that the config properties are updated during parsing.
+   * Note that the config properties may change during parsing.
    */
   args: { [arg: string]: ArgConfig };
-  /** List of aliases. */
+  /** The list of aliases. */
   aliases: { [alias: string]: Aliases[string] };
 }
 
@@ -57,7 +57,8 @@ export interface Schema {
    *
    * Note that all options and commands are paresd on the same level
    * (i.e. a command followed by an option will not nest the option).
-   *
+   * @param aliases The list of aliases.
+   * @returns `this` for chaining.
    * @example
    * cmd.alias({
    *   // option or command
@@ -69,13 +70,10 @@ export interface Schema {
    *   '-o2': [['--option1'], ['--option2']],
    *   // multiple options or commands with arguments
    *   '-o3': [
-   *      ['--option1', 'arg1', 'arg2'],
-   *      ['--option2', 'arg1', 'arg2']
-   *    ]
+   *     ['--option1', 'arg1', 'arg2'],
+   *     ['--option2', 'arg1', 'arg2']
+   *   ]
    * });
-   *
-   * @param aliases The list of aliases.
-   * @returns `this` for chaining.
    */
   alias(aliases: Aliases): this;
   /**
