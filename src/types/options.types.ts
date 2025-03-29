@@ -16,14 +16,12 @@ export interface SchemaOptions {
    */
   id?: string | null | ((data: NodeData) => string | null | void);
   /**
-   * The display name of the option or command for errors.
-   *
-   * If not provided, the {@linkcode Node.key} is used as the display name when available.
+   * The display name of the option or command for errors. If not provided,
+   * the {@linkcode Node.key} is used as the display name when available.
    */
   name?: string;
   /**
    * The initial arguments for the option or command.
-   *
    * Note that this is not a default value and additional
    * arguments will be added on top of this initial list.
    */
@@ -37,7 +35,6 @@ export interface SchemaOptions {
   min?: number | null;
   /**
    * The maximum number of arguments to read before the next parsed option or command.
-   *
    * Arguments over the maximum limit are saved to the parent option or command instead.
    *
    * A {@linkcode ParseError} is thrown if the option or command
@@ -56,7 +53,6 @@ export interface SchemaOptions {
   /**
    * When enabled, a {@linkcode ParseError} is thrown for
    * unrecognized arguments that look like an option (e.g. `-o`, `--option`).
-   *
    * Can be one of the following values:
    *
    * - `true` - Enable strict mode for both self and descendants.
@@ -94,7 +90,6 @@ export interface SchemaOptions {
   /**
    * Serves as a fallback for parsed arguments that cannot be
    * recognized using the list of configured options and commands.
-   *
    * If no option/s or command/s are returned,
    * then the parsed argument may be treated either as a value
    * or an unrecognized argument depending on the provided options.
@@ -125,7 +120,6 @@ export interface SchemaOptions {
   postData?(error: ParseError | null, data: NodeData): void;
   /**
    * Called after the node is created.
-   *
    * If not provided, then the error from {@linkcode postData} is thrown.
    * Otherwise, the error is instead passed to this callback
    * which should handle or throw it whenever necessary.

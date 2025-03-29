@@ -14,7 +14,6 @@ export interface Config {
   options: Options;
   /**
    * The list of configs for the options and commands.
-   *
    * Note that the config properties may change during parsing.
    */
   args: { [arg: string]: ArgConfig };
@@ -77,9 +76,8 @@ export interface Schema {
    */
   alias(aliases: Aliases): this;
   /**
-   * Gets the schema config.
-   *
-   * This method is used internally to read the schema config.
+   * Gets the schema config. This is mainly used internally during parsing.
+   * @returns The schema config.
    */
   config(): Config;
   /**
