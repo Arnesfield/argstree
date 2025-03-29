@@ -9,7 +9,7 @@ export interface Aliases {
 /** The schema config. */
 export interface Config {
   /** The node type. */
-  type: NodeType;
+  type: Exclude<NodeType, 'value'>;
   /** The schema options. */
   options: Options;
   /**
