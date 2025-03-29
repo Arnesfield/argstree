@@ -200,24 +200,24 @@ export class Node {
     };
     parent?.children.push(node);
 
-    // preserve `this` for callbacks, skip for value nodes
-    type !== 'value' &&
-      typeof src.preParse === 'function' &&
+    if (type === 'value') {
+      // skip for value nodes
+    } else if (typeof src.preParse === 'function') {
+      // preserve `this` for callbacks
       src.preParse(this.error, node);
+    } else if (this.error) {
+      // throw error if no preParse
+      throw this.error;
+    }
 
     return node;
   }
 
   parsed(node: INode): void {
-    if (node.type === 'value') {
-      // skip for value nodes
-    } else if (typeof this.opts.src.postParse === 'function') {
-      // preserve `this` for callbacks
-      this.opts.src.postParse(this.error, node);
-    } else if (this.error) {
-      // throw error if any if no postParse
-      throw this.error;
-    }
+    // preserve `this` for callbacks, skip for value nodes
+    node.type !== 'value' &&
+      typeof this.opts.src.postParse === 'function' &&
+      this.opts.src.postParse(node);
   }
 
   // aliases

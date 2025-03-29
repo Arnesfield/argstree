@@ -125,14 +125,6 @@ export interface SchemaOptions {
   postData?(error: ParseError | null, data: NodeData): void;
   /**
    * Called after the node is created.
-   * @param error The parse error from {@linkcode postData}.
-   * @param node The node object.
-   */
-  preParse?(error: ParseError | null, node: Node): void;
-  /**
-   * Called starting from the root node to the last parsed node
-   * after all the nodes have been parsed and all their
-   * {@linkcode preParse} callbacks have been fired.
    *
    * If not provided, then the error from {@linkcode postData} is thrown.
    * Otherwise, the error is instead passed to this callback
@@ -140,7 +132,14 @@ export interface SchemaOptions {
    * @param error The parse error from {@linkcode postData}.
    * @param node The node object.
    */
-  postParse?(error: ParseError | null, node: Node): void;
+  preParse?(error: ParseError | null, node: Node): void;
+  /**
+   * Called starting from the root node to the last parsed node
+   * after all the nodes have been parsed and all their provided
+   * {@linkcode preParse} callbacks have been fired.
+   * @param node The node object.
+   */
+  postParse?(node: Node): void;
 }
 
 /** The options object. */

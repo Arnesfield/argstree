@@ -257,6 +257,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
   child?.done();
   parent.done();
 
+  // create node objects
   const nodes = [root];
   for (let i = 0; i < nodes.length; i++) {
     const item = nodes[i];
@@ -268,7 +269,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     }
   }
 
-  // validate nodes
+  // run postParse for every node item
   for (const item of nodes as Required<NodeItem>[]) {
     item.tree.parsed(item.node);
   }
