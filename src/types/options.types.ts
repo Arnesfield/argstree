@@ -83,9 +83,8 @@ export interface SchemaOptions {
    * const cmd = command()
    *   .option('--help', { alias: '-h' })
    *   .command('run', {
-   *     alias: 'cmd',
+   *     alias: 'r',
    *     init(run) {
-   *       // configure 'run' subcommand
    *       run.option('--help', { alias: '-h' });
    *       run.option('--option', { alias: '-o' });
    *     }
@@ -119,7 +118,7 @@ export interface SchemaOptions {
    */
   preData?(data: NodeData): void;
   /**
-   * Called when the node data has all the arguments that it can have.
+   * Called after the node data has received all the arguments it can have.
    * @param error The parse error (e.g. range error). The error is not thrown.
    * @param data The node data.
    */
@@ -131,7 +130,7 @@ export interface SchemaOptions {
    */
   preParse?(error: ParseError | null, node: Node): void;
   /**
-   * Called starting from the last parsed node to the first (root node)
+   * Called starting from the root node to the last parsed node
    * after all the nodes have been parsed and all their
    * {@linkcode preParse} callbacks have been fired.
    *
@@ -160,7 +159,7 @@ export interface Options extends SchemaOptions {
    * @example
    * const cmd = command()
    *   .option('--help', { maxRead: 0, alias: '-h' })
-   *   .option('--flag', { maxRead: 0, alias: ['-f', ['--no-flag', 'false']] })
+   *   .option('--flag', { maxRead: 0, alias: ['-f', ['--no-flag', '0']] })
    *   .command('run', { alias: ['r', 'ru', 'urn'] });
    */
   alias?: string | (string | string[])[] | null;

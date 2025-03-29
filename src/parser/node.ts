@@ -210,7 +210,7 @@ export class Node {
 
   parsed(node: INode): void {
     if (node.type === 'value') {
-      // skip postParse for value nodes
+      // skip for value nodes
     } else if (typeof this.opts.src.postParse === 'function') {
       // preserve `this` for callbacks
       this.opts.src.postParse(this.error, node);
