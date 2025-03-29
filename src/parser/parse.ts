@@ -8,7 +8,7 @@ import { normalize, NormalizedOptions } from './normalize.js';
 
 // NOTE: internal
 
-interface Stack {
+interface NodeItem {
   tree: Node;
   node?: INode;
   parent: INode | null;
@@ -42,7 +42,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     return new Node(nOpts, data, dstrict);
   }
 
-  const root: Stack = { tree: n({ cfg }), parent: null };
+  const root: NodeItem = { tree: n({ cfg }), parent: null };
   let parent = root.tree,
     child: Node | null | undefined;
 
@@ -257,23 +257,22 @@ export function parse(args: readonly string[], cfg: Config): INode {
   child?.done();
   parent.done();
 
-  const stack = [root];
-  for (let i = 0; i < stack.length; i++) {
-    const item = stack[i];
+  const nodes = [root];
+  for (let i = 0; i < nodes.length; i++) {
+    const item = nodes[i];
     item.node = item.tree.node(item.parent);
 
     // this will run preParse per depth level incrementally
     for (const c of item.tree.children) {
-      stack.push({ tree: c, parent: item.node });
+      nodes.push({ tree: c, parent: item.node });
     }
   }
 
-  // validate from the end of the stack
-  for (let i = stack.length - 1; i >= 0; i--) {
-    const item = stack[i] as Required<Stack>;
+  // validate nodes
+  for (const item of nodes as Required<NodeItem>[]) {
     item.tree.parsed(item.node);
   }
 
-  // assume root.node will always be set after the first stack loop above
+  // assume root.node will always be set after the loops above
   return root.node!;
 }
