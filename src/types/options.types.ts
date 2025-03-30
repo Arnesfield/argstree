@@ -118,14 +118,14 @@ export interface SchemaOptions {
    */
   postData?(data: NodeData): void;
   /**
-   * Called when the node is created and its child nodes are yet to be parsed.
-   * @param node The node object.
+   * Called once all the {@linkcode postData} callbacks have been fired
+   * for the parsed node data and just before the node object is created.
+   * @param node The node data.
    */
-  preParse?(node: Node): void;
+  preParse?(data: NodeData): void;
   /**
-   * After all the nodes have been parsed and all their provided
-   * {@linkcode preParse} callbacks have been fired, this is called
-   * after throwing any validation errors for the node.
+   * Called once all the {@linkcode preParse} callbacks have been fired
+   * for the parsed node data and after throwing any validation errors.
    * @param node The node object.
    */
   postParse?(node: Node): void;

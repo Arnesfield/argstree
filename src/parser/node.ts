@@ -155,6 +155,12 @@ export class Node {
   node(parent: INode | null): INode {
     const { src } = this.opts;
     const { raw, key, alias, type, args } = this.data;
+
+    // preserve `this` for callbacks, skip for value nodes
+    type !== 'value' &&
+      typeof src.preParse === 'function' &&
+      src.preParse(this.data);
+
     // always prioritize options.id
     // only fallback to key if undefined (accept nulls)
     const id = typeof src.id === 'function' ? src.id(this.data) : src.id;
@@ -172,11 +178,6 @@ export class Node {
       children: []
     };
     parent?.children.push(node);
-
-    // preserve `this` for callbacks, skip for value nodes
-    type !== 'value' &&
-      typeof src.preParse === 'function' &&
-      src.preParse(node);
 
     return node;
   }
