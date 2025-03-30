@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ParseError } from '../core/error.js';
 import { Schema } from '../schema/schema.types.js';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Arg, Node, NodeData, NodeType } from './node.types.js';
 
 /** The schema options. */
@@ -114,23 +114,18 @@ export interface SchemaOptions {
   preData?(data: NodeData): void;
   /**
    * Called after the node data has received all the arguments it can have.
-   * @param error The parse error (e.g. range error). The error is not thrown.
    * @param data The node data.
    */
-  postData?(error: ParseError | null, data: NodeData): void;
+  postData?(data: NodeData): void;
   /**
-   * Called after the node is created.
-   * If not provided, then the error from {@linkcode postData} is thrown.
-   * Otherwise, the error is instead passed to this callback
-   * which should handle or throw it whenever necessary.
-   * @param error The parse error from {@linkcode postData}.
+   * Called when the node is created and its child nodes are yet to be parsed.
    * @param node The node object.
    */
-  preParse?(error: ParseError | null, node: Node): void;
+  preParse?(node: Node): void;
   /**
-   * Called starting from the root node to the last parsed node
-   * after all the nodes have been parsed and all their provided
-   * {@linkcode preParse} callbacks have been fired.
+   * After all the nodes have been parsed and all their provided
+   * {@linkcode preParse} callbacks have been fired, this is called
+   * after throwing any validation errors for the node.
    * @param node The node object.
    */
   postParse?(node: Node): void;

@@ -42,8 +42,6 @@ export class Node {
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
   readonly dstrict: boolean | undefined;
-  /** Parse error for callbacks. */
-  private error: ParseError | null = null;
 
   constructor(
     readonly opts: NormalizedOptions,
@@ -146,37 +144,12 @@ export class Node {
     }
   }
 
-  // mark as parsed. throw error later unless postParse throws early
+  // mark as parsed
   done(): void {
-    // prettier-ignore
-    const { src, range: { min, max } } = this.opts;
-
-    // validate node
-    const len = this.data.args.length;
-    const msg: [string | number, number] | null =
-      min != null && max != null && (len < min || len > max)
-        ? min === max
-          ? [min, min]
-          : [`${min}-${max}`, 2]
-        : min != null && len < min
-          ? [`at least ${min}`, min]
-          : max != null && len > max
-            ? [max && `up to ${max}`, max]
-            : null;
-
-    if (msg) {
-      const name = display(this.data);
-      this.error = new ParseError(
-        ParseError.RANGE_ERROR,
-        (name ? name + 'e' : 'E') +
-          `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`,
-        this.data
-      );
-    }
-
     // assume done() is never called for value nodes
     // preserve `this` for callbacks
-    typeof src.postData === 'function' && src.postData(this.error, this.data);
+    typeof this.opts.src.postData === 'function' &&
+      this.opts.src.postData(this.data);
   }
 
   node(parent: INode | null): INode {
@@ -200,24 +173,46 @@ export class Node {
     };
     parent?.children.push(node);
 
-    if (type === 'value') {
-      // skip for value nodes
-    } else if (typeof src.preParse === 'function') {
-      // preserve `this` for callbacks
-      src.preParse(this.error, node);
-    } else if (this.error) {
-      // throw error if no preParse
-      throw this.error;
-    }
+    // preserve `this` for callbacks, skip for value nodes
+    type !== 'value' &&
+      typeof src.preParse === 'function' &&
+      src.preParse(node);
 
     return node;
   }
 
   parsed(node: INode): void {
-    // preserve `this` for callbacks, skip for value nodes
-    node.type !== 'value' &&
-      typeof this.opts.src.postParse === 'function' &&
-      this.opts.src.postParse(node);
+    // skip for value nodes
+    if (node.type === 'value') return;
+
+    // prettier-ignore
+    const { src, range: { min, max } } = this.opts;
+
+    // validate node
+    const len = this.data.args.length;
+    const msg: [string | number, number] | null =
+      min != null && max != null && (len < min || len > max)
+        ? min === max
+          ? [min, min]
+          : [`${min}-${max}`, 2]
+        : min != null && len < min
+          ? [`at least ${min}`, min]
+          : max != null && len > max
+            ? [max && `up to ${max}`, max]
+            : null;
+
+    if (msg) {
+      const name = display(this.data);
+      throw new ParseError(
+        ParseError.RANGE_ERROR,
+        (name ? name + 'e' : 'E') +
+          `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`,
+        this.data
+      );
+    }
+
+    // preserve `this` for callbacks
+    typeof src.postParse === 'function' && src.postParse(node);
   }
 
   // aliases
