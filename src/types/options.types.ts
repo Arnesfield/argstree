@@ -7,9 +7,8 @@ import { Arg, Node, NodeData, NodeType } from './node.types.js';
 export interface SchemaOptions {
   /**
    * The option or command ID that will show up in {@linkcode Node.id}.
-   * If a function is provided, the return value
-   * will be used as the ID (e.g. transform to camelCase).
-   * Otherwise, the default ID is the {@linkcode Node.key}.
+   * If a function is provided, the return value will be used as the ID.
+   * If the value is not provided, it defaults to the {@linkcode Node.key}.
    *
    * This is never used in any internal logic, but it can be
    * useful for identifying the option or command after parsing.
