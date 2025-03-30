@@ -26,7 +26,7 @@ export function ndata(
   opts: Pick<NodeOptions, 'raw' | 'key' | 'alias'>,
   options: Options,
   type: NodeType,
-  args: string[]
+  args: string[] = []
 ): NodeData {
   const { raw = null, key = null, alias = null } = opts;
   return { raw, key, alias, type, args, options, children: [] };

@@ -64,7 +64,7 @@ export function normalize(opts: NodeOptions): NormalizedOptions {
           : null;
 
   if (error) {
-    const data = ndata(opts, src, cfg.type, []);
+    const data = ndata(opts, src, cfg.type);
     const name = display(data);
     throw new ParseError(
       ParseError.OPTIONS_ERROR,
@@ -129,7 +129,7 @@ export function normalize(opts: NodeOptions): NormalizedOptions {
       if (aliases[a]) {
         // this node data is for current value options
         // and is not being parsed but being validated
-        const data = ndata({ raw: key, key }, options, type, []);
+        const data = ndata({ raw: key, key }, options, type);
 
         // assume that the display name always has value
         // since data.key is explicitly provided
