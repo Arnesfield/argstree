@@ -117,8 +117,9 @@ export function parse(args: readonly string[], cfg: Config): INode {
       // mark existing child as parsed then make new child
       child?.done();
 
-      // create child nodes from options
+      // create child node from options
       parent.children.push((child = n(item, parent.dstrict)));
+      parent.data.children.push(child.data);
     }
 
     // assume child always exists (items has length)

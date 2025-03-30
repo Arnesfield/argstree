@@ -34,10 +34,12 @@ export interface NodeData {
   args: string[];
   /** The options for the node. */
   options: Options;
+  /** The data of child nodes. */
+  children: NodeData[];
 }
 
 /** The node object. */
-export interface Node extends Omit<NodeData, 'options'> {
+export interface Node extends Omit<NodeData, 'options' | 'children'> {
   /** The provided {@linkcode Options.id} or the {@linkcode Node.key}. */
   id: string | null;
   /** The provided {@linkcode Options.name} or the {@linkcode Node.key}. */

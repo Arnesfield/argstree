@@ -1,6 +1,5 @@
 import { ParseError } from '../core/error.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
-import { NodeData } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
@@ -130,8 +129,7 @@ export function normalize(opts: NodeOptions): NormalizedOptions {
       if (aliases[a]) {
         // this node data is for current value options
         // and is not being parsed but being validated
-        type N = NodeData;
-        const data: N = { raw: key, key, alias: null, type, args: [], options };
+        const data = ndata({ raw: key, key }, options, type, []);
 
         // assume that the display name always has value
         // since data.key is explicitly provided

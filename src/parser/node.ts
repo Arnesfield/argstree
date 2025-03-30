@@ -29,7 +29,7 @@ export function ndata(
   args: string[]
 ): NodeData {
   const { raw = null, key = null, alias = null } = opts;
-  return { raw, key, alias, type, args, options };
+  return { raw, key, alias, type, args, options, children: [] };
 }
 
 // required args

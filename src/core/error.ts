@@ -31,6 +31,7 @@ export class ParseError extends Error implements NodeData {
   type!: NodeType;
   args!: string[];
   options!: Options;
+  children!: NodeData[];
 
   /**
    * The parse error.
