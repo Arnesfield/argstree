@@ -10,8 +10,8 @@ import { normalize, NormalizedOptions } from './normalize.js';
 
 interface NodeItem {
   tree: Node;
-  node?: INode;
   parent: INode | null;
+  node?: INode;
 }
 
 function toArg(raw: string, alias: string | null): Arg {
@@ -28,7 +28,7 @@ function toArg(raw: string, alias: string | null): Arg {
 export function parse(args: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
-  function n(opts: NodeOptions, dstrict?: boolean) {
+  function node(opts: NodeOptions, dstrict?: boolean) {
     let nOpts;
     (nOpts = map.get(opts.cfg)) || map.set(opts.cfg, (nOpts = normalize(opts)));
 
@@ -42,7 +42,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     return new Node(nOpts, data, dstrict);
   }
 
-  const root: NodeItem = { tree: n({ cfg }), parent: null };
+  const root: NodeItem = { tree: node({ cfg }), parent: null };
   let parent = root.tree,
     child: Node | null | undefined;
 
@@ -118,7 +118,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
       child?.done();
 
       // create child node from options
-      parent.children.push((child = n(item, parent.dstrict)));
+      parent.children.push((child = node(item, parent.dstrict)));
       parent.data.children.push(child.data);
     }
 
@@ -141,6 +141,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
         child.opts.range.maxRead > child.data.args.length)
         ? child
         : parent;
+
     // strict mode: throw error if arg is an option-like
     curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
     curr.data.args.push(raw);
