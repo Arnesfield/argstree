@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { ParseError } from '../core/error.js';
 import { Node, NodeType } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 
@@ -84,6 +86,10 @@ export interface Schema {
    * Parses arguments into a tree structure.
    * @param args The arguments to parse.
    * @returns The node object.
+   * @throws A {@linkcode ParseError} for invalid options,
+   * unrecognized arguments, and unsatisfied ranges.
+   * Other types of errors can also be thrown by other callbacks
+   * like {@linkcode Options.preParse}, {@linkcode Options.postParse}, etc.
    */
   parse(args: readonly string[]): Node;
 }
