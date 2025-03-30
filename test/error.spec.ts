@@ -1,107 +1,365 @@
 import { expect } from 'chai';
-import argstree, { ArgsTreeError, Options } from '../src/index.js';
+import command, {
+  NodeData,
+  Options,
+  ParseError,
+  SchemaOptions
+} from '../src/index.js';
+
+function expectError(opts: {
+  reason: string;
+  options: SchemaOptions;
+  match?: Options;
+  message: string;
+  args: string[];
+}) {
+  let error: unknown;
+  try {
+    command(opts.options).parse(opts.args);
+  } catch (err) {
+    error = err;
+  }
+
+  expect(error).to.be.instanceof(ParseError);
+  if (error instanceof ParseError) {
+    expect(error.reason).to.equal(opts.reason);
+    expect(error.message).to.equal(opts.message);
+    expect(error.data).to.be.an('object');
+    expect(error.data.options).to.equal(opts.match || opts.options);
+  }
+}
 
 describe('error', () => {
-  it('should be a class (function)', () => {
-    expect(ArgsTreeError).to.be.a('function');
+  it('should be a class that extends Error', () => {
+    expect(ParseError).to.be.a('function');
+    expect(ParseError.prototype).to.be.instanceOf(Error);
   });
 
-  it('should extend to `Error`', () => {
-    expect(ArgsTreeError.prototype).to.be.instanceOf(Error);
-  });
-
-  it('should contain cause strings as static members', () => {
-    expect(ArgsTreeError)
-      .to.have.property('VALIDATE_ERROR')
-      .that.equals('validate');
-    expect(ArgsTreeError)
-      .to.have.property('INVALID_OPTIONS_ERROR')
-      .that.equals('invalid-options');
-    expect(ArgsTreeError)
-      .to.have.property('INVALID_RANGE_ERROR')
-      .that.equals('invalid-range');
-    expect(ArgsTreeError)
-      .to.have.property('INVALID_SPEC_ERROR')
-      .that.equals('invalid-spec');
-    expect(ArgsTreeError)
+  it("should contain the 'reason' strings as static members", () => {
+    expect(ParseError).to.have.property('OPTIONS_ERROR').that.equals('options');
+    expect(ParseError).to.have.property('RANGE_ERROR').that.equals('range');
+    expect(ParseError)
       .to.have.property('UNRECOGNIZED_ALIAS_ERROR')
       .that.equals('unrecognized-alias');
-    expect(ArgsTreeError)
+    expect(ParseError)
       .to.have.property('UNRECOGNIZED_ARGUMENT_ERROR')
       .that.equals('unrecognized-argument');
   });
 
   it('should contain class members', () => {
-    const args: string[] = [];
-    const options: Options = {};
-    const error = new ArgsTreeError({
-      cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
-      message: 'foo',
-      raw: 'arg',
+    const data: NodeData = {
+      raw: '--option',
+      key: '--option',
       alias: null,
-      args,
-      options
-    });
-    expect(error).to.be.instanceOf(Error);
-    expect(error.name).to.equal(ArgsTreeError.name);
-    expect(error.cause).to.equal(ArgsTreeError.INVALID_OPTIONS_ERROR);
+      type: 'option',
+      args: [],
+      options: {},
+      children: []
+    };
+    const error = new ParseError(ParseError.OPTIONS_ERROR, 'foo', data);
+
+    expect(error).to.be.instanceOf(Error).and.instanceOf(ParseError);
+    expect(error.name).to.equal('ParseError');
+    expect(error.reason).to.equal(ParseError.OPTIONS_ERROR);
     expect(error.message).to.equal('foo');
-    expect(error.raw).to.equal('arg');
-    expect(error.alias).to.be.null;
-    expect(error.args).to.equal(args);
-    expect(error.options).to.equal(options);
-    expect(error.toJSON).to.be.a('function');
+    expect(error.data).to.equal(data);
   });
 
-  it('should use the option or command name in the error message', () => {
-    // NOTE: this test does not check all types of errors,
-    // but displayName is used consistently so we can assume
-    // it works for all error cases
-    try {
-      argstree([], { min: 1 });
-    } catch (error) {
-      expect(error).to.be.instanceof(ArgsTreeError);
-      if (error instanceof ArgsTreeError) {
-        expect(error.message.startsWith('Expected')).to.be.true;
-      }
-    }
+  describe('options error', () => {
+    it('should handle duplicate aliases', () => {
+      const reason = ParseError.OPTIONS_ERROR;
 
-    try {
-      argstree(['--foo'], { args: { '--foo': {} } });
-    } catch (error) {
-      expect(error).to.be.instanceof(ArgsTreeError);
-      if (error instanceof ArgsTreeError) {
-        expect(error.message.startsWith("Option '--foo' ")).to.be.true;
-      }
-    }
+      const options: Options = { alias: '-f' };
+      expectError({
+        reason,
+        args: [],
+        message: "Option '--bar' cannot use an existing alias: -f",
+        match: options,
+        options: {
+          init(schema) {
+            schema.option('--foo', { alias: '-f' });
+            schema.option('--bar', options);
+          }
+        }
+      });
 
-    try {
-      argstree(['--foo'], { args: { '--foo': { name: 'bar, --foo' } } });
-    } catch (error) {
-      expect(error).to.be.instanceof(ArgsTreeError);
-      if (error instanceof ArgsTreeError) {
-        expect(error.message.startsWith("Option 'bar, --foo' ")).to.be.true;
-      }
-    }
-  });
-
-  it('should contain properties for toJSON', () => {
-    const error = new ArgsTreeError({
-      cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
-      message: 'foo',
-      raw: 'arg',
-      alias: '-a',
-      args: ['bar', 'baz'],
-      options: { max: 2 }
+      expectError({
+        reason,
+        args: [],
+        message: "Command 'bar' cannot use an existing alias: -f",
+        match: options,
+        options: {
+          init(schema) {
+            schema.option('--foo', { alias: '-f' });
+            schema.command('bar', options);
+          }
+        }
+      });
     });
-    expect(error.toJSON()).to.deep.equal({
-      name: ArgsTreeError.name,
-      cause: ArgsTreeError.INVALID_OPTIONS_ERROR,
-      message: 'foo',
-      raw: 'arg',
-      alias: '-a',
-      args: ['bar', 'baz'],
-      options: { max: 2 }
+
+    it('should handle invalid range options', () => {
+      const reason = ParseError.OPTIONS_ERROR;
+
+      expectError({
+        reason,
+        args: [],
+        message: 'Invalid min and max range: 1-0',
+        options: { min: 1, max: 0 }
+      });
+
+      expectError({
+        reason,
+        args: [],
+        message: 'Invalid max and maxRead range: 0 >= 1',
+        options: { max: 0, maxRead: 1 }
+      });
+    });
+  });
+
+  describe('range error', () => {
+    it("should handle errors for 'min' range option", () => {
+      const reason = ParseError.RANGE_ERROR;
+
+      expectError({
+        reason,
+        args: [],
+        message: 'Expected at least 1 argument, but got 0.',
+        options: { min: 1 }
+      });
+
+      expectError({
+        reason,
+        args: [],
+        message: "Command 'foo' expected at least 1 argument, but got 0.",
+        options: { name: 'foo', min: 1 }
+      });
+
+      const options: Options = { min: 2 };
+      expectError({
+        reason,
+        args: ['--foo', 'bar'],
+        message: "Option '--foo' expected at least 2 arguments, but got 1.",
+        match: options,
+        options: {
+          init(schema) {
+            schema.option('--foo', options);
+          }
+        }
+      });
+    });
+
+    it("should handle errors for 'max' range option", () => {
+      const reason = ParseError.RANGE_ERROR;
+
+      expectError({
+        reason,
+        args: ['foo', 'bar'],
+        message: 'Expected up to 1 argument, but got 2.',
+        options: { max: 1 }
+      });
+
+      expectError({
+        reason,
+        args: ['foo', 'bar', 'baz'],
+        message: "Command 'foo' expected up to 2 arguments, but got 3.",
+        options: { name: 'foo', max: 2 }
+      });
+
+      const options: Options = { max: 2, leaf: false };
+      expectError({
+        reason,
+        args: ['--foo', 'foo', 'bar', 'baz'],
+        message: "Option '--foo' expected up to 2 arguments, but got 3.",
+        match: options,
+        options: {
+          init(schema) {
+            schema.option('--foo', options);
+          }
+        }
+      });
+    });
+
+    it('should handle errors for exact range option', () => {
+      const reason = ParseError.RANGE_ERROR;
+
+      expectError({
+        reason,
+        args: ['foo'],
+        message: 'Expected 0 arguments, but got 1.',
+        options: { min: 0, max: 0 }
+      });
+
+      expectError({
+        reason,
+        args: [],
+        message: 'Expected 1 argument, but got 0.',
+        options: { min: 1, max: 1 }
+      });
+
+      expectError({
+        reason,
+        args: ['foo'],
+        message: "Command 'foo' expected 2 arguments, but got 1.",
+        options: { name: 'foo', min: 2, max: 2 }
+      });
+
+      const options: Options = { min: 2, max: 2, leaf: false };
+      expectError({
+        reason,
+        args: ['--foo', 'foo', 'bar', 'baz'],
+        message: "Option '--foo' expected 2 arguments, but got 3.",
+        match: options,
+        options: {
+          init(schema) {
+            schema.option('--foo', options);
+          }
+        }
+      });
+    });
+
+    it("should handle errors for 'min' and 'max' range options", () => {
+      const reason = ParseError.RANGE_ERROR;
+
+      expectError({
+        reason,
+        args: ['foo', 'bar'],
+        message: 'Expected 0-1 arguments, but got 2.',
+        options: { min: 0, max: 1 }
+      });
+
+      expectError({
+        reason,
+        args: ['foo'],
+        message: "Command 'foo' expected 2-3 arguments, but got 1.",
+        options: { name: 'foo', min: 2, max: 3 }
+      });
+
+      const options: Options = { min: 2, max: 3 };
+      expectError({
+        reason,
+        args: ['--foo', 'bar'],
+        message: "Option '--foo' expected 2-3 arguments, but got 1.",
+        match: options,
+        options: {
+          init(schema) {
+            schema.option('--foo', options);
+          }
+        }
+      });
+    });
+  });
+
+  describe('unrecognized alias error', () => {
+    it('should handle unrecognized alias error', () => {
+      const reason = ParseError.UNRECOGNIZED_ALIAS_ERROR;
+
+      expectError({
+        reason,
+        args: ['-fo'],
+        message: 'Unrecognized alias: -f(o)',
+        options: {
+          init(schema) {
+            schema.option('--foo', { alias: '-f' });
+          }
+        }
+      });
+
+      expectError({
+        reason,
+        args: ['-foobarbaz'],
+        message: 'Unrecognized aliases: -(f)oob(ar)ba(z)',
+        options: {
+          init(schema) {
+            schema
+              .option('--baz', { alias: '-ba' })
+              .option('--bar', { alias: '-oob' })
+              .option('--foo', { alias: '-foo' });
+          }
+        }
+      });
+
+      expectError({
+        reason,
+        args: ['-fo'],
+        message: "Command 'foo' does not recognize the alias: -f(o)",
+        options: {
+          name: 'foo',
+          init(schema) {
+            schema.option('--foo', { alias: '-f' });
+          }
+        }
+      });
+
+      expectError({
+        reason,
+        args: ['-foobarbaz'],
+        message:
+          "Command 'foo' does not recognize the aliases: -(f)oob(ar)ba(z)",
+        options: {
+          name: 'foo',
+          init(schema) {
+            schema
+              .option('--baz', { alias: '-ba' })
+              .option('--bar', { alias: '-oob' })
+              .option('--foo', { alias: '-foo' });
+          }
+        }
+      });
+    });
+  });
+
+  describe('unrecognized argument error', () => {
+    it('should handle unrecognized argument error', () => {
+      const reason = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
+
+      expectError({
+        reason,
+        args: ['foo', '-bar', '--baz'],
+        message: 'Unrecognized option: -bar',
+        options: { strict: 'self' }
+      });
+
+      expectError({
+        reason,
+        args: ['--foo', 'bar', '--foo=--baz', '--bar', '--baz'],
+        message: "Command 'foo' does not recognize the option: --bar",
+        options: {
+          name: 'foo',
+          strict: true,
+          init(schema) {
+            schema.option('--foo');
+          }
+        }
+      });
+
+      let options: Options = {};
+      expectError({
+        reason,
+        args: ['--foo', 'foo', '--foo=--bar', 'bar', 'baz', '--bar', '--baz'],
+        message: "Command 'bar' does not recognize the option: --bar",
+        match: options,
+        options: {
+          strict: true,
+          init(schema) {
+            schema.option('--foo');
+            schema.command('bar', options);
+          }
+        }
+      });
+
+      options = { leaf: false };
+      expectError({
+        reason,
+        args: ['-f', '--foo', '--bar=--foo', 'foo', '--bar', '--baz'],
+        message: "Option '--bar' does not recognize the option: --bar",
+        match: options,
+        options: {
+          strict: 'descendants',
+          init(schema) {
+            schema.option('--bar', options);
+          }
+        }
+      });
     });
   });
 });
