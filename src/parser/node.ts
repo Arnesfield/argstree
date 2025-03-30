@@ -182,7 +182,7 @@ export class Node {
     return node;
   }
 
-  final(node: INode): void {
+  check(node: INode): void {
     // skip for value nodes
     if (node.type === 'value') return;
 

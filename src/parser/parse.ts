@@ -268,9 +268,9 @@ export function parse(args: readonly string[], cfg: Config): INode {
     }
   }
 
-  // run postParse for every node item
+  // validate and run postParse for every node item
   for (const item of nodes as Required<NodeItem>[]) {
-    item.tree.final(item.node);
+    item.tree.check(item.node);
   }
 
   // assume root.node will always be set after the loops above
