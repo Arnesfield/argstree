@@ -1,8 +1,9 @@
-import { NodeData, NodeType } from '../types/node.types.js';
+import { NodeData } from '../types/node.types.js';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Options } from '../types/options.types.js';
 
 /** The parse error. */
-export class ParseError extends Error implements NodeData {
+export class ParseError extends Error {
   /**
    * The {@linkcode Options} object provided is invalid
    * (e.g. incorrect range config or duplicate aliases).
@@ -15,8 +16,6 @@ export class ParseError extends Error implements NodeData {
   /** The option or command cannot be recognized. */
   static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
 
-  // follow order of properties in NodeData
-  name = 'ParseError';
   /**
    * The reason for error.
    * - {@linkcode ParseError.OPTIONS_ERROR}
@@ -24,14 +23,9 @@ export class ParseError extends Error implements NodeData {
    * - {@linkcode ParseError.UNRECOGNIZED_ALIAS_ERROR}
    * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
    */
-  reason: string;
-  raw!: string | null;
-  key!: string | null;
-  alias!: string | null;
-  type!: NodeType;
-  args!: string[];
-  options!: Options;
-  children!: NodeData[];
+  readonly reason: string;
+  /** The node data. */
+  readonly data: NodeData;
 
   /**
    * The parse error.
@@ -41,8 +35,8 @@ export class ParseError extends Error implements NodeData {
    */
   constructor(reason: string, message: string, data: NodeData) {
     super(message);
+    this.name = 'ParseError';
     this.reason = reason;
-    // assume data includes all properties
-    Object.assign(this, data);
+    this.data = data;
   }
 }
