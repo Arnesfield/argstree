@@ -102,10 +102,8 @@ export function parse(args: readonly string[], cfg: Config): INode {
     return true;
   }
 
+  // assume 'items' always has value
   function set(items: NodeOptions[]) {
-    // mark existing child as parsed then make new children
-    child?.done();
-
     // consider items: [option1, command1, option2, command2, option3]
     // the previous implementation would only get
     // the last child that can have children (command2)
@@ -115,12 +113,12 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // handling this edge case probably has no practical use
     // and just adds more complexity for building the tree later
 
-    for (let i = 0; i < items.length; i++) {
-      // create child nodes from options
-      parent.children.push((child = n(items[i], parent.dstrict)));
+    for (const item of items) {
+      // mark existing child as parsed then make new child
+      child?.done();
 
-      // mark all children as parsed except the last child
-      i < items.length - 1 && child.done();
+      // create child nodes from options
+      parent.children.push((child = n(item, parent.dstrict)));
     }
 
     // assume child always exists (items has length)
@@ -271,7 +269,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
   // run postParse for every node item
   for (const item of nodes as Required<NodeItem>[]) {
-    item.tree.parsed(item.node);
+    item.tree.final(item.node);
   }
 
   // assume root.node will always be set after the loops above

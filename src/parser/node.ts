@@ -146,7 +146,7 @@ export class Node {
 
   // mark as parsed
   done(): void {
-    // assume done() is never called for value nodes
+    // assume this is never called for value nodes
     // preserve `this` for callbacks
     typeof this.opts.src.postData === 'function' &&
       this.opts.src.postData(this.data);
@@ -181,7 +181,7 @@ export class Node {
     return node;
   }
 
-  parsed(node: INode): void {
+  final(node: INode): void {
     // skip for value nodes
     if (node.type === 'value') return;
 
