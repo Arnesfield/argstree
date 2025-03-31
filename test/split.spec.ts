@@ -1,5 +1,23 @@
 import { expect } from 'chai';
-import { split } from '../src/index.js';
+import { Split, split } from '../src/index.js';
+
+function expectSplit(opts: {
+  value: string;
+  match: string[];
+  /** Prefix string with `:` for remainders. */
+  items: string[];
+}) {
+  const expected: Split = { items: [], values: [], remainder: [] };
+  for (const part of opts.items) {
+    const remainder = part.startsWith(':');
+    const value = remainder ? part.slice(1) : part;
+    (remainder ? expected.remainder : expected.values).push(value);
+    expected.items.push({ value, remainder });
+  }
+
+  const result = split(opts.value, opts.match);
+  expect(result).to.deep.equal(expected);
+}
 
 describe('split', () => {
   it('should be a function', () => {
@@ -9,61 +27,70 @@ describe('split', () => {
   it('should return a split object', () => {
     const result = split('', []);
     expect(result).to.be.an('object').that.is.not.null;
-    expect(result).to.have.property('remainder').to.length(0);
-    expect(result).to.have.property('values').that.is.an('array');
+    expect(result).to.have.property('items').that.is.an('array').with.length(0);
+    expect(result)
+      .to.have.property('values')
+      .that.is.an('array')
+      .with.length(0);
+    expect(result)
+      .to.have.property('remainder')
+      .that.is.an('array')
+      .with.length(0);
   });
 
   it('should split value by provided matches', () => {
-    const result = split('cabacb', ['ab', 'a', 'c']);
-    expect(result.values).to.deep.equal(['c', 'ab', 'a', 'c']);
-    expect(result.remainder).to.deep.equal(['b']);
+    expectSplit({
+      value: 'cabacb',
+      match: ['ab', 'a', 'c'],
+      items: ['c', 'ab', 'a', 'c', ':b']
+    });
   });
 
   it('should split in order of the provided matches', () => {
     const value = 'abcada';
 
-    let result = split(value, ['bc', 'ab', 'a', 'ca', 'ad', 'da']);
-    expect(result.values).to.deep.equal(['a', 'bc', 'a', 'a']);
-    expect(result.remainder).to.deep.equal(['d']);
-
-    const matches = ['ab', 'bc', 'a', 'ca', 'ad', 'da'];
-    result = split(value, matches);
-    expect(result.values).to.deep.equal(['ab', 'a', 'a']);
-    expect(result.remainder).to.deep.equal(['c', 'd']);
-
-    result = split(
+    expectSplit({
       value,
-      matches.slice().sort((a, b) => b.length - a.length)
-    );
-    expect(result.values).to.deep.equal(['ab', 'ca', 'da']);
-    expect(result.remainder).to.have.length(0);
+      match: ['bc', 'ab', 'a', 'ca', 'ad', 'da'],
+      items: ['a', 'bc', 'a', ':d', 'a']
+    });
+
+    const match = ['ab', 'bc', 'a', 'ca', 'ad', 'da'];
+    expectSplit({ value, match, items: ['ab', ':c', 'a', ':d', 'a'] });
+
+    match.sort((a, b) => b.length - a.length);
+    expectSplit({ value, match, items: ['ab', 'ca', 'da'] });
   });
 
   it('should preserve the remaining value', () => {
-    let result = split('abc', []);
-    expect(result.values).to.have.length(0);
-    expect(result.remainder).to.deep.equal(['abc']);
+    expectSplit({ value: 'abc', match: [], items: [':abc'] });
 
-    result = split('acdabazacd', ['a', 'z']);
-    expect(result.values).to.deep.equal(['a', 'a', 'a', 'z', 'a']);
-    expect(result.remainder).to.deep.equal(['cd', 'b', 'cd']);
+    expectSplit({
+      value: 'acdabazacd',
+      match: ['a', 'z'],
+      items: ['a', ':cd', 'a', ':b', 'a', 'z', 'a', ':cd']
+    });
   });
 
   it('should handle whitespace', () => {
-    let result = split('', ['']);
-    expect(result.values).to.have.length(0);
-    expect(result.remainder).to.have.length(0);
+    expectSplit({ value: '', match: [''], items: [] });
 
-    result = split('ab cd ', ['', ' ']);
-    expect(result.values).to.deep.equal(['', '', ' ', '', '', '', ' ']);
-    expect(result.remainder).to.deep.equal(['a', 'b', 'c', 'd']);
+    expectSplit({
+      value: 'ab cd ',
+      match: ['', ' '],
+      items: [':a', '', ':b', '', ' ', '', ':c', '', ':d', '', ' ']
+    });
 
-    result = split('ab cd ', [' ', '']);
-    expect(result.values).to.deep.equal(['', ' ', '', ' ']);
-    expect(result.remainder).to.deep.equal(['a', 'b', 'c', 'd']);
+    expectSplit({
+      value: 'ab cd ',
+      match: [' ', ''],
+      items: [':a', '', ':b', ' ', ':c', '', ':d', ' ']
+    });
 
-    result = split('a  b c', ['a', 'b', 'c']);
-    expect(result.values).to.deep.equal(['a', 'b', 'c']);
-    expect(result.remainder).to.deep.equal(['  ', ' ']);
+    expectSplit({
+      value: 'a  b c',
+      match: ['a', 'b', 'c'],
+      items: ['a', ':  ', 'b', ': ', 'c']
+    });
   });
 });
