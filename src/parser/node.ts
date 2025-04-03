@@ -129,6 +129,11 @@ export class Node {
     }
   }
 
+  save(node: Node): void {
+    this.children.push(node);
+    this.data.children.push(node.data);
+  }
+
   // save arg to the last value child node
   value(arg: string): void {
     let node;
@@ -138,7 +143,7 @@ export class Node {
     ) {
       node.data.args.push(arg);
     } else {
-      this.children.push(
+      this.save(
         new Node(this.opts, ndata(this.data, this.opts.src, 'value', [arg]))
       );
     }
