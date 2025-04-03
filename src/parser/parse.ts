@@ -29,15 +29,16 @@ export function parse(args: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
   function node(opts: NodeOptions, dstrict?: boolean) {
-    let nOpts;
-    (nOpts = map.get(opts.cfg)) || map.set(opts.cfg, (nOpts = normalize(opts)));
-
     const data = ndata(
       opts,
-      nOpts.src,
+      opts.cfg.options,
       opts.cfg.type,
-      (nOpts.src.args || []).concat(opts.args || [])
+      (opts.cfg.options.args || []).concat(opts.args || [])
     );
+
+    let nOpts;
+    (nOpts = map.get(opts.cfg)) ||
+      map.set(opts.cfg, (nOpts = normalize(opts, data)));
 
     return new Node(nOpts, data, dstrict);
   }

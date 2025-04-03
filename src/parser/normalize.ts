@@ -1,5 +1,6 @@
 import { ParseError } from '../core/error.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
+import { NodeData } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
@@ -44,7 +45,11 @@ function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
-export function normalize(opts: NodeOptions): NormalizedOptions {
+export function normalize(
+  opts: NodeOptions,
+  // NOTE: data is only used for error purposes
+  data: NodeData
+): NormalizedOptions {
   const { cfg } = opts;
   const src = cfg.options;
 
@@ -64,7 +69,6 @@ export function normalize(opts: NodeOptions): NormalizedOptions {
           : null;
 
   if (error) {
-    const data = ndata(opts, src, cfg.type);
     const name = display(data);
     throw new ParseError(
       ParseError.OPTIONS_ERROR,
@@ -129,7 +133,7 @@ export function normalize(opts: NodeOptions): NormalizedOptions {
       if (aliases[a]) {
         // this node data is for current value options
         // and is not being parsed but being validated
-        const data = ndata({ raw: key, key }, options, type);
+        data = ndata({ raw: key, key }, options, type);
 
         // assume that the display name always has value
         // since data.key is explicitly provided
