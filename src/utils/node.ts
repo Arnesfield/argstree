@@ -23,9 +23,7 @@ export function getDescendants(node: Node): Node[] {
   // the order of nodes will be wrong in the unlikely event that it happens
   const nodes = node.children.slice();
   for (let i = 0; i < nodes.length; i++) {
-    for (const child of nodes[i].children) {
-      nodes.push(child);
-    }
+    nodes.push(...nodes[i].children);
   }
   return nodes;
 }
