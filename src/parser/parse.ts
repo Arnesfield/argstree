@@ -255,8 +255,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
   // run preParse for all nodes
   const nodes = [root];
-  for (let i = 0; i < nodes.length; i++) {
-    const item = nodes[i];
+  for (const item of nodes) {
     item.run('preValidate');
 
     // this will run preParse per depth level incrementally

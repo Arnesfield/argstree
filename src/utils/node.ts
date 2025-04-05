@@ -22,8 +22,8 @@ export function getDescendants(node: Node): Node[] {
   // it is unlikely that a node with children is in between infertile nodes
   // the order of nodes will be wrong in the unlikely event that it happens
   const nodes = node.children.slice();
-  for (let i = 0; i < nodes.length; i++) {
-    nodes.push(...nodes[i].children);
+  for (const item of nodes) {
+    nodes.push(...item.children);
   }
   return nodes;
 }
