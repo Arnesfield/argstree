@@ -1,5 +1,4 @@
-import { NodeData } from '../types/node.types.js';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { Node } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 
 /** The parse error. */
@@ -16,27 +15,25 @@ export class ParseError extends Error {
   /** The option or command cannot be recognized. */
   static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
 
+  name = 'ParseError';
+
   /**
-   * The reason for error.
+   * The parse error.
+   * @param reason The reason for error.
    * - {@linkcode ParseError.OPTIONS_ERROR}
    * - {@linkcode ParseError.RANGE_ERROR}
    * - {@linkcode ParseError.UNRECOGNIZED_ALIAS_ERROR}
    * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
-   */
-  readonly reason: string;
-  /** The node data. */
-  readonly data: NodeData;
-
-  /**
-   * The parse error.
-   * @param reason The reason for error. See {@linkcode ParseError.reason} for details.
    * @param message The error message.
-   * @param data The node data.
+   * @param node The node object.
+   * @param options The options object.
    */
-  constructor(reason: string, message: string, data: NodeData) {
+  constructor(
+    public reason: string,
+    message: string,
+    public node: Node,
+    public options: Options
+  ) {
     super(message);
-    this.name = 'ParseError';
-    this.reason = reason;
-    this.data = data;
   }
 }

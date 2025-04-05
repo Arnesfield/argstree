@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import command, {
-  NodeData,
+  Node,
   Options,
   ParseError,
   SchemaOptions
@@ -22,10 +22,12 @@ function expectError(opts: {
 
   expect(error).to.be.instanceof(ParseError);
   if (error instanceof ParseError) {
-    expect(error.reason).to.equal(opts.reason);
-    expect(error.message).to.equal(opts.message);
-    expect(error.data).to.be.an('object');
-    expect(error.data.options).to.equal(opts.match || opts.options);
+    expect(error).to.have.property('reason').that.equals(opts.reason);
+    expect(error).to.have.property('message').that.equals(opts.message);
+    expect(error).to.have.property('node').that.is.an('object');
+    expect(error)
+      .to.have.property('options')
+      .that.equals(opts.match || opts.options);
   }
 }
 
@@ -47,22 +49,35 @@ describe('error', () => {
   });
 
   it('should contain class members', () => {
-    const data: NodeData = {
-      raw: '--option',
-      key: '--option',
+    const id = '--option';
+    const node: Node = {
+      id,
+      name: id,
+      raw: id,
+      key: id,
       alias: null,
       type: 'option',
+      depth: 1,
       args: [],
-      options: {},
+      parent: null,
       children: []
     };
-    const error = new ParseError(ParseError.OPTIONS_ERROR, 'foo', data);
+    const options: Options = {};
+    const error = new ParseError(
+      ParseError.OPTIONS_ERROR,
+      'foo',
+      node,
+      options
+    );
 
     expect(error).to.be.instanceOf(Error).and.instanceOf(ParseError);
-    expect(error.name).to.equal('ParseError');
-    expect(error.reason).to.equal(ParseError.OPTIONS_ERROR);
-    expect(error.message).to.equal('foo');
-    expect(error.data).to.equal(data);
+    expect(error).to.have.property('name').that.equals('ParseError');
+    expect(error)
+      .to.have.property('reason')
+      .that.equals(ParseError.OPTIONS_ERROR);
+    expect(error).to.have.property('message').that.equals('foo');
+    expect(error).to.have.property('node').that.equals(node);
+    expect(error).to.have.property('options').that.equals(options);
   });
 
   describe('options error', () => {

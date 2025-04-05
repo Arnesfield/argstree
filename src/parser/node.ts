@@ -2,11 +2,10 @@ import { ParseError } from '../core/error.js';
 import { split, Split } from '../core/split.js';
 import { Schema } from '../schema/schema.class.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
-import { Arg, Node as INode, NodeData, NodeType } from '../types/node.types.js';
-import { Options } from '../types/options.types.js';
+import { Arg, Node as INode } from '../types/node.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
-import { Alias, NormalizedOptions } from './normalize.js';
+import { Alias, NormalizedOptions, NormalizeOptions } from './normalize.js';
 
 // NOTE: internal
 
@@ -14,28 +13,10 @@ export interface NodeSplit extends Split {
   list: [Alias, ...Alias[]];
 }
 
-export interface NodeOptions {
-  raw?: string | null;
-  key?: string | null;
-  alias?: string | null;
-  args?: string[];
-  cfg: Config;
-}
-
-export function ndata(
-  opts: Pick<NodeOptions, 'raw' | 'key' | 'alias'>,
-  options: Options,
-  type: NodeType,
-  args: string[] = []
-): NodeData {
-  const { raw = null, key = null, alias = null } = opts;
-  return { raw, key, alias, type, args, options, children: [] };
-}
-
-// required args
+// same as NormalizeOptions but with required args
 export interface ParsedNodeOptions
-  extends Omit<NodeOptions, 'args'>,
-    Required<Pick<NodeOptions, 'args'>> {}
+  extends Omit<NormalizeOptions, 'args'>,
+    Required<Pick<NormalizeOptions, 'args'>> {}
 
 export class Node {
   readonly children: Node[] = [];
@@ -45,23 +26,27 @@ export class Node {
 
   constructor(
     readonly opts: NormalizedOptions,
-    readonly data: NodeData,
-    dstrict?: boolean
+    readonly data: INode,
+    parent?: Node
   ) {
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
     // for descendant nodes
     this.strict =
       opts.src.strict == null
-        ? (this.dstrict = dstrict)
+        ? (this.dstrict = parent?.dstrict)
         : typeof opts.src.strict === 'boolean'
           ? (this.dstrict = opts.src.strict)
           : !(this.dstrict = opts.src.strict !== 'self');
 
+    this.run('preArgs');
+  }
+
+  run(name: 'preArgs' | 'postArgs' | 'preValidate' | 'postValidate'): void {
     // preserve `this` for callbacks, skip for value nodes
-    data.type !== 'value' &&
-      typeof opts.src.preData === 'function' &&
-      opts.src.preData(data);
+    this.data.type !== 'value' &&
+      typeof this.opts.src[name] === 'function' &&
+      this.opts.src[name](this.data);
   }
 
   parse(
@@ -143,56 +128,24 @@ export class Node {
     ) {
       node.data.args.push(arg);
     } else {
-      this.save(
-        new Node(this.opts, ndata(this.data, this.opts.src, 'value', [arg]))
-      );
+      // value node is almost the same as the node but with a few different props
+      node = new Node(this.opts, {
+        ...this.data,
+        type: 'value',
+        depth: this.data.depth + 1,
+        args: [arg],
+        parent: this.data,
+        children: []
+      });
+      this.save(node);
     }
   }
 
-  // mark as parsed
-  done(): void {
-    // assume this is never called for value nodes
-    // preserve `this` for callbacks
-    typeof this.opts.src.postData === 'function' &&
-      this.opts.src.postData(this.data);
-  }
-
-  node(parent: INode | null): INode {
-    const { src } = this.opts;
-    const { raw, key, alias, type, args } = this.data;
-
-    // preserve `this` for callbacks, skip for value nodes
-    type !== 'value' &&
-      typeof src.preParse === 'function' &&
-      src.preParse(this.data);
-
-    // always prioritize options.id
-    // only fallback to key if undefined (accept nulls)
-    const id = typeof src.id === 'function' ? src.id(this.data) : src.id;
-
-    const node: INode = {
-      id: typeof id !== 'undefined' ? id : key,
-      name: src.name ?? key,
-      raw,
-      key,
-      alias,
-      type,
-      depth: parent ? parent.depth + 1 : 0,
-      args,
-      parent,
-      children: []
-    };
-    parent?.children.push(node);
-
-    return node;
-  }
-
-  check(node: INode): void {
+  check(): void {
     // skip for value nodes
-    if (node.type === 'value') return;
+    if (this.data.type === 'value') return;
 
-    // prettier-ignore
-    const { src, range: { min, max } } = this.opts;
+    const { min, max } = this.opts.range;
 
     // validate node
     const len = this.data.args.length;
@@ -213,12 +166,12 @@ export class Node {
         ParseError.RANGE_ERROR,
         (name ? name + 'e' : 'E') +
           `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`,
-        this.data
+        this.data,
+        this.opts.src
       );
     }
 
-    // preserve `this` for callbacks
-    typeof src.postParse === 'function' && src.postParse(node);
+    this.run('postValidate');
   }
 
   // aliases

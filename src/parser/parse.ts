@@ -3,16 +3,11 @@ import { Config } from '../schema/schema.types.js';
 import { Arg, Node as INode } from '../types/node.types.js';
 import { isOption } from '../utils/arg.js';
 import { display } from '../utils/display.js';
-import { ndata, Node, NodeOptions, NodeSplit } from './node.js';
-import { normalize, NormalizedOptions } from './normalize.js';
+import { cnode } from './cnode.js';
+import { Node, NodeSplit } from './node.js';
+import { normalize, NormalizedOptions, NormalizeOptions } from './normalize.js';
 
 // NOTE: internal
-
-interface NodeItem {
-  tree: Node;
-  parent: INode | null;
-  node?: INode;
-}
 
 function toArg(raw: string, alias: string | null): Arg {
   const index = raw.lastIndexOf('=');
@@ -28,11 +23,10 @@ function toArg(raw: string, alias: string | null): Arg {
 export function parse(args: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
-  function node(opts: NodeOptions, dstrict?: boolean) {
-    const data = ndata(
+  function node(opts: NormalizeOptions, parent?: Node) {
+    const data = cnode(
       opts,
-      opts.cfg.options,
-      opts.cfg.type,
+      parent ? parent.data : null,
       (opts.cfg.options.args || []).concat(opts.args || [])
     );
 
@@ -40,11 +34,11 @@ export function parse(args: readonly string[], cfg: Config): INode {
     (nOpts = map.get(opts.cfg)) ||
       map.set(opts.cfg, (nOpts = normalize(opts, data)));
 
-    return new Node(nOpts, data, dstrict);
+    return new Node(nOpts, data, parent);
   }
 
-  const root: NodeItem = { tree: node({ cfg }), parent: null };
-  let parent = root.tree,
+  const root = node({ cfg });
+  let parent = root,
     child: Node | null | undefined;
 
   function unrecognized(
@@ -55,7 +49,8 @@ export function parse(args: readonly string[], cfg: Config): INode {
     throw new ParseError(
       reason,
       (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg,
-      parent.data
+      parent.data,
+      parent.opts.src
     );
   }
 
@@ -98,13 +93,14 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
       return parsed;
     });
-    set(items);
+
+    // assume 'items' always has value
+    set(items as [NormalizeOptions, ...NormalizeOptions[]]);
 
     return true;
   }
 
-  // assume 'items' always has value
-  function set(items: NodeOptions[]) {
+  function set(items: [NormalizeOptions, ...NormalizeOptions[]]) {
     // consider items: [option1, command1, option2, command2, option3]
     // the previous implementation would only get
     // the last child that can have children (command2)
@@ -116,17 +112,17 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
     for (const item of items) {
       // mark existing child as parsed then make new child
-      child?.done();
+      child?.run('postArgs');
 
       // create child node from options
-      parent.save((child = node(item, parent.dstrict)));
+      parent.save((child = node(item, parent)));
     }
 
     // assume child always exists (items has length)
     // use child as next parent if it's not a leaf node
     if (!child!.opts.leaf) {
       // since we're removing reference to parent, mark it as parsed
-      parent.done();
+      parent.run('postArgs');
       parent = child!;
       child = null;
     }
@@ -254,26 +250,26 @@ export function parse(args: readonly string[], cfg: Config): INode {
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
-  child?.done();
-  parent.done();
+  child?.run('postArgs');
+  parent.run('postArgs');
 
-  // create node objects
+  // run preParse for all nodes
   const nodes = [root];
   for (let i = 0; i < nodes.length; i++) {
     const item = nodes[i];
-    item.node = item.tree.node(item.parent);
+    item.run('preValidate');
 
     // this will run preParse per depth level incrementally
-    for (const c of item.tree.children) {
-      nodes.push({ tree: c, parent: item.node });
+    for (const c of item.children) {
+      nodes.push(c);
     }
   }
 
-  // validate and run postParse for every node item
-  for (const item of nodes as Required<NodeItem>[]) {
-    item.tree.check(item.node);
+  // validate and run postParse for all nodes
+  for (const item of nodes) {
+    item.check();
   }
 
   // assume root.node will always be set after the loops above
-  return root.node!;
+  return root.data;
 }

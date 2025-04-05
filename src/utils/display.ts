@@ -1,10 +1,7 @@
-import { NodeData } from '../types/node.types.js';
+import { Node } from '../types/node.types.js';
 
-export function display(
-  opts: Pick<NodeData, 'type' | 'key' | 'options'>
-): string {
-  const name = opts.options.name ?? opts.key;
-  return name == null
+export function display(node: Node): string {
+  return node.name == null
     ? ''
-    : (opts.type === 'option' ? 'Option' : 'Command') + ` '${name}' `;
+    : (node.type === 'option' ? 'Option' : 'Command') + ` '${node.name}' `;
 }

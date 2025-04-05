@@ -88,8 +88,8 @@ export interface Schema {
    * @returns The node object.
    * @throws A {@linkcode ParseError} for invalid options,
    * unrecognized arguments, and unsatisfied ranges.
-   * Other types of errors can also be thrown by other callbacks
-   * like {@linkcode Options.preParse}, {@linkcode Options.postParse}, etc.
+   * Other types of errors can also be thrown through other callbacks like
+   * {@linkcode Options.preValidate}, {@linkcode Options.postValidate}, etc.
    */
   parse(args: readonly string[]): Node;
 }

@@ -1,19 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { ParseError } from '../core/error.js';
 import { Schema } from '../schema/schema.types.js';
-import { Arg, Node, NodeData, NodeType } from './node.types.js';
+import { Arg, Node, NodeType } from './node.types.js';
 
 /** The schema options. */
 export interface SchemaOptions {
   /**
    * The option or command ID that will show up in {@linkcode Node.id}.
-   * If a function is provided, the return value will be used as the ID.
-   * If the value is not provided, it defaults to the {@linkcode Node.key}.
+   * If not provided, the default value is the {@linkcode Node.key}.
    *
    * This is never used in any internal logic, but it can be
    * useful for identifying the option or command after parsing.
    */
-  id?: string | null | ((data: NodeData) => string | null | void);
+  id?: string | null;
   /**
    * The display name of the option or command for errors. If not provided,
    * the {@linkcode Node.key} is used as the display name when available.
@@ -29,7 +28,7 @@ export interface SchemaOptions {
    * The minimum number of arguments to read before the next parsed option or command.
    *
    * A {@linkcode ParseError} is thrown if the option or command
-   * does not satisfy this condition unless {@linkcode postParse} is handled.
+   * does not satisfy this condition unless {@linkcode postValidate} is handled.
    */
   min?: number | null;
   /**
@@ -37,7 +36,7 @@ export interface SchemaOptions {
    * Arguments over the maximum limit are saved to the parent option or command instead.
    *
    * A {@linkcode ParseError} is thrown if the option or command
-   * does not satisfy this condition unless {@linkcode postParse} is handled.
+   * does not satisfy this condition unless {@linkcode postValidate} is handled.
    */
   max?: number | null;
   /**
@@ -93,7 +92,7 @@ export interface SchemaOptions {
    * then the parsed argument may be treated either as a value
    * or an unrecognized argument depending on the provided options.
    * @param arg The parsed argument.
-   * @param data The node data.
+   * @param node The node object.
    * @returns The schema or multiple schemas if any.
    * @example
    * const cmd = command({
@@ -105,29 +104,29 @@ export interface SchemaOptions {
    *   }
    * });
    */
-  handler?(arg: Arg, data: NodeData): Schema | Schema[] | null | void;
+  handler?(arg: Arg, node: Node): Schema | Schema[] | null | void;
   /**
-   * Called when the node data is created.
-   * @param data The node data.
-   */
-  preData?(data: NodeData): void;
-  /**
-   * Called after the node data has received all the arguments it can have.
-   * @param data The node data.
-   */
-  postData?(data: NodeData): void;
-  /**
-   * Called once all the {@linkcode postData} callbacks have been fired
-   * for the parsed node data and just before the node object is created.
-   * @param node The node data.
-   */
-  preParse?(data: NodeData): void;
-  /**
-   * Called once all the {@linkcode preParse} callbacks have been fired
-   * for the parsed node data and after throwing any validation errors.
+   * Called when the node is created with its initial arguments.
    * @param node The node object.
    */
-  postParse?(node: Node): void;
+  preArgs?(node: Node): void;
+  /**
+   * Called after the node has received all the arguments it can have.
+   * @param node The node object.
+   */
+  postArgs?(node: Node): void;
+  /**
+   * Called once all the {@linkcode postArgs} callbacks
+   * have been fired for all the parsed nodes.
+   * @param node The node object.
+   */
+  preValidate?(node: Node): void;
+  /**
+   * Called once all the {@linkcode preValidate} callbacks have been
+   * fired for all the parsed nodes and after throwing any validation errors.
+   * @param node The node object.
+   */
+  postValidate?(node: Node): void;
 }
 
 /** The options object. */

@@ -1,10 +1,11 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Options } from './options.types.js';
 
 /** The parsed argument. */
 export interface Arg {
   /** The unparsed argument. */
   raw: string;
-  // NOTE: same doc as NodeData.key
+  // NOTE: same doc as Node.key
   /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
   key: string;
   /**
@@ -19,8 +20,12 @@ export interface Arg {
 /** The node type. */
 export type NodeType = 'option' | 'command' | 'value';
 
-/** The node data. */
-export interface NodeData {
+/** The node object. */
+export interface Node {
+  /** The provided {@linkcode Options.id} or the {@linkcode Node.key}. */
+  id: string | null;
+  /** The provided {@linkcode Options.name} or the {@linkcode Node.key}. */
+  name: string | null;
   /** The unparsed argument. The value is `null` for the root node. */
   raw: string | null;
   // NOTE: same doc as Arg.key
@@ -30,22 +35,10 @@ export interface NodeData {
   alias: string | null;
   /** The node type. */
   type: NodeType;
-  /** The node arguments. */
-  args: string[];
-  /** The options for the node. */
-  options: Options;
-  /** The data of child nodes. */
-  children: NodeData[];
-}
-
-/** The node object. */
-export interface Node extends Omit<NodeData, 'options' | 'children'> {
-  /** The provided {@linkcode Options.id} or the {@linkcode Node.key}. */
-  id: string | null;
-  /** The provided {@linkcode Options.name} or the {@linkcode Node.key}. */
-  name: string | null;
   /** The node depth. */
   depth: number;
+  /** The node arguments. */
+  args: string[];
   /** The parent node. If `null`, then the node is a root node. */
   parent: Node | null;
   /** The child nodes. */

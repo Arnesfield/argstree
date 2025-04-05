@@ -1,11 +1,11 @@
 import { ParseError } from '../core/error.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
-import { NodeData } from '../types/node.types.js';
+import { Node } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
 import { obj } from '../utils/obj.js';
-import { ndata, NodeOptions } from './node.js';
+import { cnode } from './cnode.js';
 
 // NOTE: internal
 
@@ -40,15 +40,20 @@ export interface NormalizedOptions {
   readonly names: string[];
 }
 
+export interface NormalizeOptions
+  extends Partial<Pick<Node, 'raw' | 'key' | 'alias' | 'args'>> {
+  cfg: Config;
+}
+
 // ensure non-negative number
 function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
 export function normalize(
-  opts: NodeOptions,
+  opts: NormalizeOptions,
   // NOTE: data is only used for error purposes
-  data: NodeData
+  data: Node
 ): NormalizedOptions {
   const { cfg } = opts;
   const src = cfg.options;
@@ -73,7 +78,8 @@ export function normalize(
     throw new ParseError(
       ParseError.OPTIONS_ERROR,
       (name ? name + 'has i' : 'I') + `nvalid ${error}`,
-      data
+      data,
+      src
     );
   }
 
@@ -114,13 +120,13 @@ export function normalize(
 
   // apply aliases from args
   const cfgs = Object.entries(cfg.args);
-  for (const [key, { type, options }] of cfgs) {
+  for (const [key, cfg] of cfgs) {
     // use `alias[0]` as alias and `arg` as arg
     const items =
-      typeof options.alias === 'string'
-        ? [options.alias]
-        : Array.isArray(options.alias)
-          ? options.alias
+      typeof cfg.options.alias === 'string'
+        ? [cfg.options.alias]
+        : Array.isArray(cfg.options.alias)
+          ? cfg.options.alias
           : [];
     for (const item of items) {
       // each item is an alias
@@ -131,16 +137,17 @@ export function normalize(
 
       const a = arr[0];
       if (aliases[a]) {
-        // this node data is for current value options
+        // this node is for current value options
         // and is not being parsed but being validated
-        data = ndata({ raw: key, key }, options, type);
+        data = cnode({ raw: key, key, cfg }, data.parent, []);
 
         // assume that the display name always has value
         // since data.key is explicitly provided
         throw new ParseError(
           ParseError.OPTIONS_ERROR,
           `${display(data)}cannot use an existing alias: ${a}`,
-          data
+          data,
+          cfg.options
         );
       }
 
