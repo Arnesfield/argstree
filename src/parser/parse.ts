@@ -263,9 +263,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
   }
 
   // validate and run postParse for all nodes
-  for (const item of nodes) {
-    item.check();
-  }
+  for (const item of nodes) item.check();
 
   return root.data;
 }
