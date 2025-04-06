@@ -1,4 +1,8 @@
-export function obj<T extends Record<keyof unknown, unknown>>(val?: T): T {
-  // create and assign value to object with no prototype
-  return Object.assign(Object.create(null) as T, val);
+/**
+ * Create a shallow copy of an object with `null` prototype.
+ * @param o The object to copy.
+ * @returns The shallow copy of the object.
+ */
+export function obj<T extends Record<keyof never, unknown>>(o?: T): T {
+  return { __proto__: null, ...o } as unknown as T;
 }
