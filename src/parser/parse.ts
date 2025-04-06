@@ -267,6 +267,5 @@ export function parse(args: readonly string[], cfg: Config): INode {
     item.check();
   }
 
-  // assume root.node will always be set after the loops above
   return root.data;
 }

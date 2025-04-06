@@ -18,9 +18,9 @@ export interface Alias {
 }
 
 export interface NormalizedOptions {
-  /** Determines if the Node is a leaf node and cannot have descendants. */
+  /** Determines if the node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
-  /** Determines if the Node can actually have children. */
+  /** Determines if the node can actually have children. */
   readonly fertile: boolean;
   /** Determines if the {@linkcode names} have no equal signs (`=`). */
   readonly safeAlias: boolean;
