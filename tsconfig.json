@@ -15,7 +15,7 @@
   },
   "include": [
     "src/**/*",
-    "**/*.spec.ts",
+    "test/**/*",
     ".mocharc.cjs",
     "eslint.config.mjs",
     "rollup.config.ts"
