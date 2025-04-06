@@ -3,6 +3,7 @@ import { split, Split } from '../core/split.js';
 import { Schema } from '../schema/schema.class.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
 import { Arg, Node as INode } from '../types/node.types.js';
+import { NonEmptyArray } from '../types/types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
 import { Alias, NormalizedOptions, NormalizeOptions } from './normalize.js';
@@ -10,7 +11,7 @@ import { Alias, NormalizedOptions, NormalizeOptions } from './normalize.js';
 // NOTE: internal
 
 export interface NodeSplit extends Split {
-  list: [Alias, ...Alias[]];
+  list: NonEmptyArray<Alias>;
 }
 
 // same as NormalizeOptions but with required args
@@ -52,7 +53,7 @@ export class Node {
   parse(
     arg: Arg,
     flags: { exact?: boolean; hasValue?: boolean } = {}
-  ): [ParsedNodeOptions, ...ParsedNodeOptions[]] | false | undefined {
+  ): NonEmptyArray<ParsedNodeOptions> | false | undefined {
     // scenario: -a=6
     // alias -a: --option=3, 4, 5
     // option --option: initial 1, 2
@@ -97,7 +98,7 @@ export class Node {
     }
   }
 
-  handle(arg: Arg): [ParsedNodeOptions, ...ParsedNodeOptions[]] | undefined {
+  handle(arg: Arg): NonEmptyArray<ParsedNodeOptions> | undefined {
     // preserve `this` for callbacks
     let schemas;
     if (
@@ -110,7 +111,7 @@ export class Node {
         // use arg.key as key here despite not using arg.value
         // since we assume that the consumer will handle arg.value manually
         return { raw, key, alias, args: [], cfg: schema.config() };
-      }) as [ParsedNodeOptions, ...ParsedNodeOptions[]];
+      }) as NonEmptyArray<ParsedNodeOptions>;
     }
   }
 

@@ -2,6 +2,7 @@ import { ParseError } from '../core/error.js';
 import { ArgConfig, Config } from '../schema/schema.types.js';
 import { Node } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
+import { NonEmptyArray } from '../types/types.js';
 import { isAlias } from '../utils/arg.js';
 import { display } from '../utils/display.js';
 import { obj } from '../utils/obj.js';
@@ -9,12 +10,13 @@ import { cnode } from './cnode.js';
 
 // NOTE: internal
 
-export type AliasArgs = [[string, ...string[]], ...[string, ...string[]][]];
+export type AliasArgs = NonEmptyArray<string>;
+export type AliasArgsList = NonEmptyArray<AliasArgs>;
 
 export interface Alias {
   /** Alias name. */
   name: string;
-  args: AliasArgs[number];
+  args: AliasArgs;
 }
 
 export interface NormalizedOptions {
@@ -88,7 +90,7 @@ export function normalize(
   const names: string[] = [];
   const aliases: NormalizedOptions['aliases'] = obj();
 
-  function setAlias(name: string, all: AliasArgs) {
+  function setAlias(name: string, all: AliasArgsList) {
     aliases[name] = all.map((args): Alias => ({ name, args }));
     // skip command aliases since we don't need to split them
     // and remove `-` prefix
@@ -101,8 +103,8 @@ export function normalize(
   // apply aliases
   for (const [key, alias] of Object.entries(c.aliases)) {
     /** List of strings in `args`. */
-    let strs: [string, ...string[]] | undefined;
-    const all: [string, ...string[]][] = [];
+    let strs: AliasArgs | undefined;
+    const all: AliasArgs[] = [];
     const args =
       typeof alias === 'string' ? [alias] : Array.isArray(alias) ? alias : [];
 
@@ -111,11 +113,11 @@ export function normalize(
         strs ? strs.push(arg) : all.push((strs = [arg]));
       } else if (Array.isArray(arg) && arg.length > 0) {
         // filter out empty array
-        all.push(arg as [string, ...string[]]);
+        all.push(arg as AliasArgs);
       }
     }
 
-    all.length > 0 && setAlias(key, all as AliasArgs);
+    all.length > 0 && setAlias(key, all as AliasArgsList);
   }
 
   // apply aliases from args
@@ -151,7 +153,7 @@ export function normalize(
         );
       }
 
-      setAlias(a, [[key].concat(arr.slice(1))] as [[string, ...string[]]]);
+      setAlias(a, [[key].concat(arr.slice(1))] as [AliasArgs]);
     }
   }
 

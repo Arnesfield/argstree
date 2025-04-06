@@ -1,6 +1,7 @@
 import { ParseError } from '../core/error.js';
 import { Config } from '../schema/schema.types.js';
 import { Arg, Node as INode } from '../types/node.types.js';
+import { NonEmptyArray } from '../types/types.js';
 import { isOption } from '../utils/arg.js';
 import { display } from '../utils/display.js';
 import { cnode } from './cnode.js';
@@ -95,12 +96,12 @@ export function parse(args: readonly string[], cfg: Config): INode {
     });
 
     // assume 'items' always has value
-    set(items as [NormalizeOptions, ...NormalizeOptions[]]);
+    set(items as NonEmptyArray<NormalizeOptions>);
 
     return true;
   }
 
-  function set(items: [NormalizeOptions, ...NormalizeOptions[]]) {
+  function set(items: NonEmptyArray<NormalizeOptions>) {
     // consider items: [option1, command1, option2, command2, option3]
     // the previous implementation would only get
     // the last child that can have children (command2)
