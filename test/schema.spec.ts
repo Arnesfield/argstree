@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import command, {
+  Aliases,
   Config,
   NodeType,
   option,
@@ -103,7 +104,7 @@ function describeSchemaFn(
           ['--bar', 'arg1', 'arg2'],
           ['--baz', 'arg1', 'arg2']
         ]
-      } as Config['aliases']);
+      } as Aliases);
     });
   });
 }

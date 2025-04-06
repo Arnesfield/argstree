@@ -20,7 +20,7 @@ export interface Config {
    */
   args: { [arg: string]: ArgConfig };
   /** The list of aliases. */
-  aliases: { [alias: string]: Aliases[string] };
+  aliases: Aliases;
 }
 
 /** The config for options or commands. */
