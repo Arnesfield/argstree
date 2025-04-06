@@ -116,14 +116,14 @@ export interface SchemaOptions {
    */
   postArgs?(node: Node): void;
   /**
-   * Called once all the {@linkcode postArgs} callbacks
-   * have been fired for all the parsed nodes.
+   * Called once all the {@linkcode postArgs} callbacks have been fired
+   * for all the parsed nodes and before throwing any validation errors.
    * @param node The node object.
    */
   preValidate?(node: Node): void;
   /**
-   * Called once all the {@linkcode preValidate} callbacks have been
-   * fired for all the parsed nodes and after throwing any validation errors.
+   * Called once all the {@linkcode preValidate} callbacks have been fired
+   * for all the parsed nodes and after throwing any validation errors.
    * @param node The node object.
    */
   postValidate?(node: Node): void;
