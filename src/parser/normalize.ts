@@ -55,8 +55,8 @@ export function normalize(
   // NOTE: data is only used for error purposes
   data: Node
 ): NormalizedOptions {
-  const { cfg } = opts;
-  const src = cfg.options;
+  const c = opts.cfg;
+  const src = c.options;
 
   // get and validate range
   const min = number(src.min);
@@ -99,7 +99,7 @@ export function normalize(
   }
 
   // apply aliases
-  for (const [key, alias] of Object.entries(cfg.aliases)) {
+  for (const [key, alias] of Object.entries(c.aliases)) {
     /** List of strings in `args`. */
     let strs: [string, ...string[]] | undefined;
     const all: [string, ...string[]][] = [];
@@ -119,7 +119,7 @@ export function normalize(
   }
 
   // apply aliases from args
-  const cfgs = Object.entries(cfg.args);
+  const cfgs = Object.entries(c.args);
   for (const [key, cfg] of cfgs) {
     // use `alias[0]` as alias and `arg` as arg
     const items =
@@ -159,12 +159,12 @@ export function normalize(
     !!src.handler || cfgs.length > 0 || Object.keys(aliases).length > 0;
 
   return {
-    leaf: !fertile && (src.leaf ?? cfg.type === 'option'),
+    leaf: !fertile && (src.leaf ?? c.type === 'option'),
     fertile,
     safeAlias,
     range: { min, max, maxRead },
     src,
-    args: obj(cfg.args),
+    args: obj(c.args),
     aliases,
     // sort by length desc for splitting later on
     names: names.sort((a, b) => b.length - a.length)

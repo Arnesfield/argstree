@@ -23,10 +23,10 @@ function toArg(raw: string, alias: string | null): Arg {
 export function parse(args: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
-  function node(opts: NormalizeOptions, parent?: Node) {
+  function node(opts: NormalizeOptions, curr?: Node) {
     const data = cnode(
       opts,
-      parent ? parent.data : null,
+      curr ? curr.data : null,
       (opts.cfg.options.args || []).concat(opts.args || [])
     );
 
@@ -34,7 +34,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     (nOpts = map.get(opts.cfg)) ||
       map.set(opts.cfg, (nOpts = normalize(opts, data)));
 
-    return new Node(nOpts, data, parent);
+    return new Node(nOpts, data, curr);
   }
 
   const root = node({ cfg });
