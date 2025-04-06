@@ -16,7 +16,7 @@ export function getAncestors(node: Node | null): Node[] {
 /**
  * Gets the descendant nodes of the provided node.
  * @param node The node to process.
- * @returns The descendant nodes
+ * @returns The descendant nodes.
  */
 export function getDescendants(node: Node): Node[] {
   // it is unlikely that a node with children is in between infertile nodes
