@@ -146,7 +146,7 @@ export class Node {
     // skip for value nodes
     if (this.data.type === 'value') return;
 
-    const { min, max } = this.opts.range;
+    const { min, max } = this.opts;
 
     // validate node
     const len = this.data.args.length;
@@ -154,25 +154,31 @@ export class Node {
       min != null && max != null && (len < min || len > max)
         ? min === max
           ? [min, min]
-          : [`${min}-${max}`, 2]
+          : [`${min}-${max}`, 0]
         : min != null && len < min
           ? [`at least ${min}`, min]
           : max != null && len > max
             ? [max && `up to ${max}`, max]
             : null;
 
-    if (msg) {
-      const name = display(this.data);
-      throw new ParseError(
-        ParseError.RANGE_ERROR,
-        (name ? name + 'e' : 'E') +
-          `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`,
-        this.data,
-        this.opts.src
-      );
-    }
+    msg && this.expected(msg, ` ${len}.`);
 
     this.run('postValidate');
+  }
+
+  expected(
+    msg: [string | number, number],
+    str: string,
+    reason = ParseError.RANGE_ERROR
+  ): never {
+    const name = display(this.data);
+    throw new ParseError(
+      reason,
+      (name ? name + 'e' : 'E') +
+        `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got${str}`,
+      this.data,
+      this.opts.src
+    );
   }
 
   // aliases

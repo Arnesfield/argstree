@@ -121,13 +121,6 @@ describe('error', () => {
         message: 'Invalid min and max range: 1-0',
         options: { min: 1, max: 0 }
       });
-
-      expectError({
-        reason,
-        args: [],
-        message: 'Invalid max and maxRead range: 0 >= 1',
-        options: { max: 0, maxRead: 1 }
-      });
     });
   });
 
@@ -372,6 +365,66 @@ describe('error', () => {
           strict: 'descendants',
           init(schema) {
             schema.option('--bar', options);
+          }
+        }
+      });
+    });
+
+    it("should handle 'read: false' option", () => {
+      const reason = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
+
+      expectError({
+        reason,
+        args: ['foo', 'bar', 'baz'],
+        message: 'Expected no arguments, but got: foo',
+        options: { read: false, strict: true }
+      });
+
+      expectError({
+        reason,
+        args: ['foo', 'bar', 'baz'],
+        message: 'Unrecognized option or command: foo',
+        options: {
+          read: false,
+          strict: true,
+          init(schema) {
+            schema.option('--foo');
+          }
+        }
+      });
+
+      let options: Options = { read: false };
+      expectError({
+        reason,
+        args: ['--foo', 'bar', '--baz'],
+        message: "Command 'bar' expected no arguments, but got: --baz",
+        match: options,
+        options: {
+          strict: true,
+          init(schema) {
+            schema.option('--foo');
+            schema.command('bar', options);
+          }
+        }
+      });
+
+      options = {
+        read: false,
+        leaf: false,
+        init(schema) {
+          schema.option('--baz', { read: false });
+        }
+      };
+      expectError({
+        reason,
+        args: ['--foo', 'bar', '--baz', 'foo'],
+        message: "Option 'bar' does not recognize the option or command: foo",
+        match: options,
+        options: {
+          strict: true,
+          init(schema) {
+            schema.option('--foo');
+            schema.option('bar', options);
           }
         }
       });

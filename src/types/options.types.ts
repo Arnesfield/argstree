@@ -27,27 +27,35 @@ export interface SchemaOptions {
   /**
    * The minimum number of arguments to read before the next parsed option or command.
    *
-   * A {@linkcode ParseError} is thrown if the option or command
-   * does not satisfy this condition unless {@linkcode postValidate} is handled.
+   * A {@linkcode ParseError} is thrown if the option or command does not satisfy this condition.
    */
   min?: number | null;
   /**
    * The maximum number of arguments to read before the next parsed option or command.
    * Arguments over the maximum limit are saved to the parent option or command instead.
    *
-   * A {@linkcode ParseError} is thrown if the option or command
-   * does not satisfy this condition unless {@linkcode postValidate} is handled.
+   * A {@linkcode ParseError} is thrown if the option or command does not
+   * satisfy this condition or if the parent option or command cannot accept
+   * any more arguments.
    */
   max?: number | null;
   /**
-   * Similar to the {@linkcode max} option but does not throw an error.
-   * If not provided, the value for {@linkcode max} is used instead.
-   *
-   * This takes priority over the {@linkcode max} option
-   * when reading arguments, but only the {@linkcode max} option
-   * is used for validating the maximum number of arguments.
+   * When disabled, the option or command will not accept any arguments
+   * (except for {@linkcode assign assigned} values) and are instead saved to
+   * the parent option or command if it can accept arguments. Otherwise,
+   * a {@linkcode ParseError} is thrown and the argument is treated as an
+   * unrecognized option or command.
+   * @default true
    */
-  maxRead?: number | null;
+  read?: boolean;
+  /**
+   * Determines if the option or command assignment is enabled
+   * (uses the equal sign, e.g. `--option=value`, `command=value`).
+   *
+   * Depending on the {@linkcode NodeType}, the default value is
+   * `true` for `option` types and `false` for `command` types.
+   */
+  assign?: boolean;
   /**
    * When enabled, a {@linkcode ParseError} is thrown for
    * unrecognized arguments that look like an option (e.g. `-o`, `--option`).
@@ -131,14 +139,6 @@ export interface SchemaOptions {
 
 /** The options object. */
 export interface Options extends SchemaOptions {
-  /**
-   * Determines if the option or command assignment is enabled
-   * (uses the equal sign, e.g. `--option=value`, `command=value`).
-   *
-   * Depending on the {@linkcode NodeType}, the default value is
-   * `true` for `option` types and `false` for `command` types.
-   */
-  assign?: boolean;
   /**
    * The alias, list of aliases, or list of aliases with arguments
    * for the option or command.

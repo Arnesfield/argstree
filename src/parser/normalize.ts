@@ -20,18 +20,18 @@ export interface Alias {
 }
 
 export interface NormalizedOptions {
+  /** The resolved {@linkcode Options.read} value. */
+  readonly read: boolean;
   /** Determines if the node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
   /** Determines if the node can actually have children. */
   readonly fertile: boolean;
   /** Determines if the {@linkcode names} have no equal signs (`=`). */
   readonly safeAlias: boolean;
-  /** The resolved range options. */
-  readonly range: {
-    min: number | null;
-    max: number | null;
-    maxRead: number | null;
-  };
+  /** The resolved {@linkcode Options.min} value. */
+  readonly min: number | null;
+  /** The resolved {@linkcode Options.max} value. */
+  readonly max: number | null;
   /** The reference to the provided options. */
   readonly src: Options;
   /** Safe args object. */
@@ -63,23 +63,12 @@ export function normalize(
   // get and validate range
   const min = number(src.min);
   const max = number(src.max);
-  const maxRead = number(src.maxRead) ?? max;
 
-  // if no max, skip all checks as they all require max to be provided
-  const error =
-    max == null
-      ? null
-      : min != null && min > max
-        ? `min and max range: ${min}-${max}`
-        : maxRead != null && max < maxRead
-          ? `max and maxRead range: ${max} >= ${maxRead}`
-          : null;
-
-  if (error) {
+  if (min != null && max != null && min > max) {
     const name = display(data);
     throw new ParseError(
       ParseError.OPTIONS_ERROR,
-      (name ? name + 'has i' : 'I') + `nvalid ${error}`,
+      (name ? name + 'has i' : 'I') + `nvalid min and max range: ${min}-${max}`,
       data,
       src
     );
@@ -161,10 +150,12 @@ export function normalize(
     !!src.handler || cfgs.length > 0 || Object.keys(aliases).length > 0;
 
   return {
+    read: src.read ?? true,
     leaf: !fertile && (src.leaf ?? c.type === 'option'),
     fertile,
     safeAlias,
-    range: { min, max, maxRead },
+    min,
+    max,
     src,
     args: obj(c.args),
     aliases,

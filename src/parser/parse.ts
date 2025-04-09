@@ -82,7 +82,9 @@ export function parse(args: readonly string[], cfg: Config): INode {
       const parsed = last ? lastParsed : parent.parse(arg);
 
       if (!parsed) {
-        unrecognized(`argument from alias '${alias.name}': ${arg.raw}`);
+        unrecognized(
+          `option or command from alias '${alias.name}': ${arg.raw}`
+        );
       }
 
       // assume parsed always contains at least 1 item
@@ -131,13 +133,21 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
   function setValue(raw: string) {
     // check if child can read one more argument
-    // fallback to parent if child cannot accept anymore args
+    // fallback to parent if child cannot accept any more args:
+    // - if parent cannot read args, assume unrecognized argument
+    // - if parent cannot make children, save the argument and rely on the
+    // range check since we can safely assume it cannot have any child nodes
+    // that will need the events called first before throwing an error
+    // - if parent cannot accept args, assume unrecognized argument
     const curr =
-      child &&
-      (child.opts.range.maxRead == null ||
-        child.opts.range.maxRead > child.data.args.length)
+      child?.opts.read &&
+      (child.opts.max == null || child.opts.max > child.data.args.length)
         ? child
-        : parent;
+        : parent.opts.read
+          ? parent
+          : parent.opts.fertile
+            ? unrecognized(`option or command: ${raw}`)
+            : parent.expected(['no', 0], `: ${raw}`, ParseError.UNRECOGNIZED_ARGUMENT_ERROR); // prettier-ignore
 
     // strict mode: throw error if arg is an option-like
     curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
