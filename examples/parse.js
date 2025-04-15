@@ -43,14 +43,14 @@ function run(argv) {
           args: arg.value != null ? [arg.value] : [],
           max: 1,
           // for options starting with --no-*, stop accepting args
-          maxRead: id.startsWith(negatePrefix) ? 0 : null
+          read: !id.startsWith(negatePrefix)
         });
       }
     }
   });
 
   const root = cmd
-    .option('--help', { alias: '-h', preArgs: help })
+    .option('--help', { max: 0, alias: '-h', assign: false, preArgs: help })
     .command('--', { strict: false })
     .parse(argv);
 
