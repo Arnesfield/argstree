@@ -106,8 +106,8 @@ function run(argv) {
       // handle numbers and strings
       const values = args.map(arg => {
         // check and parse if number
-        const n = Number(arg);
-        return isNaN(n) ? arg : n;
+        let n;
+        return arg.trim() && !isNaN((n = Number(arg))) ? n : arg;
       });
       set(obj, last, values.length === 1 ? values[0] : values);
     } else {
@@ -118,7 +118,21 @@ function run(argv) {
     }
   }
 
-  // remove null prototype from log
-  const object = JSON.parse(JSON.stringify(result));
-  console.dir(object, { depth: null });
+  /**
+   * Recursively reset object prototype
+   * to hide `[Object: null prototype]` from logs.
+   * @param {unknown} value The object to reset the prototype of.
+   */
+  function resetPrototype(value) {
+    if (Array.isArray(value)) {
+      value.forEach(resetPrototype);
+    } else if (typeof value === 'object' && value !== null) {
+      Object.setPrototypeOf(value, Object.prototype);
+      Object.values(value).forEach(resetPrototype);
+    }
+  }
+  // mutate result object
+  resetPrototype(result);
+
+  console.dir(result, { depth: null });
 }
