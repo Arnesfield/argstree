@@ -3,8 +3,8 @@ import { ParseError } from '../core/error.js';
 import { Schema } from '../schema/schema.types.js';
 import { Arg, Node, NodeType } from './node.types.js';
 
-/** The schema options. */
-export interface SchemaOptions {
+/** The options object. */
+export interface Options {
   /**
    * The option or command ID that will show up in {@linkcode Node.id}.
    * If not provided, the default value is the {@linkcode Node.key}.
@@ -24,6 +24,16 @@ export interface SchemaOptions {
    * arguments will be added on top of this initial list.
    */
   args?: string[];
+  /**
+   * The alias, list of aliases, or list of aliases with arguments
+   * for the option or command.
+   * @example
+   * const cmd = command()
+   *   .option('--help', { read: false, assign: false, alias: '-h' })
+   *   .option('--flag', { read: false, alias: ['-f', ['--no-flag', '0']] })
+   *   .command('run', { alias: ['r', 'rum', 'urn'] });
+   */
+  alias?: string | (string | string[])[] | null;
   /**
    * The minimum number of arguments to read before the next parsed option or command.
    *
@@ -137,16 +147,5 @@ export interface SchemaOptions {
   postValidate?(node: Node): void;
 }
 
-/** The options object. */
-export interface Options extends SchemaOptions {
-  /**
-   * The alias, list of aliases, or list of aliases with arguments
-   * for the option or command.
-   * @example
-   * const cmd = command()
-   *   .option('--help', { maxRead: 0, alias: '-h' })
-   *   .option('--flag', { maxRead: 0, alias: ['-f', ['--no-flag', '0']] })
-   *   .command('run', { alias: ['r', 'ru', 'urn'] });
-   */
-  alias?: string | (string | string[])[] | null;
-}
+/** The schema options. */
+export type SchemaOptions = Omit<Options, 'alias'>;
