@@ -140,8 +140,8 @@ export interface Options {
    */
   preValidate?(node: Node): void;
   /**
-   * Called once all the {@linkcode preValidate} callbacks have been fired
-   * for all the parsed nodes and after throwing any validation errors.
+   * Called once all the {@linkcode preValidate} callbacks have been fired for
+   * all the parsed nodes and after throwing any validation errors for the node.
    * @param node The node object.
    */
   postValidate?(node: Node): void;
