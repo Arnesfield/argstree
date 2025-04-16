@@ -25,7 +25,6 @@ export interface NodeSplit extends Split {
 // NOTE: node instances will only have data types 'option' and 'command'
 // directly save value nodes into data.children instead
 export class Node {
-  readonly children: Node[] = [];
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
   readonly dstrict: boolean | undefined;

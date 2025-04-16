@@ -39,6 +39,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
   }
 
   const root = node({ cfg });
+  const nodes = [root];
   let parent = root,
     child: Node | null | undefined;
 
@@ -118,7 +119,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
       child?.run('postArgs');
 
       // create child node from options
-      parent.children.push((child = node(item, parent)));
+      nodes.push((child = node(item, parent)));
       parent.data.children.push(child.data);
     }
 
@@ -265,14 +266,8 @@ export function parse(args: readonly string[], cfg: Config): INode {
   child?.run('postArgs');
   parent.run('postArgs');
 
-  // run preParse for all nodes
-  const nodes = [root];
-  for (const item of nodes) {
-    item.run('preValidate');
-
-    // this will run preParse per depth level incrementally
-    nodes.push(...item.children);
-  }
+  // run preParse for all nodes per depth level incrementally
+  for (const item of nodes) item.run('preValidate');
 
   // validate and run postParse for all nodes
   for (const item of nodes) item.check();
