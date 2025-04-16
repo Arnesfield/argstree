@@ -148,7 +148,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
           ? parent
           : parent.opts.fertile
             ? unrecognized(`option or command: ${raw}`)
-            : parent.expected(['no', 0], `: ${raw}`, ParseError.UNRECOGNIZED_ARGUMENT_ERROR); // prettier-ignore
+            : parent.expected(ParseError.UNRECOGNIZED_ARGUMENT_ERROR, ['no', 0], `: ${raw}`); // prettier-ignore
 
     // strict mode: throw error if arg is an option-like
     curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);

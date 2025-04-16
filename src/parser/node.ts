@@ -156,16 +156,12 @@ export class Node {
             ? [max && `up to ${max}`, max]
             : null;
 
-    msg && this.expected(msg, ` ${len}.`);
+    msg && this.expected(ParseError.RANGE_ERROR, msg, ` ${len}.`);
 
     this.run('postValidate');
   }
 
-  expected(
-    msg: [string | number, number],
-    str: string,
-    reason = ParseError.RANGE_ERROR
-  ): never {
+  expected(reason: string, msg: [string | number, number], str: string): never {
     const name = display(this.data);
     throw new ParseError(
       reason,
