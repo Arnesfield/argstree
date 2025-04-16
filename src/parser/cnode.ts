@@ -1,11 +1,17 @@
-import { Node, NodeType } from '../types/node.types.js';
+import { Config } from '../schema/schema.types.js';
+import { Node } from '../types/node.types.js';
 import { Options } from '../types/options.types.js';
+import { NodeData } from './node.js';
 import { NormalizeOptions } from './normalize.js';
+
+export interface CreateNodeOptionsConfig extends Pick<Config, 'type'> {
+  options: Pick<Options, 'id' | 'name'>;
+}
 
 export interface CreateNodeOptions
   extends Pick<NormalizeOptions, 'raw' | 'key' | 'alias'> {
   // partial config
-  cfg: { type: NodeType; options: Pick<Options, 'id' | 'name'> };
+  cfg: CreateNodeOptionsConfig;
 }
 
 /** Create node object. */
@@ -13,7 +19,7 @@ export function cnode(
   opts: CreateNodeOptions,
   parent: Node | null,
   args: string[]
-): Node {
+): NodeData {
   const { cfg, raw = null, key = null, alias = null } = opts;
   return {
     id: typeof cfg.options.id !== 'undefined' ? cfg.options.id : key,

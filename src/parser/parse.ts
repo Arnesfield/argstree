@@ -118,7 +118,8 @@ export function parse(args: readonly string[], cfg: Config): INode {
       child?.run('postArgs');
 
       // create child node from options
-      parent.save((child = node(item, parent)));
+      parent.children.push((child = node(item, parent)));
+      parent.data.children.push(child.data);
     }
 
     // assume child always exists (items has length)

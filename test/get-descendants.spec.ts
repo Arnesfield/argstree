@@ -10,11 +10,12 @@ function node(opts: {
   parent: Node | null;
   args?: string[];
 }) {
-  const node = cnode(
-    { raw: opts.key, key: opts.key, cfg: { type: opts.type, options: {} } },
+  const node: Node = cnode(
+    { raw: opts.key, key: opts.key, cfg: { type: 'option', options: {} } },
     opts.parent,
     opts.args || []
   );
+  node.type = opts.type;
   node.depth = opts.depth;
   return node;
 }

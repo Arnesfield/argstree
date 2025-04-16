@@ -10,15 +10,20 @@ import { Alias, NormalizedOptions, NormalizeOptions } from './normalize.js';
 
 // NOTE: internal
 
-export interface NodeSplit extends Split {
-  list: NonEmptyArray<Alias>;
-}
+// same as INode but cannot be a value type
+export interface NodeData extends Omit<INode, 'type'>, Pick<Config, 'type'> {}
 
 // same as NormalizeOptions but with required args
 export interface ParsedNodeOptions
   extends Omit<NormalizeOptions, 'args'>,
     Required<Pick<NormalizeOptions, 'args'>> {}
 
+export interface NodeSplit extends Split {
+  list: NonEmptyArray<Alias>;
+}
+
+// NOTE: node instances will only have data types 'option' and 'command'
+// directly save value nodes into data.children instead
 export class Node {
   readonly children: Node[] = [];
   readonly strict: boolean | undefined;
@@ -27,7 +32,7 @@ export class Node {
 
   constructor(
     readonly opts: NormalizedOptions,
-    readonly data: INode,
+    readonly data: NodeData,
     parent?: Node
   ) {
     // if options.strict is not set, follow ancestor strict mode
@@ -44,10 +49,8 @@ export class Node {
   }
 
   run(name: 'preArgs' | 'postArgs' | 'preValidate' | 'postValidate'): void {
-    // preserve `this` for callbacks, skip for value nodes
-    this.data.type !== 'value' &&
-      typeof this.opts.src[name] === 'function' &&
-      this.opts.src[name](this.data);
+    // preserve `this` for callbacks
+    typeof this.opts.src[name] === 'function' && this.opts.src[name](this.data);
   }
 
   parse(
@@ -115,22 +118,18 @@ export class Node {
     }
   }
 
-  save(node: Node): void {
-    this.children.push(node);
-    this.data.children.push(node.data);
-  }
-
   // save arg to the last value child node
   value(arg: string): void {
     let node;
+    const { children } = this.data;
     if (
-      this.children.length > 0 &&
-      (node = this.children[this.children.length - 1]).data.type === 'value'
+      children.length > 0 &&
+      (node = children[children.length - 1]).type === 'value'
     ) {
-      node.data.args.push(arg);
+      node.args.push(arg);
     } else {
-      // value node is almost the same as the node but with a few different props
-      node = new Node(this.opts, {
+      // value node is almost the same as its parent but with different props
+      children.push({
         ...this.data,
         type: 'value',
         depth: this.data.depth + 1,
@@ -138,14 +137,10 @@ export class Node {
         parent: this.data,
         children: []
       });
-      this.save(node);
     }
   }
 
   check(): void {
-    // skip for value nodes
-    if (this.data.type === 'value') return;
-
     const { min, max } = this.opts;
 
     // validate node
