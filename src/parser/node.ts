@@ -27,7 +27,7 @@ export interface NodeSplit extends Split {
 export class Node {
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
-  readonly dstrict: boolean | undefined;
+  private readonly dstrict: boolean | undefined;
 
   constructor(
     readonly opts: NormalizedOptions,
