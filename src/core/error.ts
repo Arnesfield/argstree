@@ -7,19 +7,19 @@ export class ParseError extends Error {
    * The {@linkcode Options} object provided is invalid
    * (e.g. incorrect range config or duplicate aliases).
    */
-  static readonly OPTIONS_ERROR = 'options';
+  static readonly OPTIONS_ERROR = 'OPTIONS';
   /** The option or command did not satisfy the required number of arguments. */
-  static readonly RANGE_ERROR = 'range';
+  static readonly RANGE_ERROR = 'RANGE';
   /** The parsed alias cannot be recognized. */
-  static readonly UNRECOGNIZED_ALIAS_ERROR = 'unrecognized-alias';
+  static readonly UNRECOGNIZED_ALIAS_ERROR = 'UNRECOGNIZED_ALIAS';
   /** The option or command cannot be recognized. */
-  static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'unrecognized-argument';
+  static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'UNRECOGNIZED_ARGUMENT';
 
   name = 'ParseError';
 
   /**
    * The parse error.
-   * @param reason The reason for error.
+   * @param code The error code.
    * - {@linkcode ParseError.OPTIONS_ERROR}
    * - {@linkcode ParseError.RANGE_ERROR}
    * - {@linkcode ParseError.UNRECOGNIZED_ALIAS_ERROR}
@@ -29,7 +29,7 @@ export class ParseError extends Error {
    * @param options The options object.
    */
   constructor(
-    public reason: string,
+    public code: string,
     message: string,
     public node: Node,
     public options: Options

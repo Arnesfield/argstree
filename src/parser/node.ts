@@ -160,10 +160,10 @@ export class Node {
     this.run('postValidate');
   }
 
-  expected(reason: string, msg: [string | number, number], str: string): never {
+  expected(code: string, msg: [string | number, number], str: string): never {
     const name = display(this.data);
     throw new ParseError(
-      reason,
+      code,
       (name ? name + 'e' : 'E') +
         `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got${str}`,
       this.data,

@@ -7,7 +7,7 @@ import command, {
 } from '../src/index.js';
 
 function expectError(opts: {
-  reason: string;
+  code: string;
   options: SchemaOptions;
   match?: Options;
   message: string;
@@ -22,7 +22,7 @@ function expectError(opts: {
 
   expect(error).to.be.instanceof(ParseError);
   if (error instanceof ParseError) {
-    expect(error).to.have.property('reason').that.equals(opts.reason);
+    expect(error).to.have.property('code').that.equals(opts.code);
     expect(error).to.have.property('message').that.equals(opts.message);
     expect(error).to.have.property('node').that.is.an('object');
     expect(error)
@@ -37,15 +37,15 @@ describe('error', () => {
     expect(ParseError.prototype).to.be.instanceOf(Error);
   });
 
-  it("should contain the 'reason' strings as static members", () => {
-    expect(ParseError).to.have.property('OPTIONS_ERROR').that.equals('options');
-    expect(ParseError).to.have.property('RANGE_ERROR').that.equals('range');
+  it("should contain the 'error.code' strings as static members", () => {
+    expect(ParseError).to.have.property('OPTIONS_ERROR').that.equals('OPTIONS');
+    expect(ParseError).to.have.property('RANGE_ERROR').that.equals('RANGE');
     expect(ParseError)
       .to.have.property('UNRECOGNIZED_ALIAS_ERROR')
-      .that.equals('unrecognized-alias');
+      .that.equals('UNRECOGNIZED_ALIAS');
     expect(ParseError)
       .to.have.property('UNRECOGNIZED_ARGUMENT_ERROR')
-      .that.equals('unrecognized-argument');
+      .that.equals('UNRECOGNIZED_ARGUMENT');
   });
 
   it('should contain class members', () => {
@@ -73,7 +73,7 @@ describe('error', () => {
     expect(error).to.be.instanceOf(Error).and.instanceOf(ParseError);
     expect(error).to.have.property('name').that.equals('ParseError');
     expect(error)
-      .to.have.property('reason')
+      .to.have.property('code')
       .that.equals(ParseError.OPTIONS_ERROR);
     expect(error).to.have.property('message').that.equals('foo');
     expect(error).to.have.property('node').that.equals(node);
@@ -82,11 +82,11 @@ describe('error', () => {
 
   describe('options error', () => {
     it('should handle duplicate aliases', () => {
-      const reason = ParseError.OPTIONS_ERROR;
+      const code = ParseError.OPTIONS_ERROR;
 
       const options: Options = { alias: '-f' };
       expectError({
-        reason,
+        code,
         args: [],
         message: "Option '--bar' cannot use an existing alias: -f",
         match: options,
@@ -99,7 +99,7 @@ describe('error', () => {
       });
 
       expectError({
-        reason,
+        code,
         args: [],
         message: "Command 'bar' cannot use an existing alias: -f",
         match: options,
@@ -113,10 +113,10 @@ describe('error', () => {
     });
 
     it('should handle invalid range options', () => {
-      const reason = ParseError.OPTIONS_ERROR;
+      const code = ParseError.OPTIONS_ERROR;
 
       expectError({
-        reason,
+        code,
         args: [],
         message: 'Invalid min and max range: 1-0',
         options: { min: 1, max: 0 }
@@ -126,17 +126,17 @@ describe('error', () => {
 
   describe('range error', () => {
     it("should handle errors for 'min' range option", () => {
-      const reason = ParseError.RANGE_ERROR;
+      const code = ParseError.RANGE_ERROR;
 
       expectError({
-        reason,
+        code,
         args: [],
         message: 'Expected at least 1 argument, but got 0.',
         options: { min: 1 }
       });
 
       expectError({
-        reason,
+        code,
         args: [],
         message: "Command 'foo' expected at least 1 argument, but got 0.",
         options: { name: 'foo', min: 1 }
@@ -144,7 +144,7 @@ describe('error', () => {
 
       const options: Options = { min: 2 };
       expectError({
-        reason,
+        code,
         args: ['--foo', 'bar'],
         message: "Option '--foo' expected at least 2 arguments, but got 1.",
         match: options,
@@ -157,17 +157,17 @@ describe('error', () => {
     });
 
     it("should handle errors for 'max' range option", () => {
-      const reason = ParseError.RANGE_ERROR;
+      const code = ParseError.RANGE_ERROR;
 
       expectError({
-        reason,
+        code,
         args: ['foo', 'bar'],
         message: 'Expected up to 1 argument, but got 2.',
         options: { max: 1 }
       });
 
       expectError({
-        reason,
+        code,
         args: ['foo', 'bar', 'baz'],
         message: "Command 'foo' expected up to 2 arguments, but got 3.",
         options: { name: 'foo', max: 2 }
@@ -175,7 +175,7 @@ describe('error', () => {
 
       const options: Options = { max: 2, leaf: false };
       expectError({
-        reason,
+        code,
         args: ['--foo', 'foo', 'bar', 'baz'],
         message: "Option '--foo' expected up to 2 arguments, but got 3.",
         match: options,
@@ -188,24 +188,24 @@ describe('error', () => {
     });
 
     it('should handle errors for exact range option', () => {
-      const reason = ParseError.RANGE_ERROR;
+      const code = ParseError.RANGE_ERROR;
 
       expectError({
-        reason,
+        code,
         args: ['foo'],
         message: 'Expected 0 arguments, but got 1.',
         options: { min: 0, max: 0 }
       });
 
       expectError({
-        reason,
+        code,
         args: [],
         message: 'Expected 1 argument, but got 0.',
         options: { min: 1, max: 1 }
       });
 
       expectError({
-        reason,
+        code,
         args: ['foo'],
         message: "Command 'foo' expected 2 arguments, but got 1.",
         options: { name: 'foo', min: 2, max: 2 }
@@ -213,7 +213,7 @@ describe('error', () => {
 
       const options: Options = { min: 2, max: 2, leaf: false };
       expectError({
-        reason,
+        code,
         args: ['--foo', 'foo', 'bar', 'baz'],
         message: "Option '--foo' expected 2 arguments, but got 3.",
         match: options,
@@ -226,17 +226,17 @@ describe('error', () => {
     });
 
     it("should handle errors for 'min' and 'max' range options", () => {
-      const reason = ParseError.RANGE_ERROR;
+      const code = ParseError.RANGE_ERROR;
 
       expectError({
-        reason,
+        code,
         args: ['foo', 'bar'],
         message: 'Expected 0-1 arguments, but got 2.',
         options: { min: 0, max: 1 }
       });
 
       expectError({
-        reason,
+        code,
         args: ['foo'],
         message: "Command 'foo' expected 2-3 arguments, but got 1.",
         options: { name: 'foo', min: 2, max: 3 }
@@ -244,7 +244,7 @@ describe('error', () => {
 
       const options: Options = { min: 2, max: 3 };
       expectError({
-        reason,
+        code,
         args: ['--foo', 'bar'],
         message: "Option '--foo' expected 2-3 arguments, but got 1.",
         match: options,
@@ -259,10 +259,10 @@ describe('error', () => {
 
   describe('unrecognized alias error', () => {
     it('should handle unrecognized alias error', () => {
-      const reason = ParseError.UNRECOGNIZED_ALIAS_ERROR;
+      const code = ParseError.UNRECOGNIZED_ALIAS_ERROR;
 
       expectError({
-        reason,
+        code,
         args: ['-fo'],
         message: 'Unrecognized alias: -f(o)',
         options: {
@@ -273,7 +273,7 @@ describe('error', () => {
       });
 
       expectError({
-        reason,
+        code,
         args: ['-foobarbaz'],
         message: 'Unrecognized aliases: -(f)oob(ar)ba(z)',
         options: {
@@ -287,7 +287,7 @@ describe('error', () => {
       });
 
       expectError({
-        reason,
+        code,
         args: ['-fo'],
         message: "Command 'foo' does not recognize the alias: -f(o)",
         options: {
@@ -299,7 +299,7 @@ describe('error', () => {
       });
 
       expectError({
-        reason,
+        code,
         args: ['-foobarbaz'],
         message:
           "Command 'foo' does not recognize the aliases: -(f)oob(ar)ba(z)",
@@ -318,17 +318,17 @@ describe('error', () => {
 
   describe('unrecognized argument error', () => {
     it('should handle unrecognized argument error', () => {
-      const reason = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
+      const code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
 
       expectError({
-        reason,
+        code,
         args: ['foo', '-bar', '--baz'],
         message: 'Unrecognized option: -bar',
         options: { strict: 'self' }
       });
 
       expectError({
-        reason,
+        code,
         args: ['--foo', 'bar', '--foo=--baz', '--bar', '--baz'],
         message: "Command 'foo' does not recognize the option: --bar",
         options: {
@@ -342,7 +342,7 @@ describe('error', () => {
 
       let options: Options = {};
       expectError({
-        reason,
+        code,
         args: ['--foo', 'foo', '--foo=--bar', 'bar', 'baz', '--bar', '--baz'],
         message: "Command 'bar' does not recognize the option: --bar",
         match: options,
@@ -357,7 +357,7 @@ describe('error', () => {
 
       options = { leaf: false };
       expectError({
-        reason,
+        code,
         args: ['-f', '--foo', '--bar=--foo', 'foo', '--bar', '--baz'],
         message: "Option '--bar' does not recognize the option: --bar",
         match: options,
@@ -371,17 +371,17 @@ describe('error', () => {
     });
 
     it("should handle 'read: false' option", () => {
-      const reason = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
+      const code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
 
       expectError({
-        reason,
+        code,
         args: ['foo', 'bar', 'baz'],
         message: 'Expected no arguments, but got: foo',
         options: { read: false, strict: true }
       });
 
       expectError({
-        reason,
+        code,
         args: ['foo', 'bar', 'baz'],
         message: 'Unrecognized option or command: foo',
         options: {
@@ -395,7 +395,7 @@ describe('error', () => {
 
       let options: Options = { read: false };
       expectError({
-        reason,
+        code,
         args: ['--foo', 'bar', '--baz'],
         message: "Command 'bar' expected no arguments, but got: --baz",
         match: options,
@@ -416,7 +416,7 @@ describe('error', () => {
         }
       };
       expectError({
-        reason,
+        code,
         args: ['--foo', 'bar', '--baz', 'foo'],
         message: "Option 'bar' does not recognize the option or command: foo",
         match: options,

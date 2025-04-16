@@ -45,11 +45,11 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
   function unrecognized(
     msg: string,
-    reason = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
+    code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
   ): never {
     const name = display(parent.data);
     throw new ParseError(
-      reason,
+      code,
       (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg,
       parent.data,
       parent.opts.src
