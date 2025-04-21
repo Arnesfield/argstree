@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { getAncestors } from '../src/index.js';
-import { getNode } from './common/get-node.js';
+import { getAncestors } from '../src';
+import { getNode } from './common/get-node';
 
 describe('getAncestors', () => {
   it('should be a function', () => {

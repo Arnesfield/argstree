@@ -1,5 +1,5 @@
-import { Node } from '../types/node.types.js';
-import { Options } from '../types/options.types.js';
+import { Node } from '../types/node.types';
+import { Options } from '../types/options.types';
 
 /** The parse error. */
 export class ParseError extends Error {

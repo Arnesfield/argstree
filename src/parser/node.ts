@@ -1,12 +1,12 @@
-import { ParseError } from '../core/error.js';
-import { split, Split } from '../core/split.js';
-import { Schema } from '../schema/schema.class.js';
-import { ArgConfig, Config } from '../schema/schema.types.js';
-import { Arg, Node as INode } from '../types/node.types.js';
-import { NonEmptyArray } from '../types/types.js';
-import { isAlias } from '../utils/arg.js';
-import { display } from '../utils/display.js';
-import { Alias, NormalizedOptions, NormalizeOptions } from './normalize.js';
+import { ParseError } from '../core/error';
+import { split, Split } from '../core/split';
+import { Schema } from '../schema/schema.class';
+import { ArgConfig, Config } from '../schema/schema.types';
+import { Arg, Node as INode } from '../types/node.types';
+import { NonEmptyArray } from '../types/types';
+import { isAlias } from '../utils/arg';
+import { display } from '../utils/display';
+import { Alias, NormalizedOptions, NormalizeOptions } from './normalize';
 
 // NOTE: internal
 

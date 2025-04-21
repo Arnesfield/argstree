@@ -1,4 +1,4 @@
-import command, { Node } from '../../src/index.js';
+import command, { Node } from '../../src';
 
 /**
  * Common node test data for `getAncestors` and `getDescendants`.

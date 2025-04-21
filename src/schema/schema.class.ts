@@ -1,13 +1,8 @@
-import { parse } from '../parser/parse.js';
-import { Node } from '../types/node.types.js';
-import { Options } from '../types/options.types.js';
-import { obj } from '../utils/obj.js';
-import {
-  Aliases,
-  ArgConfig,
-  Config,
-  Schema as ISchema
-} from './schema.types.js';
+import { parse } from '../parser/parse';
+import { Node } from '../types/node.types';
+import { Options } from '../types/options.types';
+import { obj } from '../utils/obj';
+import { Aliases, ArgConfig, Config, Schema as ISchema } from './schema.types';
 
 // NOTE: internal
 

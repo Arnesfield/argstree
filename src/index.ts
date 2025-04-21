@@ -1,9 +1,9 @@
-export * from './core/error.js';
-export * from './core/split.js';
-export * from './schema/schema.js';
-export { command as default } from './schema/schema.js';
-export * from './schema/schema.types.js';
-export * from './types/node.types.js';
-export * from './types/options.types.js';
-export * from './utils/arg.js';
-export * from './utils/node.js';
+export * from './core/error';
+export * from './core/split';
+export * from './schema/schema';
+export { command as default } from './schema/schema';
+export * from './schema/schema.types';
+export * from './types/node.types';
+export * from './types/options.types';
+export * from './utils/arg';
+export * from './utils/node';

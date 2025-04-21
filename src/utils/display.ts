@@ -1,4 +1,4 @@
-import { Node } from '../types/node.types.js';
+import { Node } from '../types/node.types';
 
 export function display(node: Node): string {
   return node.name == null

@@ -29,7 +29,7 @@ try {
 function run(args) {
   const cmd = command();
 
-  /** @type {import('../lib/index.js').Options} */
+  /** @type {import('../lib').Options} */
   const options = { min: 1, max: 1, assign: false };
   for (const operation of ['+', '-', 'x', '*', '/', '^', '%']) {
     // safely assume each node will have 1 argument

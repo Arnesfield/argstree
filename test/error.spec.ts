@@ -1,10 +1,5 @@
 import { expect } from 'chai';
-import command, {
-  Node,
-  Options,
-  ParseError,
-  SchemaOptions
-} from '../src/index.js';
+import command, { Node, Options, ParseError, SchemaOptions } from '../src';
 
 function expectError(opts: {
   code: string;

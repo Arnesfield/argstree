@@ -1,8 +1,8 @@
-import { Config } from '../schema/schema.types.js';
-import { Node } from '../types/node.types.js';
-import { Options } from '../types/options.types.js';
-import { NodeData } from './node.js';
-import { NormalizeOptions } from './normalize.js';
+import { Config } from '../schema/schema.types';
+import { Node } from '../types/node.types';
+import { Options } from '../types/options.types';
+import { NodeData } from './node';
+import { NormalizeOptions } from './normalize';
 
 export interface CreateNodeOptionsConfig extends Pick<Config, 'type'> {
   options: Pick<Options, 'id' | 'name'>;

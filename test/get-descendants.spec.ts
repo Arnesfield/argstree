@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { getDescendants, Node, NodeType } from '../src/index.js';
-import { cnode } from '../src/parser/cnode.js';
-import { getNode } from './common/get-node.js';
+import { getDescendants, Node, NodeType } from '../src';
+import { cnode } from '../src/parser/cnode';
+import { getNode } from './common/get-node';
 
 function node(opts: {
   type: NodeType;

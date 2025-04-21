@@ -1,12 +1,12 @@
-import { ParseError } from '../core/error.js';
-import { ArgConfig, Config } from '../schema/schema.types.js';
-import { Node } from '../types/node.types.js';
-import { Options } from '../types/options.types.js';
-import { NonEmptyArray } from '../types/types.js';
-import { isAlias } from '../utils/arg.js';
-import { display } from '../utils/display.js';
-import { obj } from '../utils/obj.js';
-import { cnode } from './cnode.js';
+import { ParseError } from '../core/error';
+import { ArgConfig, Config } from '../schema/schema.types';
+import { Node } from '../types/node.types';
+import { Options } from '../types/options.types';
+import { NonEmptyArray } from '../types/types';
+import { isAlias } from '../utils/arg';
+import { display } from '../utils/display';
+import { obj } from '../utils/obj';
+import { cnode } from './cnode';
 
 // NOTE: internal
 

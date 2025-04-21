@@ -1,6 +1,6 @@
-import { SchemaOptions } from '../types/options.types.js';
-import { Schema as SchemaClass } from './schema.class.js';
-import { Schema } from './schema.types.js';
+import { SchemaOptions } from '../types/options.types';
+import { Schema as SchemaClass } from './schema.class';
+import { Schema } from './schema.types';
 
 /**
  * Creates an option schema.

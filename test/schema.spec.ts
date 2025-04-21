@@ -7,7 +7,7 @@ import command, {
   Options,
   Schema,
   SchemaOptions
-} from '../src/index.js';
+} from '../src';
 
 function describeSchemaFn(
   type: NodeType,

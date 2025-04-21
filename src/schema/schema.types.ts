@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { ParseError } from '../core/error.js';
-import { Node, NodeType } from '../types/node.types.js';
-import { Options } from '../types/options.types.js';
+import { ParseError } from '../core/error';
+import { Node, NodeType } from '../types/node.types';
+import { Options } from '../types/options.types';
 
 /** The aliases object. */
 export interface Aliases {

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ParseError } from '../core/error.js';
-import { Schema } from '../schema/schema.types.js';
-import { Arg, Node, NodeType } from './node.types.js';
+import { ParseError } from '../core/error';
+import { Schema } from '../schema/schema.types';
+import { Arg, Node, NodeType } from './node.types';
 
 /** The options object. */
 export interface Options {

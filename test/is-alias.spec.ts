@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { isAlias } from '../src/index.js';
+import { isAlias } from '../src';
 
 describe('isAlias', () => {
   it('should be a function', () => {

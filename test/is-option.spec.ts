@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { isOption } from '../src/index.js';
+import { isOption } from '../src';
 
 describe('isOption', () => {
   it('should be a function', () => {

@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Options } from './options.types.js';
+import { Options } from './options.types';
 
 /** The parsed argument. */
 export interface Arg {

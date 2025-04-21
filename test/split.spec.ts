@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Split, split } from '../src/index.js';
+import { Split, split } from '../src';
 
 function expectSplit(opts: {
   value: string;

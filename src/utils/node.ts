@@ -1,4 +1,4 @@
-import { Node } from '../types/node.types.js';
+import { Node } from '../types/node.types';
 
 /**
  * Gets the ancestor nodes of the provided node

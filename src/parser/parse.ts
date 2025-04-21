@@ -1,12 +1,12 @@
-import { ParseError } from '../core/error.js';
-import { Config } from '../schema/schema.types.js';
-import { Arg, Node as INode } from '../types/node.types.js';
-import { NonEmptyArray } from '../types/types.js';
-import { isOption } from '../utils/arg.js';
-import { display } from '../utils/display.js';
-import { cnode } from './cnode.js';
-import { Node, NodeSplit } from './node.js';
-import { normalize, NormalizedOptions, NormalizeOptions } from './normalize.js';
+import { ParseError } from '../core/error';
+import { Config } from '../schema/schema.types';
+import { Arg, Node as INode } from '../types/node.types';
+import { NonEmptyArray } from '../types/types';
+import { isOption } from '../utils/arg';
+import { display } from '../utils/display';
+import { cnode } from './cnode';
+import { Node, NodeSplit } from './node';
+import { normalize, NormalizedOptions, NormalizeOptions } from './normalize';
 
 // NOTE: internal
 
