@@ -1,19 +1,11 @@
-import _eslint from '@rollup/plugin-eslint';
-import _typescript from '@rollup/plugin-typescript';
-import { PluginImpl, RollupOptions } from 'rollup';
+import eslint from '@rollup/plugin-eslint';
+import typescript from '@rollup/plugin-typescript';
+import { RollupOptions } from 'rollup';
 import cleanup from 'rollup-plugin-cleanup';
-import _dts, { Options as RollupPluginDtsOptions } from 'rollup-plugin-dts';
-import _esbuild, {
-  Options as RollupPluginEsbuildOptions
-} from 'rollup-plugin-esbuild';
+import dts from 'rollup-plugin-dts';
+import esbuild from 'rollup-plugin-esbuild';
 import outputSize from 'rollup-plugin-output-size';
 import pkg from './package.json' with { type: 'json' };
-
-// NOTE: remove once import errors are fixed for their respective packages
-const dts = _dts as unknown as PluginImpl<RollupPluginDtsOptions>;
-const esbuild = _esbuild as unknown as PluginImpl<RollupPluginEsbuildOptions>;
-const eslint = _eslint as unknown as typeof _eslint.default;
-const typescript = _typescript as unknown as typeof _typescript.default;
 
 // const PROD = process.env.NODE_ENV !== 'development';
 const WATCH = process.env.ROLLUP_WATCH === 'true';
@@ -33,13 +25,13 @@ export default defineConfig([
         comments: ['some', 'sources', /__PURE__/],
         extensions: ['js', 'ts']
       }),
-      outputSize()
+      outputSize({ bytes: true })
     ]
   },
   {
     input,
     output: { file: pkg.types, format: 'esm' },
-    plugins: [dts(), outputSize()]
+    plugins: [dts(), outputSize({ bytes: true })]
   },
   WATCH && {
     input,
