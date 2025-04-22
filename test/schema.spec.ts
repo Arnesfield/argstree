@@ -8,6 +8,7 @@ import command, {
   Schema,
   SchemaOptions
 } from '../src';
+import { Schema as SchemaClass } from '../src/schema/schema.class';
 
 function describeSchemaFn(
   type: NodeType,
@@ -20,7 +21,7 @@ function describeSchemaFn(
 
     it('should return a schema object', () => {
       const schema = schemaFn();
-      expect(schema).to.be.an('object');
+      expect(schema).to.be.an('object').that.is.an.instanceOf(SchemaClass);
       expect(schema).to.have.property('option').that.is.a('function');
       expect(schema).to.have.property('command').that.is.a('function');
       expect(schema).to.have.property('alias').that.is.a('function');
