@@ -3,7 +3,6 @@ import { Config } from '../schema/schema.types';
 import { Arg, Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/types';
 import { isOption } from '../utils/arg';
-import { display } from '../utils/display';
 import { cnode } from './cnode';
 import { Node, NodeSplit } from './node';
 import { normalize, NormalizedOptions, NormalizeOptions } from './normalize';
@@ -38,22 +37,18 @@ export function parse(args: readonly string[], cfg: Config): INode {
     return new Node(nOpts, data, curr);
   }
 
+  const ERR = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
   const root = node({ cfg });
   const nodes = [root];
   let parent = root,
     child: Node | null | undefined;
 
-  function unrecognized(
-    msg: string,
-    code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
-  ): never {
-    const name = display(parent.data);
-    throw new ParseError(
-      code,
-      (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg,
-      parent.data,
-      parent.opts.src
-    );
+  function unrecognized(msg: string, code = ERR): never {
+    throw parent.error(code, 'does not recognize the ', 'Unrecognized ', msg);
+  }
+
+  function expected(raw: string): never {
+    throw parent.error(ERR, 'e', 'E', `xpected no arguments, but got: ${raw}`);
   }
 
   function setAlias(aliases: NodeSplit['list'], value?: string | null) {
@@ -149,7 +144,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
           ? parent
           : parent.opts.fertile
             ? unrecognized(`option or command: ${raw}`)
-            : parent.expected(ParseError.UNRECOGNIZED_ARGUMENT_ERROR, ['no', 0], `: ${raw}`); // prettier-ignore
+            : expected(raw);
 
     // strict mode: throw error if arg is an option-like
     curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
@@ -267,10 +262,16 @@ export function parse(args: readonly string[], cfg: Config): INode {
   parent.run('postArgs');
 
   // run preParse for all nodes per depth level incrementally
-  for (const item of nodes) item.run('preValidate');
+  let error: ParseError | null | undefined;
+  for (const item of nodes) {
+    item.run('preValidate');
+    error ||= item.check();
+  }
+
+  if (error) throw error;
 
   // validate and run postParse for all nodes
-  for (const item of nodes) item.check();
+  for (const item of nodes) item.run('postValidate');
 
   return root.data;
 }
