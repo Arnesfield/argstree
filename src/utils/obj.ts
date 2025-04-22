@@ -1,5 +1,5 @@
 /**
- * Create a shallow copy of an object with `null` prototype.
+ * Creates a shallow copy of an object with `null` prototype.
  * @param o The object to copy.
  * @returns The shallow copy of the object.
  */

@@ -14,7 +14,13 @@ export interface CreateNodeOptions
   cfg: CreateNodeOptionsConfig;
 }
 
-/** Create node object. */
+/**
+ * Creates a node object.
+ * @param opts The options.
+ * @param parent The parent node object.
+ * @param args The node arguments.
+ * @returns The node object.
+ */
 export function cnode(
   opts: CreateNodeOptions,
   parent: Node | null,

@@ -23,7 +23,7 @@ export interface Config {
   aliases: Aliases;
 }
 
-/** The config for options or commands. */
+/** The config for options and commands. */
 export interface ArgConfig
   extends Omit<Config, 'args' | 'aliases'>,
     Partial<Pick<Config, 'args' | 'aliases'>> {
