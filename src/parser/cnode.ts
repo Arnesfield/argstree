@@ -22,7 +22,7 @@ export function cnode(
 ): NodeData {
   const { cfg, raw = null, key = null, alias = null } = opts;
   return {
-    id: typeof cfg.options.id !== 'undefined' ? cfg.options.id : key,
+    id: cfg.options.id !== undefined ? cfg.options.id : key,
     name: cfg.options.name ?? key,
     raw,
     key,
