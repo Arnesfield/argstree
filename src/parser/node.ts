@@ -3,7 +3,7 @@ import { split, Split } from '../core/split';
 import { Schema } from '../schema/schema.class';
 import { ArgConfig, Config } from '../schema/schema.types';
 import { Arg, Node as INode } from '../types/node.types';
-import { NonEmptyArray } from '../types/types';
+import { NonEmptyArray } from '../types/util.types';
 import { isAlias } from '../utils/arg';
 import { display } from '../utils/display';
 import { Alias, NormalizedOptions, NormalizeOptions } from './normalize';

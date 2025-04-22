@@ -2,7 +2,7 @@ import { ParseError } from '../core/error';
 import { ArgConfig, Config } from '../schema/schema.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { NonEmptyArray } from '../types/types';
+import { NonEmptyArray } from '../types/util.types';
 import { isAlias } from '../utils/arg';
 import { display } from '../utils/display';
 import { obj } from '../utils/obj';

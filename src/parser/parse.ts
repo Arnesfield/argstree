@@ -1,7 +1,7 @@
 import { ParseError } from '../core/error';
 import { Config } from '../schema/schema.types';
 import { Arg, Node as INode } from '../types/node.types';
-import { NonEmptyArray } from '../types/types';
+import { NonEmptyArray } from '../types/util.types';
 import { isOption } from '../utils/arg';
 import { cnode } from './cnode';
 import { Node } from './node';
