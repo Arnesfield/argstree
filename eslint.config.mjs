@@ -37,6 +37,7 @@ export default tseslint.config(
       eqeqeq: ['warn', 'always', { null: 'ignore' }],
       'no-constant-condition': 'warn',
       'no-empty': 'warn',
+      'no-lonely-if': 'warn',
       'no-throw-literal': 'warn',
       'no-unused-expressions': 'off', // use typescript-eslint
       'no-unused-private-class-members': 'warn',
