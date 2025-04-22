@@ -1,24 +1,7 @@
 import { expect } from 'chai';
-import { getDescendants, Node, NodeType } from '../src';
-import { cnode } from '../src/parser/cnode';
+import { getDescendants, Node } from '../src';
+import { createNode } from './common/create-node';
 import { getNode } from './common/get-node';
-
-function node(opts: {
-  type: NodeType;
-  depth: number;
-  key: string | null;
-  parent: Node | null;
-  args?: string[];
-}) {
-  const node: Node = cnode(
-    { raw: opts.key, key: opts.key, cfg: { type: 'option', options: {} } },
-    opts.parent,
-    opts.args || []
-  );
-  node.type = opts.type;
-  node.depth = opts.depth;
-  return node;
-}
 
 function expectMatch(descendant: Node, match: Node) {
   expect(descendant).to.have.property('id').that.equals(match.id);
@@ -36,63 +19,45 @@ describe('getDescendants', () => {
   });
 
   it('should get descendant nodes', () => {
-    const cmd0 = node({
-      key: null,
-      depth: 0,
-      type: 'command',
-      parent: null,
-      args: ['1']
-    });
-    const cmd1 = node({
+    const cmd0 = createNode({ type: 'command', args: ['1'] });
+    const cmd1 = createNode({
       key: 'baz',
-      depth: 1,
       type: 'command',
+      depth: 1,
       args: ['1'],
       parent: cmd0
     });
-    const cmd2 = node({
+    const cmd2 = createNode({
       key: 'foo',
-      depth: 2,
       type: 'command',
+      depth: 2,
       args: ['1'],
       parent: cmd1
     });
 
     const matches: Node[] = [
-      node({
-        key: null,
-        depth: 1,
+      createNode({ depth: 1, type: 'value', args: ['1'], parent: cmd0 }),
+      createNode({ key: '--foo', depth: 1, args: ['2', '3'], parent: cmd0 }),
+      createNode({ key: '--bar', depth: 1, parent: cmd0 }),
+      cmd1,
+      createNode({
+        key: 'baz',
+        depth: 2,
         type: 'value',
         args: ['1'],
-        parent: cmd0
-      }),
-      node({
-        key: '--foo',
-        depth: 1,
-        type: 'option',
-        args: ['2', '3'],
-        parent: cmd0
-      }),
-      node({ key: '--bar', depth: 1, type: 'option', parent: cmd0 }),
-      cmd1,
-      node({ key: 'baz', depth: 2, type: 'value', args: ['1'], parent: cmd1 }),
-      node({
-        key: '--foo',
-        depth: 2,
-        type: 'option',
-        args: ['baz'],
         parent: cmd1
       }),
-      node({ key: '--bar', depth: 2, type: 'option', parent: cmd1 }),
+      createNode({ key: '--foo', depth: 2, args: ['baz'], parent: cmd1 }),
+      createNode({ key: '--bar', depth: 2, parent: cmd1 }),
       cmd2,
-      node({ key: 'foo', depth: 3, type: 'value', args: ['1'], parent: cmd2 }),
-      node({
-        key: '--bar',
+      createNode({
+        key: 'foo',
         depth: 3,
-        type: 'option',
-        args: ['1', '2'],
+        type: 'value',
+        args: ['1'],
         parent: cmd2
-      })
+      }),
+      createNode({ key: '--bar', depth: 3, args: ['1', '2'], parent: cmd2 })
     ];
 
     const root = getNode();
