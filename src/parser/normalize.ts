@@ -15,7 +15,7 @@ export type AliasArgsList = NonEmptyArray<AliasArgs>;
 
 export interface Alias {
   /** Alias name. */
-  name: string;
+  key: string;
   args: AliasArgs;
 }
 
@@ -26,7 +26,7 @@ export interface NormalizedOptions {
   readonly leaf: boolean;
   /** Determines if the node can actually have children. */
   readonly fertile: boolean;
-  /** Determines if the {@linkcode names} have no equal signs (`=`). */
+  /** Determines if the {@linkcode keys} have no equal signs (`=`). */
   readonly safeAlias: boolean;
   /** The resolved {@linkcode Options.min} value. */
   readonly min: number | null;
@@ -37,9 +37,9 @@ export interface NormalizedOptions {
   /** Safe args object. */
   readonly args: { [arg: string]: Config | ArgConfig | undefined };
   /** Safe aliases object. */
-  readonly aliases: { [alias: string]: Alias[] };
-  /** A sorted list of splittable alias names without the `-` prefix. */
-  readonly names: string[];
+  readonly aliases: { [alias: string]: NonEmptyArray<Alias> };
+  /** A sorted list of splittable alias keys without the `-` prefix. */
+  readonly keys: string[];
 }
 
 export interface NormalizeOptions
@@ -74,18 +74,19 @@ export function normalize(
     );
   }
 
-  // save splittable aliases to names array
+  // save splittable aliases to keys array
   let safeAlias = true;
-  const names: string[] = [];
+  const keys: string[] = [];
   const aliases: NormalizedOptions['aliases'] = obj();
 
-  function setAlias(name: string, all: AliasArgsList) {
-    aliases[name] = all.map((args): Alias => ({ name, args }));
+  function setAlias(key: string, all: AliasArgsList) {
+    type A = NonEmptyArray<Alias>;
+    aliases[key] = all.map((args): Alias => ({ key, args })) as A;
     // skip command aliases since we don't need to split them
     // and remove `-` prefix
-    if (isAlias(name)) {
-      names.push(name.slice(1));
-      safeAlias &&= !name.includes('=');
+    if (isAlias(key)) {
+      keys.push(key.slice(1));
+      safeAlias &&= !key.includes('=');
     }
   }
 
@@ -160,6 +161,6 @@ export function normalize(
     args: obj(c.args),
     aliases,
     // sort by length desc for splitting later on
-    names: names.sort((a, b) => b.length - a.length)
+    keys: keys.sort((a, b) => b.length - a.length)
   };
 }

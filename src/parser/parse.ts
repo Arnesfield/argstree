@@ -4,8 +4,13 @@ import { Arg, Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/types';
 import { isOption } from '../utils/arg';
 import { cnode } from './cnode';
-import { Node, NodeSplit } from './node';
-import { normalize, NormalizedOptions, NormalizeOptions } from './normalize';
+import { Node } from './node';
+import {
+  Alias,
+  normalize,
+  NormalizedOptions,
+  NormalizeOptions
+} from './normalize';
 
 // NOTE: internal
 
@@ -51,7 +56,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     throw parent.error(ERR, 'e', 'E', `xpected no arguments, but got: ${raw}`);
   }
 
-  function setAlias(aliases: NodeSplit['list'], value?: string | null) {
+  function setAlias(aliases: NonEmptyArray<Alias>, value?: string | null) {
     // assignable arg --option: initial 1, 2
     // alias -a: --option=3, 4, 5
     // scenario: -a=6
@@ -60,7 +65,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // make sure the last option is assignable
     const hasValue = value != null;
     const lastAlias = aliases[aliases.length - 1];
-    const lastArg = toArg(lastAlias.args[0], lastAlias.name);
+    const lastArg = toArg(lastAlias.args[0], lastAlias.key);
     const lastParsed = parent.parse(lastArg, { hasValue });
 
     // skip if assiging a value to alias but no parsed last options
@@ -72,15 +77,13 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
     const items = aliases.flatMap((alias, i) => {
       const last = i === aliases.length - 1;
-      const arg = last ? lastArg : toArg(alias.args[0], alias.name);
+      const arg = last ? lastArg : toArg(alias.args[0], alias.key);
       // no need to check assignable here since
       // we only need to check that for the last alias arg
       const parsed = last ? lastParsed : parent.parse(arg);
 
       if (!parsed) {
-        unrecognized(
-          `option or command from alias '${alias.name}': ${arg.raw}`
-        );
+        unrecognized(`option or command from alias '${alias.key}': ${arg.raw}`);
       }
 
       // assume parsed always contains at least 1 item
@@ -165,7 +168,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // assume arg.raw and raw are the same
     const arg = toArg(raw, null);
     const hasValue = arg.value != null;
-    let parsed, split;
+    let parsed, alias, split;
 
     // parse options from options.args only
     if ((parsed = parent.parse(arg, { exact: true }))) {
@@ -178,12 +181,12 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // - options from handler
     // - a value (or, if in strict mode, an unknown option-like)
     // for this case, handle exact alias
-    else if (raw in parent.opts.aliases && setAlias(parent.alias([raw]))) {
+    else if ((alias = parent.opts.aliases[raw]) && setAlias(alias)) {
       // setAlias was successful, do nothing and go to next iteration
     } else if (
       hasValue &&
-      arg.key in parent.opts.aliases &&
-      setAlias(parent.alias([arg.key]), arg.value)
+      (alias = parent.opts.aliases[arg.key]) &&
+      setAlias(alias, arg.value)
     ) {
       // setAlias was successful, do nothing and go to next iteration
     }
