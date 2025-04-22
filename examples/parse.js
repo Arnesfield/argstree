@@ -54,6 +54,7 @@ function run(argv) {
     .command('--', { strict: false })
     .parse(argv);
 
+  /** @type {Record<string, unknown> & { __proto__: null, _: unknown[] }} */
   const result = { __proto__: null, _: [] };
 
   /**
@@ -86,6 +87,7 @@ function run(argv) {
     if (last == null) continue;
 
     // get nested object
+    /** @type {Record<string, unknown>} */
     let obj = result;
     for (const prop of props) {
       if (!(prop in obj)) {
@@ -93,7 +95,7 @@ function run(argv) {
       } else if (Array.isArray(obj[prop])) {
         obj[prop].push((obj = Object.create(null)));
       } else if (typeof obj[prop] === 'object' && obj[prop] !== null) {
-        obj = obj[prop];
+        obj = /** @type {Record<string, unknown>} */ (obj[prop]);
       }
     }
 

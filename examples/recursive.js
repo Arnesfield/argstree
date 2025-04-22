@@ -22,14 +22,14 @@ function run(args) {
   // use 'init' and 'handler' for root command and subcommands
   const prefix = 'cmd:';
 
-  /** @type {import('../lib').SchemaOptions['init']} */
+  /** @type {import('../lib/index.js').SchemaOptions['init']} */
   const init = schema => {
     schema
       .option('--help', { max: 0, alias: '-h', assign: false, preArgs: help })
       .command('--', { strict: false });
   };
 
-  /** @type {import('../lib').SchemaOptions['handler']} */
+  /** @type {import('../lib/index.js').SchemaOptions['handler']} */
   const handler = arg => {
     if (isOption(arg.key)) {
       // for option ids, remove first 2 hyphens
