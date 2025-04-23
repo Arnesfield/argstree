@@ -91,13 +91,9 @@ describe('parse', () => {
     for (const { fn, type } of fns) {
       let root = fn().command('cmd').parse(['--foo', 'cmd', '--bar']);
       expectNode(root, createNode({ type, args: ['--foo'] }));
-      expect(root.children).to.have.length(2);
-      expectNode(
-        root.children[0],
-        createNode({ type: 'value', depth: 1, args: ['--foo'] })
-      );
-      expectNode(
-        root.children[1],
+
+      const children = [
+        createNode({ type: 'value', depth: 1, args: ['--foo'] }),
         createNode({
           id: 'cmd',
           name: 'cmd',
@@ -107,14 +103,71 @@ describe('parse', () => {
           depth: 1,
           args: ['--bar']
         })
-      );
+      ];
+      expect(root.children).to.have.length(children.length);
+
+      for (let i = 0; i < children.length; i++) {
+        expectNode(root.children[i], children[i]);
+      }
 
       root = fn({ strict: false }).parse(['foo', '--bar', '-baz']);
       expectNode(root, createNode({ type, args: ['foo', '--bar', '-baz'] }));
     }
   });
 
-  it('should be variadic by default', () => {
+  it('should match configured options or commands (+variadic arguments)', () => {
+    const root = command()
+      .option('--foo')
+      .option('--baz')
+      .command('cmd')
+      .parse(
+        ([] as string[]).concat(
+          'foo',
+          ['--foo', 'bar', 'baz', '--bar'],
+          ['--baz', 'foo', 'bar'],
+          ['cmd', '--foo', '--bar', '--baz']
+        )
+      );
+    expectNode(root, createNode({ type: 'command', args: ['foo'] }));
+
+    const children = [
+      createNode({ type: 'value', args: ['foo'], depth: 1 }),
+      createNode({
+        id: '--foo',
+        name: '--foo',
+        raw: '--foo',
+        key: '--foo',
+        type: 'option',
+        depth: 1,
+        args: ['bar', 'baz', '--bar']
+      }),
+      createNode({
+        id: '--baz',
+        name: '--baz',
+        raw: '--baz',
+        key: '--baz',
+        type: 'option',
+        depth: 1,
+        args: ['foo', 'bar']
+      }),
+      createNode({
+        id: 'cmd',
+        name: 'cmd',
+        raw: 'cmd',
+        key: 'cmd',
+        type: 'command',
+        depth: 1,
+        args: ['--foo', '--bar', '--baz']
+      })
+    ];
+
+    expect(root.children).to.have.length(children.length);
+    for (let i = 0; i < children.length; i++) {
+      expectNode(root.children[i], children[i]);
+    }
+  });
+
+  it('should save initial arguments', () => {
     // TODO:
   });
 });
