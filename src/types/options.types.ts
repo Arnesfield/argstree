@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { ParseError } from '../core/error';
+import { ParseError } from '../lib/error';
 import { Schema } from '../schema/schema.types';
 import { Arg, Node, NodeType } from './node.types';
 

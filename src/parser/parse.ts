@@ -1,4 +1,4 @@
-import { ParseError } from '../core/error';
+import { ParseError } from '../lib/error';
 import { Config } from '../schema/schema.types';
 import { Arg, Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/util.types';

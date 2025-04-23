@@ -1,5 +1,5 @@
-import { ParseError } from '../core/error';
-import { split, Split } from '../core/split';
+import { ParseError } from '../lib/error';
+import { split, Split } from '../lib/split';
 import { Schema } from '../schema/schema.class';
 import { ArgConfig, Config } from '../schema/schema.types';
 import { Arg, Node as INode } from '../types/node.types';

@@ -1,4 +1,4 @@
-import { ParseError } from '../core/error';
+import { ParseError } from '../lib/error';
 import { ArgConfig, Config } from '../schema/schema.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';

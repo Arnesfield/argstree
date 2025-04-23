@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { ParseError } from '../core/error';
+import { ParseError } from '../lib/error';
 import { Node, NodeType } from '../types/node.types';
 import { Options } from '../types/options.types';
 

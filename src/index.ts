@@ -1,5 +1,5 @@
-export * from './core/error';
-export * from './core/split';
+export * from './lib/error';
+export * from './lib/split';
 export * from './schema/schema';
 export { command as default } from './schema/schema';
 export * from './schema/schema.types';
