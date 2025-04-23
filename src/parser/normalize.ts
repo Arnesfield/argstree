@@ -66,12 +66,9 @@ export function normalize(
 
   if (min != null && max != null && min > max) {
     const name = display(data);
-    throw new ParseError(
-      ParseError.OPTIONS_ERROR,
-      (name ? name + 'has i' : 'I') + `nvalid min and max range: ${min}-${max}`,
-      data,
-      src
-    );
+    const msg =
+      (name ? name + 'has i' : 'I') + `nvalid min and max range: ${min}-${max}`;
+    throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, src);
   }
 
   // save splittable aliases to keys array
@@ -135,12 +132,8 @@ export function normalize(
 
         // assume that the display name always has value
         // since data.key is explicitly provided
-        throw new ParseError(
-          ParseError.OPTIONS_ERROR,
-          `${display(data)}cannot use an existing alias: ${a}`,
-          data,
-          cfg.options
-        );
+        const msg = `${display(data)}cannot use an existing alias: ${a}`;
+        throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, cfg.options);
       }
 
       setAlias(a, [[key].concat(arr.slice(1))] as [AliasArgs]);

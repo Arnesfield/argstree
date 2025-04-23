@@ -45,15 +45,11 @@ export function parse(args: readonly string[], cfg: Config): INode {
   const ERR = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
   const root = node({ cfg });
   const nodes = [root];
-  let parent = root,
+  let parent: Node = root,
     child: Node | null | undefined;
 
   function unrecognized(msg: string, code = ERR): never {
-    throw parent.error(code, 'does not recognize the ', 'Unrecognized ', msg);
-  }
-
-  function expected(raw: string): never {
-    throw parent.error(ERR, 'e', 'E', `xpected no arguments, but got: ${raw}`);
+    parent.error(code, 'does not recognize the ', 'Unrecognized ', msg);
   }
 
   function setAlias(aliases: NonEmptyArray<Alias>, value?: string | null) {
@@ -147,7 +143,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
           ? parent
           : parent.opts.fertile
             ? unrecognized(`option or command: ${raw}`)
-            : expected(raw);
+            : parent.error(ERR, 'e', 'E', `xpected no arguments, but got: ${raw}`); // prettier-ignore
 
     // strict mode: throw error if arg is an option-like
     curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
@@ -265,16 +261,10 @@ export function parse(args: readonly string[], cfg: Config): INode {
   parent.run('postArgs');
 
   // run preParse for all nodes per depth level incrementally
-  let error: ParseError | null | undefined;
-  for (const item of nodes) {
-    item.run('preValidate');
-    error ||= item.check();
-  }
-
-  if (error) throw error;
+  for (const item of nodes) item.run('preValidate');
 
   // validate and run postParse for all nodes
-  for (const item of nodes) item.run('postValidate');
+  for (const item of nodes) item.check();
 
   return root.data;
 }

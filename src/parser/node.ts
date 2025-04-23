@@ -139,7 +139,7 @@ export class Node {
     }
   }
 
-  check(): ParseError | null {
+  check(): void {
     const { min, max } = this.opts;
 
     // validate node
@@ -155,26 +155,18 @@ export class Node {
             ? [max && `up to ${max}`, max]
             : null;
 
-    return (
-      msg &&
-      this.error(
-        ParseError.RANGE_ERROR,
-        'e',
-        'E',
-        `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`
-      )
-    );
+    if (msg) {
+      const err = `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`;
+      this.error(ParseError.RANGE_ERROR, 'e', 'E', err);
+    }
+
+    this.run('postValidate');
   }
 
-  error(
-    code: string,
-    prefix1: string,
-    prefix2: string,
-    msg: string
-  ): ParseError {
+  error(code: string, prefix1: string, prefix2: string, msg: string): never {
     const name = display(this.data);
     msg = (name ? name + prefix1 : prefix2) + msg;
-    return new ParseError(code, msg, this.data, this.opts.src);
+    throw new ParseError(code, msg, this.data, this.opts.src);
   }
 
   // aliases
