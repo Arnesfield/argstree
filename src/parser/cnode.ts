@@ -4,6 +4,8 @@ import { Options } from '../types/options.types';
 import { NodeData } from './node';
 import { NormalizeOptions } from './normalize';
 
+// NOTE: internal
+
 export interface CreateNodeOptionsConfig extends Pick<Config, 'type'> {
   options: Pick<Options, 'id' | 'name'>;
 }

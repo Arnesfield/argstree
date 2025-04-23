@@ -1,3 +1,5 @@
+// NOTE: internal
+
 /**
  * Creates a shallow copy of an object with `null` prototype.
  * @param o The object to copy.
