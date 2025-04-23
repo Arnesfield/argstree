@@ -1,30 +1,6 @@
 import { expect } from 'chai';
-import command, { Node, Options, ParseError, SchemaOptions } from '../src';
-
-function expectError(opts: {
-  code: string;
-  options: SchemaOptions;
-  match?: Options;
-  message: string;
-  args: string[];
-}) {
-  let error: unknown;
-  try {
-    command(opts.options).parse(opts.args);
-  } catch (err) {
-    error = err;
-  }
-
-  expect(error).to.be.instanceof(ParseError);
-  if (error instanceof ParseError) {
-    expect(error).to.have.property('code').that.equals(opts.code);
-    expect(error).to.have.property('message').that.equals(opts.message);
-    expect(error).to.have.property('node').that.is.an('object');
-    expect(error)
-      .to.have.property('options')
-      .that.equals(opts.match || opts.options);
-  }
-}
+import { Node, Options, ParseError } from '../src';
+import { expectError } from './common/expect-error';
 
 describe('error', () => {
   it('should be a class that extends Error', () => {
