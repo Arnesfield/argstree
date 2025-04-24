@@ -34,14 +34,14 @@ export interface ArgConfig
 /** The schema object. */
 export interface Schema {
   /**
-   * Adds an option. The option is overwritten if it already exists.
+   * Adds an option. The argument is overwritten if it already exists.
    * @param arg The argument to match.
    * @param options The schema options.
    * @returns `this` for chaining.
    */
   option(arg: string, options?: Options): this;
   /**
-   * Adds a command. The command is overwritten if it already exists.
+   * Adds a command. The argument is overwritten if it already exists.
    * @param arg The argument to match.
    * @param options The schema options.
    * @returns `this` for chaining.
