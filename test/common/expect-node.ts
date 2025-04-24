@@ -20,3 +20,10 @@ export function expectNode(node: Node, actual: Node): void {
   expect(node).to.have.property('parent');
   expect(node).to.have.property('children').that.is.an('array');
 }
+
+export function expectNodes(children: Node[], actual: Node[]): void {
+  expect(children).to.have.length(actual.length);
+  for (let i = 0; i < actual.length; i++) {
+    expectNode(children[i], actual[i]);
+  }
+}

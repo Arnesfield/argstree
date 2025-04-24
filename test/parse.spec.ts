@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import command, { NodeType, option } from '../src';
 import { createNode } from './common/create-node';
-import { expectNode } from './common/expect-node';
+import { expectNode, expectNodes } from './common/expect-node';
 
 describe('parse', () => {
   it('should return the root node', () => {
@@ -104,11 +104,8 @@ describe('parse', () => {
           args: ['--bar']
         })
       ];
-      expect(root.children).to.have.length(children.length);
 
-      for (let i = 0; i < children.length; i++) {
-        expectNode(root.children[i], children[i]);
-      }
+      expectNodes(root.children, children);
 
       root = fn({ strict: false }).parse(['foo', '--bar', '-baz']);
       expectNode(root, createNode({ type, args: ['foo', '--bar', '-baz'] }));
@@ -161,10 +158,7 @@ describe('parse', () => {
       })
     ];
 
-    expect(root.children).to.have.length(children.length);
-    for (let i = 0; i < children.length; i++) {
-      expectNode(root.children[i], children[i]);
-    }
+    expectNodes(root.children, children);
   });
 
   it('should save initial arguments', () => {
