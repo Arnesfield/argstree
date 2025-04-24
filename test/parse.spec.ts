@@ -162,6 +162,98 @@ describe('parse', () => {
   });
 
   it('should save initial arguments', () => {
+    const root = command({ args: ['foo', 'bar'] })
+      .option('--foo', { args: ['1', '2'] })
+      .command('cmd', { args: ['arg1'] })
+      .parse(['--foo=3', '4', 'cmd', 'arg2', '--foo=3']);
+    expectNode(root, createNode({ type: 'command', args: ['foo', 'bar'] }));
+
+    const children = [
+      createNode({
+        id: '--foo',
+        name: '--foo',
+        raw: '--foo=3',
+        key: '--foo',
+        depth: 1,
+        args: ['1', '2', '3', '4']
+      }),
+      createNode({
+        id: 'cmd',
+        name: 'cmd',
+        raw: 'cmd',
+        key: 'cmd',
+        type: 'command',
+        depth: 1,
+        args: ['arg1', 'arg2', '--foo=3']
+      })
+    ];
+
+    expectNodes(root.children, children);
+
+    // subcommand node should have value node
+    const subcmd = root.children[1];
+    expect(subcmd.children).to.have.length(1);
+    expectNode(
+      subcmd.children[0],
+      createNode({
+        id: 'cmd',
+        name: 'cmd',
+        raw: 'cmd',
+        key: 'cmd',
+        type: 'value',
+        depth: 2,
+        args: ['arg2', '--foo=3']
+      })
+    );
+  });
+
+  it('should use provided aliases and their args', () => {
+    const root = command()
+      .option('--foo', { alias: '-f' })
+      .option('--bar', {
+        alias: ['-b', ['--no-bar', '1'], ['--full-bar', '2']],
+        args: ['0']
+      })
+      .command('cmd', { alias: ['c', 'cm', 'cdm'] })
+      .parse(
+        ([] as string[]).concat(
+          ['-f', 'foo'],
+          ['-b', '1'],
+          ['--no-bar=2', '3'],
+          ['--full-bar', '4'],
+          ['c', 'cmd']
+        )
+      );
     // TODO:
+    console.dir(root, { depth: null });
+  });
+
+  it('should use provided aliases object with proper args', () => {
+    const root = command()
+      .alias({ '-f': ['--foo=2', '3', '4'] })
+      .alias({
+        F: [
+          ['--foo=2', '3', '4'],
+          ['--bar=c', 'd', 'e']
+        ]
+      })
+      .option('--foo', { args: ['0', '1'] })
+      .option('--bar', { args: ['a', 'b'] })
+      .parse(['-f=5', '6', 'F=f', 'g']);
+    // TODO:
+    expect(root.children).to.have.length(3);
+    expectNode(
+      root.children[0],
+      createNode({
+        id: '--foo',
+        name: '--foo',
+        raw: '-f=5',
+        key: '--foo',
+        alias: '-f',
+        type: 'option',
+        depth: 1,
+        args: ['0', '1', '2', '3', '4', '5', '6']
+      })
+    );
   });
 });
