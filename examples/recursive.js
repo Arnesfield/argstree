@@ -34,9 +34,12 @@ function run(args) {
     if (isOption(arg.key)) {
       // for option ids, remove first 2 hyphens
       const id = arg.key.replace(/^--?/, '');
-      const args = arg.value != null ? [arg.value] : [];
       // change max arguments captured if a value is assigned
-      return option({ id, args, max: args.length || null });
+      return option({
+        id,
+        args: arg.value,
+        max: arg.value != null ? 1 : undefined
+      });
     } else if (arg.value == null && arg.key.startsWith(prefix)) {
       // commands start with 'cmd:' prefix and should not have assigned value
       // for command ids, remove prefix

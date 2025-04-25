@@ -2,7 +2,7 @@ import { parse } from '../parser/parse';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { obj } from '../utils/obj';
-import { Aliases, ArgConfig, Config, Schema as ISchema } from './schema.types';
+import { ArgConfig, Config, Schema as ISchema } from './schema.types';
 
 // NOTE: internal
 
@@ -15,9 +15,8 @@ export class Schema implements ISchema {
   constructor(cfg: PartialConfig);
   constructor(private readonly cfg: Config) {
     // NOTE: intentional cfg object mutation to update existing ArgConfig object
-    // always replace args and aliases
+    // always replace args
     cfg.args = obj();
-    cfg.aliases = obj();
 
     // only call init once all states are ready
     typeof cfg.options.init === 'function' && cfg.options.init(this);
@@ -30,11 +29,6 @@ export class Schema implements ISchema {
 
   command(arg: string, options: Options = {}): this {
     this.cfg.args[arg] = { arg, type: 'command', options };
-    return this;
-  }
-
-  alias(aliases: Aliases): this {
-    Object.assign(this.cfg.aliases, aliases);
     return this;
   }
 

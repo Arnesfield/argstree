@@ -31,17 +31,17 @@ function run(argv) {
             // only apply args for the last option
             const args =
               index === array.length - 1 && arg.value != null
-                ? [arg.value]
-                : [];
-            return option({ id, name: id, args, max: 1 });
+                ? arg.value
+                : undefined;
+            return option({ id, name: id, max: 1, args });
           });
       } else if (isOption(arg.key)) {
         // for option ids, remove first 2 hyphens
         const id = arg.key.replace(/^--?/, '');
         return option({
           id,
-          args: arg.value != null ? [arg.value] : [],
           max: 1,
+          args: arg.value,
           // for options starting with --no-*, stop accepting args
           read: !id.startsWith(negatePrefix)
         });

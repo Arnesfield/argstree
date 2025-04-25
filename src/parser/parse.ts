@@ -1,10 +1,10 @@
 import { ParseError } from '../lib/error';
 import { Config } from '../schema/schema.types';
-import { Arg, Node as INode } from '../types/node.types';
+import { Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/util.types';
 import { isOption } from '../utils/arg';
 import { cnode } from './cnode';
-import { Node } from './node';
+import { Node, ParsedArg } from './node';
 import {
   Alias,
   normalize,
@@ -14,25 +14,17 @@ import {
 
 // NOTE: internal
 
-function toArg(raw: string, alias: string | null): Arg {
-  const index = raw.lastIndexOf('=');
-  const split = index > -1;
-  return {
-    raw,
-    key: split ? raw.slice(0, index) : raw,
-    alias,
-    value: split ? raw.slice(index + 1) : null
-  };
-}
-
 export function parse(args: readonly string[], cfg: Config): INode {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Config, NormalizedOptions>();
   function node(opts: NormalizeOptions, curr?: Node) {
+    let cArgs = opts.cfg.options.args;
+    cArgs =
+      typeof cArgs === 'string' ? [cArgs] : Array.isArray(cArgs) ? cArgs : [];
     const data = cnode(
       opts,
       curr ? curr.data : null,
-      (opts.cfg.options.args || []).concat(opts.args || [])
+      cArgs.concat(opts.args || [])
     );
 
     let nOpts;
@@ -52,31 +44,36 @@ export function parse(args: readonly string[], cfg: Config): INode {
     parent.error(code, 'does not recognize the ', 'Unrecognized ', msg);
   }
 
-  function setAlias(aliases: NonEmptyArray<Alias>, value?: string | null) {
+  function setAlias(
+    aliases: NonEmptyArray<Alias>,
+    raw: string,
+    value?: string
+  ) {
     // assignable arg --option: initial 1, 2
-    // alias -a: --option=3, 4, 5
+    // alias -a: --option 3, 4, 5
     // scenario: -a=6
 
     // convert aliases to options
     // make sure the last option is assignable
+    type A = ParsedArg;
     const hasValue = value != null;
     const lastAlias = aliases[aliases.length - 1];
-    const lastArg = toArg(lastAlias.args[0], lastAlias.key);
-    const lastParsed = parent.parse(lastArg, { hasValue });
+    const lArg: A = { raw, key: lastAlias.arg, alias: lastAlias.key };
+    const lParsed = parent.parse(lArg, hasValue);
 
-    // skip if assiging a value to alias but no parsed last options
-    if (hasValue && !lastParsed) return;
+    if (!lParsed) return;
 
-    // at this point, if a value is assigned, lastParsed would always be set
-    // otherwise, lastParsed was parsed normally like the loop below.
+    // at this point, if a value is assigned, lParsed would always be set
+    // otherwise, lParsed was parsed normally like the loop below.
     // this ensures that the options.handler call is not called twice
 
-    const items = aliases.flatMap((alias, i) => {
+    const items = aliases.map((alias, i) => {
       const last = i === aliases.length - 1;
-      const arg = last ? lastArg : toArg(alias.args[0], alias.key);
+      const arg: A = last ? lArg : { raw, key: alias.arg, alias: alias.key };
       // no need to check assignable here since
       // we only need to check that for the last alias arg
-      const parsed = last ? lastParsed : parent.parse(arg);
+      // also, no handler fallback for aliases!
+      const parsed = last ? lParsed : parent.parse(arg);
 
       if (!parsed) {
         unrecognized(`option or command from alias '${alias.key}': ${arg.raw}`);
@@ -84,10 +81,10 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
       // assume parsed always contains at least 1 item
       // save alias args to the last item only
-      const item = parsed[parsed.length - 1];
-      item.args.push(...alias.args.slice(1));
+      // const parsed = parsed[parsed.length - 1];
+      parsed.args.push(...alias.args);
       // add value to the last item (assume last item is assignable)
-      last && hasValue && item.args.push(value);
+      last && hasValue && parsed.args.push(value);
 
       return parsed;
     });
@@ -161,14 +158,26 @@ export function parse(args: readonly string[], cfg: Config): INode {
       continue;
     }
 
-    // assume arg.raw and raw are the same
-    const arg = toArg(raw, null);
-    const hasValue = arg.value != null;
     let parsed, alias, split;
+    const arg: ParsedArg = { raw, key: raw };
+
+    if ((parsed = parent.parse(arg))) {
+      set([parsed]);
+      continue;
+    }
+
+    // assume arg.raw and raw are the same
+    // const arg = toArg(raw, null);
+    const index = raw.lastIndexOf('=');
+    const hasValue = index > -1;
+    if (hasValue) {
+      arg.key = raw.slice(0, index);
+      arg.value = raw.slice(index + 1);
+    }
 
     // parse options from options.args only
-    if ((parsed = parent.parse(arg, { exact: true }))) {
-      set(parsed);
+    if (hasValue && (parsed = parent.parse(arg, true))) {
+      set([parsed]);
     }
 
     // at this point, if there are no parsed options, arg can be:
@@ -177,12 +186,12 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // - options from handler
     // - a value (or, if in strict mode, an unknown option-like)
     // for this case, handle exact alias
-    else if ((alias = parent.opts.aliases[raw]) && setAlias(alias)) {
+    else if ((alias = parent.opts.aliases[raw]) && setAlias([alias], raw)) {
       // setAlias was successful, do nothing and go to next iteration
     } else if (
       hasValue &&
       (alias = parent.opts.aliases[arg.key]) &&
-      setAlias(alias, arg.value)
+      setAlias([alias], raw, arg.value)
     ) {
       // setAlias was successful, do nothing and go to next iteration
     }
@@ -213,7 +222,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
       !parent.opts.safeAlias &&
       (split = parent.split(raw)) &&
       split.remainder.length === 0 &&
-      setAlias(split.list)
+      setAlias(split.list, raw)
     ) {
       // you would think it might be ideal to stop parent.split()
       // when it finds at least 1 remainder, but we'll need to display
@@ -224,7 +233,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
       (parent.opts.safeAlias || hasValue) &&
       (split = parent.split(arg.key)) &&
       split.remainder.length === 0 &&
-      setAlias(split.list, arg.value)
+      setAlias(split.list, raw, arg.value)
     ) {
       // setAlias was successful, do nothing and go to next iteration
     }

@@ -3,11 +3,6 @@ import { ParseError } from '../lib/error';
 import { Node, NodeType } from '../types/node.types';
 import { Options } from '../types/options.types';
 
-/** The aliases object. */
-export interface Aliases {
-  [alias: string]: string | string[] | string[][] | null | undefined;
-}
-
 /** The schema config. */
 export interface Config {
   /** The node type. */
@@ -19,14 +14,12 @@ export interface Config {
    * Note that the config properties may change during parsing.
    */
   args: { [arg: string]: ArgConfig };
-  /** The list of aliases. */
-  aliases: Aliases;
 }
 
 /** The config for options and commands. */
 export interface ArgConfig
-  extends Omit<Config, 'args' | 'aliases'>,
-    Partial<Pick<Config, 'args' | 'aliases'>> {
+  extends Omit<Config, 'args'>,
+    Partial<Pick<Config, 'args'>> {
   /** The argument to match. */
   arg: string;
 }
@@ -47,36 +40,6 @@ export interface Schema {
    * @returns `this` for chaining.
    */
   command(arg: string, options?: Options): this;
-  /**
-   * Sets a list of aliases. Can be called multiple times.
-   * These aliases are mapped to:
-   *
-   * - An option or command (`string`).
-   * - An option or command with additional arguments (`string[]`).
-   * - Multiple options or commands (`string[][]`).
-   * - Multiple options or commands with arguments (`string[][]`).
-   *
-   * Note that all options and commands are paresd on the same level
-   * (i.e. a command followed by an option will not nest the option).
-   * @param aliases The list of aliases.
-   * @returns `this` for chaining.
-   * @example
-   * cmd.alias({
-   *   // option or command
-   *   r: 'command',
-   *   '-o': '--option',
-   *   // option or command with additional arguments
-   *   '-o1': ['--option', 'arg1', 'arg2'],
-   *   // multiple options or commands
-   *   '-o2': [['--option1'], ['--option2']],
-   *   // multiple options or commands with arguments
-   *   '-o3': [
-   *     ['--option1', 'arg1', 'arg2'],
-   *     ['--option2', 'arg1', 'arg2']
-   *   ]
-   * });
-   */
-  alias(aliases: Aliases): this;
   /**
    * Gets the schema config. This is mainly used internally during parsing.
    * @returns The schema config.

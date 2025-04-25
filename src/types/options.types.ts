@@ -23,7 +23,7 @@ export interface Options {
    * Note that this is not a default value and additional
    * arguments will be added on top of this initial list.
    */
-  args?: string[];
+  args?: string | string[];
   /**
    * The alias, list of aliases, or list of aliases with arguments
    * for the option or command.
@@ -33,13 +33,13 @@ export interface Options {
    *   .option('--flag', { read: false, alias: ['-f', ['--no-flag', '0']] })
    *   .command('run', { alias: ['r', 'rum', 'urn'] });
    */
-  alias?: string | (string | string[])[] | null;
+  alias?: string | (string | string[])[];
   /**
    * The minimum number of arguments to read before the next parsed option or command.
    *
    * A {@linkcode ParseError} is thrown if the option or command does not satisfy this condition.
    */
-  min?: number | null;
+  min?: number;
   /**
    * The maximum number of arguments to read before the next parsed option or command.
    * Arguments over the maximum limit are saved to the parent option or command instead.
@@ -48,7 +48,7 @@ export interface Options {
    * satisfy this condition or if the parent option or command cannot accept
    * any more arguments.
    */
-  max?: number | null;
+  max?: number;
   /**
    * When disabled, the option or command will not accept any arguments
    * (except for {@linkcode assign assigned} values) and are instead saved to
@@ -117,7 +117,7 @@ export interface Options {
    *   handler(arg) {
    *     // return an option when '--foo' is matched
    *     if (arg.key === '--foo') {
-   *       return option({ args: arg.value != null ? [arg.value] : [] });
+   *       return option({ args: arg.value });
    *     }
    *   }
    * });

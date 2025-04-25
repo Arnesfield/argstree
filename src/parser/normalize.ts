@@ -16,7 +16,10 @@ export type AliasArgsList = NonEmptyArray<AliasArgs>;
 export interface Alias {
   /** Alias name. */
   key: string;
-  args: AliasArgs;
+  /** The argument to match. */
+  arg: string;
+  /** Alias arguments. */
+  args: string[];
 }
 
 export interface NormalizedOptions {
@@ -37,7 +40,7 @@ export interface NormalizedOptions {
   /** Safe args object. */
   readonly args: { [arg: string]: Config | ArgConfig | undefined };
   /** Safe aliases object. */
-  readonly aliases: { [alias: string]: NonEmptyArray<Alias> };
+  readonly aliases: { [alias: string]: Alias };
   /** A sorted list of splittable alias keys without the `-` prefix. */
   readonly keys: string[];
 }
@@ -76,40 +79,9 @@ export function normalize(
   const keys: string[] = [];
   const aliases: NormalizedOptions['aliases'] = obj();
 
-  function setAlias(key: string, all: AliasArgsList) {
-    type A = NonEmptyArray<Alias>;
-    aliases[key] = all.map((args): Alias => ({ key, args })) as A;
-    // skip command aliases since we don't need to split them
-    // and remove `-` prefix
-    if (isAlias(key)) {
-      keys.push(key.slice(1));
-      safeAlias &&= !key.includes('=');
-    }
-  }
-
-  // apply aliases
-  for (const [key, alias] of Object.entries(c.aliases)) {
-    /** List of strings in `args`. */
-    let strs: AliasArgs | undefined;
-    const all: AliasArgs[] = [];
-    const args =
-      typeof alias === 'string' ? [alias] : Array.isArray(alias) ? alias : [];
-
-    for (const arg of args) {
-      if (typeof arg === 'string') {
-        strs ? strs.push(arg) : all.push((strs = [arg]));
-      } else if (Array.isArray(arg) && arg.length > 0) {
-        // filter out empty array
-        all.push(arg as AliasArgs);
-      }
-    }
-
-    all.length > 0 && setAlias(key, all as AliasArgsList);
-  }
-
   // apply aliases from args
   const cfgs = Object.entries(c.args);
-  for (const [key, cfg] of cfgs) {
+  for (const [raw, cfg] of cfgs) {
     // use `alias[0]` as alias and `arg` as arg
     const items =
       typeof cfg.options.alias === 'string'
@@ -124,19 +96,26 @@ export function normalize(
         typeof item === 'string' ? [item] : Array.isArray(item) ? item : [];
       if (arr.length === 0) continue;
 
-      const a = arr[0];
-      if (aliases[a]) {
+      const key = arr[0];
+      if (aliases[key]) {
         // this node is for current value options
         // and is not being parsed but being validated
-        data = cnode({ raw: key, key, cfg }, data.parent, []);
+        data = cnode({ raw, key: raw, cfg }, data.parent, []);
 
         // assume that the display name always has value
         // since data.key is explicitly provided
-        const msg = `${display(data)}cannot use an existing alias: ${a}`;
+        const msg = `${display(data)}cannot use an existing alias: ${key}`;
         throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, cfg.options);
       }
 
-      setAlias(a, [[key].concat(arr.slice(1))] as [AliasArgs]);
+      aliases[key] = { key, arg: raw, args: arr.slice(1) };
+
+      // skip command aliases since we don't need to split them
+      // and remove `-` prefix
+      if (isAlias(key)) {
+        keys.push(key.slice(1));
+        safeAlias &&= !key.includes('=');
+      }
     }
   }
 

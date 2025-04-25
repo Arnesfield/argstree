@@ -10,6 +10,11 @@ import { Alias, NormalizedOptions, NormalizeOptions } from './normalize';
 
 // NOTE: internal
 
+export interface ParsedArg extends Arg {
+  /** The alias used when the argument was parsed through an alias. */
+  alias?: string;
+}
+
 // same as INode but cannot be a value type
 export interface NodeData extends Omit<INode, 'type'>, Pick<Config, 'type'> {}
 
@@ -52,55 +57,30 @@ export class Node {
     typeof this.opts.src[name] === 'function' && this.opts.src[name](this.data);
   }
 
-  parse(
-    arg: Arg,
-    flags: { exact?: boolean; hasValue?: boolean } = {}
-  ): NonEmptyArray<ParsedNodeOptions> | false | undefined {
-    // scenario: -a=6
-    // alias -a: --option=3, 4, 5
-    // option --option: initial 1, 2
-    // order of args: [options.initial, arg assigned, alias.args, alias assigned]
-
-    // use arg.raw as key if not using arg.value or if parsing via handler
-    let key = arg.raw,
-      value,
-      opts;
-
-    // first, find exact options match
-    if ((opts = this.opts.args[key])) {
-      // ok, use arg.raw as key
-    } else if (arg.value != null && (opts = this.opts.args[arg.key])) {
-      key = arg.key;
-      value = arg.value;
-    }
-
-    // if no exact match, fallback to handler
-    // no need to check if this is assignable
-    // since the consumer would have already handled the value
-    else {
-      // 'opts' is undefined at this point
-      return !flags.exact && this.handle(arg);
-    }
-
-    // if exact match was found, check assignable only if
-    // - for arg.raw match (value == null): check with flags.hasValue
-    // - for arg.key match: always check
+  /**
+   * Gets the node options from the normalized arguments using the parsed argument.
+   * @param arg The parsed argument.
+   * @param assignable Set to `true` to accept assignable option or command only.
+   * @returns The parsed node options.
+   */
+  parse(arg: ParsedArg, assignable?: boolean): ParsedNodeOptions | undefined {
+    // if exact match was found, check assignable only if value exists
+    const { raw, key, alias, value } = arg;
+    const opts = this.opts.args[key];
     if (
-      (value == null && !flags.hasValue) ||
-      (opts.options.assign ?? opts.type === 'option')
+      opts &&
+      (!assignable || (opts.options.assign ?? opts.type === 'option'))
     ) {
       // only create schema when needed to handle recursive init functions
       // having args and aliases means that the schema was already configured
-      const { raw, alias } = arg;
-      const cfg =
-        opts.args && opts.aliases
-          ? (opts as Config)
-          : new Schema(opts as ArgConfig).config();
-      return [{ raw, key, alias, args: value != null ? [value] : [], cfg }];
+      const cfg = opts.args
+        ? (opts as Config)
+        : new Schema(opts as ArgConfig).config();
+      return { raw, key, alias, args: value != null ? [value] : [], cfg };
     }
   }
 
-  handle(arg: Arg): NonEmptyArray<ParsedNodeOptions> | undefined {
+  handle(arg: ParsedArg): NonEmptyArray<ParsedNodeOptions> | undefined {
     // preserve `this` for callbacks
     let schemas;
     if (
@@ -189,7 +169,7 @@ export class Node {
       (s = split(arg.slice(1), this.opts.keys)).values.length > 0
     ) {
       // get args per alias and assume `-{name}` always exists
-      s.list = s.values.flatMap(key => this.opts.aliases['-' + key]) as A;
+      s.list = s.values.map(key => this.opts.aliases['-' + key]) as A;
       return s as NodeSplit;
     }
   }

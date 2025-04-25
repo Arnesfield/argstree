@@ -8,13 +8,8 @@ export interface Arg {
   // NOTE: same doc as Node.key
   /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
   key: string;
-  /**
-   * The alias used when the argument was parsed through an alias,
-   * otherwise the value is `null`.
-   */
-  alias: string | null;
   /** The parsed value from the argument (e.g. `value` from `--option=value`). */
-  value: string | null;
+  value?: string;
 }
 
 /** The node type. */
