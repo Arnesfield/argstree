@@ -44,6 +44,9 @@ export interface Options {
    * The maximum number of arguments to read before the next parsed option or command.
    * Arguments over the maximum limit are saved to the parent option or command instead.
    *
+   * {@link assign Assigned values} are always treated as arguments
+   * for the option or command regardless of the {@linkcode max} value.
+   *
    * A {@linkcode ParseError} is thrown if the option or command does not
    * satisfy this condition or if the parent option or command cannot accept
    * any more arguments.
