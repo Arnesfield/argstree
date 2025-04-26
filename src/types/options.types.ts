@@ -62,8 +62,9 @@ export interface Options {
    */
   read?: boolean;
   /**
-   * Determines if the option or command assignment is enabled
-   * (uses the equal sign, e.g. `--option=value`, `command=value`).
+   * Determines if the option or command can have an assigned value using the
+   * equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option
+   * or command will not be matched Zand the argument is treated like a normal value.
    *
    * Depending on the {@linkcode NodeType}, the default value is
    * `true` for `option` types and `false` for `command` types.
@@ -78,6 +79,9 @@ export interface Options {
    * - `false` - Disable strict mode for both self and descendants.
    * - `self` - Enable strict mode for self but disable it for descendants.
    * - `descendants` - Disable strict mode for self but enable it for descendants.
+   *
+   * Note that string values returned by the {@linkcode handler} callback
+   * are excluded from the strict mode checks.
    * @default false
    */
   strict?: boolean | 'self' | 'descendants';
@@ -171,4 +175,4 @@ export interface Options {
 }
 
 /** The schema options. */
-export type SchemaOptions = Omit<Options, 'alias'>;
+export type SchemaOptions = Omit<Options, 'alias' | 'assign'>;
