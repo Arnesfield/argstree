@@ -24,6 +24,11 @@ function run(argv) {
   const cmd = command({
     handler(arg) {
       if (isAlias(arg.key)) {
+        // treat negative numbers as values
+        if (!isNaN(Number(arg.key))) {
+          return arg.key;
+        }
+
         return arg.key
           .slice(1)
           .split('')
