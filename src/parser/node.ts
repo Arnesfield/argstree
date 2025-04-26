@@ -15,6 +15,11 @@ export interface ParsedArg extends Arg {
   alias?: string;
 }
 
+export interface HandlerResult {
+  values: string[];
+  opts: ParsedNodeOptions[];
+}
+
 // same as INode but cannot be a value type
 export interface NodeData extends Omit<INode, 'type'>, Pick<Config, 'type'> {}
 
@@ -80,21 +85,37 @@ export class Node {
     }
   }
 
-  handle(arg: ParsedArg): NonEmptyArray<ParsedNodeOptions> | undefined {
+  // NOTE: return empty arrays to ignore values
+  // return falsy to fallback to default behavior
+  handle(arg: ParsedArg): HandlerResult | undefined {
+    if (typeof this.opts.src.handler !== 'function') return;
+
     // preserve `this` for callbacks
-    let schemas;
-    if (
-      typeof this.opts.src.handler === 'function' &&
-      (schemas = this.opts.src.handler(arg, this.data)) &&
-      (schemas = Array.isArray(schemas) ? schemas : [schemas]).length > 0
-    ) {
-      const { raw, key, alias } = arg;
-      return schemas.map((schema): ParsedNodeOptions => {
+    let schemas = this.opts.src.handler(arg, this.data);
+    // fallback to default behavior for null, undefined, true
+    if (schemas == null || schemas === true) return;
+
+    const result: HandlerResult = { values: [], opts: [] };
+
+    // ignore when false by returning empty results
+    if (schemas === false) return result;
+
+    schemas = Array.isArray(schemas) ? schemas : [schemas];
+    // fallback to default behavior for empty arrays
+    if (schemas.length === 0) return;
+
+    const { raw, key, alias } = arg;
+    for (const schema of schemas) {
+      if (typeof schema === 'string') {
+        result.values.push(schema);
+      } else {
         // use arg.key as key here despite not using arg.value
         // since we assume that the consumer will handle arg.value manually
-        return { raw, key, alias, args: [], cfg: schema.config() };
-      }) as NonEmptyArray<ParsedNodeOptions>;
+        result.opts.push({ raw, key, alias, args: [], cfg: schema.config() });
+      }
     }
+
+    return result;
   }
 
   // save arg to the last value child node

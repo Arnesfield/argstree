@@ -106,23 +106,43 @@ export interface Options {
   /**
    * Serves as a fallback for parsed arguments that cannot be
    * recognized using the list of configured options and commands.
-   * If no option/s or command/s are returned,
-   * then the parsed argument may be treated either as a value
-   * or an unrecognized argument depending on the provided options.
+   * Can have the following return values:
+   *
+   * - `Schema`s - Treated as options or commands.
+   * If the option or command (or for arrays, the last option or command)
+   * is a non-leaf node, the next arguments will be parsed using that node.
+   * - `string`s - Treated as value arguments and will be saved to either the
+   * current parent or child option or command depending on their provided options.
+   * These values are excluded from the {@linkcode strict} mode checks
+   * and are assumed to have been validated before being returned.
+   * - `false` - The argument is ignored as if it was never parsed.
+   * - Empty array, `true`, `undefined` - Fallback to the default behavior
+   * where the parsed argument may be treated either as a value or
+   * an unrecognized argument depending on the provided options.
    * @param arg The parsed argument.
    * @param node The node object.
-   * @returns The schema or multiple schemas if any.
+   * @returns The schemas or values if any.
    * @example
+   * import { command, isAlias, option } from 'argstree';
+   *
    * const cmd = command({
+   *   strict: true,
    *   handler(arg) {
    *     // return an option when '--foo' is matched
    *     if (arg.key === '--foo') {
    *       return option({ args: arg.value });
    *     }
+   *     // allow negative numbers in strict mode
+   *     if (isAlias(arg.key) && !isNaN(Number(arg.key))) {
+   *       return arg.key;
+   *     }
    *   }
    * });
    */
-  handler?(arg: Arg, node: Node): Schema | Schema[] | null | void;
+  handler?(
+    arg: Arg,
+    node: Node
+  ): Schema | string | (Schema | string)[] | boolean | void;
   /**
    * Called when the node is created with its initial arguments.
    * @param node The node object.

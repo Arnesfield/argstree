@@ -4,7 +4,7 @@ import { Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/util.types';
 import { isOption } from '../utils/arg';
 import { cnode } from './cnode';
-import { Node, ParsedArg } from './node';
+import { Node, ParsedArg, ParsedNodeOptions } from './node';
 import {
   Alias,
   normalize,
@@ -124,7 +124,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     }
   }
 
-  function setValue(raw: string) {
+  function setValue(raw: string, noStrict?: boolean) {
     // check if child can read one more argument
     // fallback to parent if child cannot accept any more args:
     // - if parent cannot read args, assume unrecognized argument
@@ -143,7 +143,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
             : parent.error(ERR, 'e', 'E', `xpected no arguments, but got: ${raw}`); // prettier-ignore
 
     // strict mode: throw error if arg is an option-like
-    curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
+    !noStrict && curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
     curr.data.args.push(raw);
 
     // if saving to parent, save args to the value node
@@ -240,9 +240,12 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
     // parse options using handler
     else if ((parsed = parent.handle(arg))) {
+      for (const value of parsed.values) setValue(value, true);
+
       // use arg.key as key here despite not using arg.value
       // assume that the consumer handles arg.value manually
-      set(parsed);
+      type O = NonEmptyArray<ParsedNodeOptions>;
+      parsed.opts.length > 0 && set(parsed.opts as O);
     }
 
     // split can be unset by the 2nd parent.split() call
