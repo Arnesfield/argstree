@@ -3,6 +3,7 @@ export * from './lib/split';
 export * from './schema/schema';
 export { command as default } from './schema/schema';
 export * from './schema/schema.types';
+export * from './types/arg.types';
 export * from './types/node.types';
 export * from './types/options.types';
 export * from './utils/arg';
