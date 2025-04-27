@@ -32,17 +32,16 @@ function run(args) {
   /** @type {import('../lib/index.js').Options} */
   const options = { min: 1, max: 1, assign: false };
   for (const operation of ['+', '-', 'x', '*', '/', '^', '%']) {
-    // safely assume each node will have 1 argument
     cmd.option(operation, options);
   }
 
   const root = cmd
-    .option('--help', { max: 0, alias: '-h', assign: false, preArgs: help })
+    .option('--help', { alias: '-h', assign: false, preArgs: help })
     .parse(args);
 
   let result = 0;
   for (const node of root.children) {
-    // parse last argument
+    // get the last argument since value nodes can have multiple args
     const arg = node.args.length > 0 ? node.args[node.args.length - 1] : null;
     const n = arg !== null ? Number(arg) : NaN;
     if (!isFinite(n)) {

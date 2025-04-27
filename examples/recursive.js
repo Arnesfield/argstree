@@ -4,7 +4,8 @@ import { command, getDescendants, isOption, option } from '../lib/index.js';
 /** @returns {never} */
 function help() {
   console.log(
-    'Usage: node examples/recursive.js hello --option=1 world cmd:run command --option 2 3 -- --foo bar baz'
+    'Usage: node examples/recursive.js ' +
+      'hello --input=src world cmd:run build --option 2 3 -- -a -b'
   );
   process.exit();
 }
@@ -25,23 +26,19 @@ function run(args) {
   /** @type {import('../lib/index.js').SchemaOptions['init']} */
   const init = schema => {
     schema
-      .option('--help', { max: 0, alias: '-h', assign: false, preArgs: help })
+      .option('--help', { alias: '-h', assign: false, preArgs: help })
       .command('--', { strict: false });
   };
 
   /** @type {import('../lib/index.js').SchemaOptions['handler']} */
   const handler = arg => {
     if (isOption(arg.key)) {
+      // stop reading arguments for this option if a value is assigned
       // for option ids, remove first 2 hyphens
       const id = arg.key.replace(/^--?/, '');
-      // change max arguments captured if a value is assigned
-      return option({
-        id,
-        args: arg.value,
-        max: arg.value != null ? 1 : undefined
-      });
+      return option({ id, args: arg.value, read: arg.value == null });
     } else if (arg.value == null && arg.key.startsWith(prefix)) {
-      // commands start with 'cmd:' prefix and should not have assigned value
+      // commands should not have an assigned value
       // for command ids, remove prefix
       const id = arg.key.slice(prefix.length);
       return command({ id, init, handler });

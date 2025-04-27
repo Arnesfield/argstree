@@ -4,7 +4,8 @@ import { command, isAlias, isOption, option } from '../lib/index.js';
 /** @returns {never} */
 function help() {
   console.log(
-    'Usage: node examples/parse.js hello --option 1.23 world --no-bool -abc 4 --x.y.z 5 -- -a -b 6'
+    'Usage: node examples/parse.js ' +
+      'hello --num 3.14 world --no-bool -abc 15 --x.y.z 92 -- -a -b 65'
   );
   process.exit();
 }
@@ -29,33 +30,27 @@ function run(argv) {
           return arg.key;
         }
 
+        // each character becomes its own option
         return arg.key
           .slice(1)
           .split('')
           .map((id, index, array) => {
-            // only apply args for the last option
-            const args =
-              index === array.length - 1 && arg.value != null
-                ? arg.value
-                : undefined;
+            // apply the value for the last option
+            const args = index === array.length - 1 ? arg.value : undefined;
             return option({ id, name: id, max: 1, args });
           });
       } else if (isOption(arg.key)) {
         // for option ids, remove first 2 hyphens
         const id = arg.key.replace(/^--?/, '');
-        return option({
-          id,
-          max: 1,
-          args: arg.value,
-          // for options starting with --no-*, stop accepting args
-          read: !id.startsWith(negatePrefix)
-        });
+        // for options starting with --no-*, stop reading args
+        const read = !id.startsWith(negatePrefix);
+        return option({ id, max: 1, args: arg.value, read });
       }
     }
   });
 
   const root = cmd
-    .option('--help', { max: 0, alias: '-h', assign: false, preArgs: help })
+    .option('--help', { alias: '-h', assign: false, preArgs: help })
     .command('--', { strict: false })
     .parse(argv);
 
@@ -63,7 +58,7 @@ function run(argv) {
   const result = { __proto__: null, _: [] };
 
   /**
-   * @param {Record<string, any>} object
+   * @param {Record<string, unknown>} object
    * @param {string} key
    * @param {unknown} value
    */
@@ -78,14 +73,11 @@ function run(argv) {
         curr == null ||
         (typeof curr === 'boolean' && typeof value === 'boolean')
           ? value
-          : [curr].concat(value);
+          : /** @type {unknown[]} */ ([curr]).concat(value);
     }
   }
 
   for (const node of root.children) {
-    // skip value nodes except the root node
-    if (node.type === 'value' && node.id !== root.id) continue;
-
     const id = node.id || '_';
     const props = id === '.' ? [id] : id.split('.');
     const last = props.pop();
@@ -95,18 +87,20 @@ function run(argv) {
     /** @type {Record<string, unknown>} */
     let obj = result;
     for (const prop of props) {
-      if (!(prop in obj)) {
+      if (obj[prop] === undefined) {
         obj = obj[prop] = Object.create(null);
       } else if (Array.isArray(obj[prop])) {
         obj[prop].push((obj = Object.create(null)));
       } else if (typeof obj[prop] === 'object' && obj[prop] !== null) {
         obj = /** @type {Record<string, unknown>} */ (obj[prop]);
+      } else {
+        obj[prop] = [obj[prop], (obj = Object.create(null))];
       }
     }
 
     // set value
     const { args } = node;
-    if (last === '--') {
+    if (props.length === 0 && last === '--') {
       // handle unformatted args
       set(obj, '_', args);
     } else if (args.length > 0) {
@@ -126,7 +120,7 @@ function run(argv) {
   }
 
   /**
-   * Recursively reset object prototype
+   * Recursively resets object prototype
    * to hide `[Object: null prototype]` from logs.
    * @param {unknown} value The object to reset the prototype of.
    */
