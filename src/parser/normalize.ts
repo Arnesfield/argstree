@@ -119,8 +119,9 @@ export function normalize(
     }
   }
 
+  // check args length first since it is the most likely to always be true
   const fertile =
-    !!src.handler || cfgs.length > 0 || Object.keys(aliases).length > 0;
+    cfgs.length > 0 || !!src.handler || Object.keys(aliases).length > 0;
 
   return {
     read: src.read ?? true,
