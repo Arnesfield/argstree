@@ -100,12 +100,11 @@ export interface Options {
    * @param schema The schema object.
    * @example
    * const cmd = command()
-   *   .option('--help', { alias: '-h' })
+   *   .option('--help')
    *   .command('run', {
-   *     alias: 'r',
    *     init(run) {
-   *       run.option('--help', { alias: '-h' });
-   *       run.option('--option', { alias: '-o' });
+   *       run.option('--help');
+   *       run.option('--option');
    *     }
    *   });
    */
