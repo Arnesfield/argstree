@@ -23,7 +23,7 @@ export interface Alias {
 }
 
 export interface NormalizedOptions {
-  /** The resolved {@linkcode Options.read} value. */
+  /** The resolved {@linkcode Options.read} option. */
   readonly read: boolean;
   /** Determines if the node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
@@ -31,9 +31,9 @@ export interface NormalizedOptions {
   readonly fertile: boolean;
   /** Determines if the {@linkcode keys} have no equal signs (`=`). */
   readonly safeAlias: boolean;
-  /** The resolved {@linkcode Options.min} value. */
+  /** The resolved {@linkcode Options.min} option. */
   readonly min: number | null;
-  /** The resolved {@linkcode Options.max} value. */
+  /** The resolved {@linkcode Options.max} option. */
   readonly max: number | null;
   /** The reference to the provided options. */
   readonly src: Options;

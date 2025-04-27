@@ -272,10 +272,10 @@ export function parse(args: readonly string[], cfg: Config): INode {
   child?.run('postArgs');
   parent.run('postArgs');
 
-  // run preParse for all nodes per depth level incrementally
+  // run preValidate for all nodes per depth level incrementally
   for (const item of nodes) item.run('preValidate');
 
-  // validate and run postParse for all nodes
+  // validate and run postValidate for all nodes
   for (const item of nodes) item.check();
 
   return root.data;

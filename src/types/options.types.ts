@@ -15,8 +15,8 @@ export interface Options {
    */
   id?: string | null;
   /**
-   * The display name of the option or command for errors. If not provided,
-   * the {@linkcode Node.key} is used as the display name when available.
+   * The display name of the option or command for {@link ParseError errors}.
+   * If not provided, the {@linkcode Node.key} is used as the display name when available.
    */
   name?: string;
   /**
@@ -26,12 +26,17 @@ export interface Options {
    */
   args?: string | string[];
   /**
-   * The alias, list of aliases, or list of aliases with arguments
-   * for the option or command.
+   * The alias, list of aliases, or list of aliases with arguments for the option or command.
+   *
+   * Aliases that start with a single dash (`-`) can be grouped together after
+   * a single dash (e.g. aliases `-a`, `-b`, and `-c` can be written as `-abc`).
+   *
+   * If the option or command requires a value, it must be the last option when its alias
+   * is grouped together with other aliases, otherwise a {@linkcode ParseError} is thrown.
    * @example
    * const cmd = command()
-   *   .option('--help', { read: false, assign: false, alias: '-h' })
-   *   .option('--flag', { read: false, alias: ['-f', ['--no-flag', '0']] })
+   *   .option('--help', { alias: '-h', assign: false })
+   *   .option('--flag', { alias: ['-f', ['--no-flag', '0']] })
    *   .command('run', { alias: ['r', 'rum', 'urn'] });
    */
   alias?: string | (string | string[])[];
@@ -46,7 +51,7 @@ export interface Options {
    * Arguments over the maximum limit are saved to the parent option or command instead.
    *
    * {@link assign Assigned values} are always treated as arguments
-   * for the option or command regardless of the {@linkcode max} value.
+   * for the option or command regardless of the {@linkcode max} option.
    *
    * A {@linkcode ParseError} is thrown if the option or command does not
    * satisfy this condition or if the parent option or command cannot accept
@@ -55,7 +60,7 @@ export interface Options {
   max?: number;
   /**
    * When disabled, the option or command will not accept any arguments
-   * (except for {@linkcode assign assigned} values) and are instead saved to
+   * (except for {@link assign assigned values}) and are instead saved to
    * the parent option or command if it can accept arguments. Otherwise,
    * a {@linkcode ParseError} is thrown and the argument is treated as an
    * unrecognized option or command.
@@ -89,7 +94,7 @@ export interface Options {
   /**
    * When enabled, parsed nodes will be treated as leaf nodes (no child nodes).
    * If there are options or commands configured for the schema,
-   * then this value is ignored and is always `false` (can have child nodes).
+   * then this option is ignored and becomes `false` (can have child nodes).
    *
    * Depending on the {@linkcode NodeType}, the default value is
    * `true` for `option` types and `false` for `command` types.
@@ -135,13 +140,13 @@ export interface Options {
    * const cmd = command({
    *   strict: true,
    *   handler(arg) {
-   *     // return an option when '--foo' is matched
-   *     if (arg.key === '--foo') {
-   *       return option({ args: arg.value });
-   *     }
    *     // allow negative numbers in strict mode
    *     if (isAlias(arg.key) && !isNaN(Number(arg.key))) {
    *       return arg.key;
+   *     }
+   *     // return an option when '--option' is matched
+   *     if (arg.key === '--option') {
+   *       return option({ args: arg.value });
    *     }
    *   }
    * });
