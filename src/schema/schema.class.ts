@@ -6,13 +6,9 @@ import { ArgConfig, Config, Schema as ISchema } from './schema.types';
 
 // NOTE: internal
 
-export interface PartialConfig
-  extends Omit<ArgConfig, 'arg'>,
-    Partial<Pick<ArgConfig, 'arg'>> {}
-
 export class Schema implements ISchema {
-  // expose as PartialConfig but use Config internally
-  constructor(cfg: PartialConfig);
+  // expose as ArgConfig but use Config internally
+  constructor(cfg: ArgConfig);
   constructor(private readonly cfg: Config) {
     // NOTE: intentional cfg object mutation to update existing ArgConfig object
     // always replace args
@@ -23,12 +19,12 @@ export class Schema implements ISchema {
   }
 
   option(arg: string, options: Options = {}): this {
-    this.cfg.args[arg] = { arg, type: 'option', options };
+    this.cfg.args[arg] = { type: 'option', options };
     return this;
   }
 
   command(arg: string, options: Options = {}): this {
-    this.cfg.args[arg] = { arg, type: 'command', options };
+    this.cfg.args[arg] = { type: 'command', options };
     return this;
   }
 
