@@ -17,9 +17,7 @@ export interface Config {
 }
 
 /** The config for options and commands. */
-export interface ArgConfig
-  extends Omit<Config, 'args'>,
-    Partial<Pick<Config, 'args'>> {}
+export type ArgConfig = Omit<Config, 'args'> & Partial<Pick<Config, 'args'>>;
 
 /** The schema object. */
 export interface Schema {
