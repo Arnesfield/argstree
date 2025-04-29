@@ -1,5 +1,5 @@
 // @ts-check
-import { command, isAlias, isOption, option } from '../lib/index.js';
+import { command, isOption, option } from '../lib/index.js';
 
 /** @returns {never} */
 function help() {
@@ -24,7 +24,7 @@ function run(argv) {
 
   const cmd = command({
     handler(arg) {
-      if (isAlias(arg.key)) {
+      if (isOption(arg.key, 'short')) {
         // treat negative numbers as values
         if (!isNaN(Number(arg.key))) {
           return arg.key;
@@ -39,7 +39,7 @@ function run(argv) {
             const args = index === array.length - 1 ? arg.value : undefined;
             return option({ id, name: id, max: 1, args });
           });
-      } else if (isOption(arg.key)) {
+      } else if (isOption(arg.key, 'long')) {
         // for option ids, remove first 2 hyphens
         const id = arg.key.replace(/^--?/, '');
         // for options starting with --no-*, stop reading args

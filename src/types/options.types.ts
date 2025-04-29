@@ -135,13 +135,13 @@ export interface Options {
    * @param node The node object.
    * @returns The schemas or values if any.
    * @example
-   * import { command, isAlias, option } from 'argstree';
+   * import { command, isOption, option } from 'argstree';
    *
    * const cmd = command({
    *   strict: true,
    *   handler(arg) {
    *     // allow negative numbers in strict mode
-   *     if (isAlias(arg.key) && !isNaN(Number(arg.key))) {
+   *     if (isOption(arg.key, 'short') && !isNaN(Number(arg.key))) {
    *       return arg.key;
    *     }
    *     // return an option when '--option' is matched

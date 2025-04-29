@@ -1,9 +1,9 @@
 import { ParseError } from '../lib/error';
+import { isOption } from '../lib/is-option';
 import { ArgConfig, Config } from '../schema/schema.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { NonEmptyArray } from '../types/util.types';
-import { isAlias } from '../utils/arg';
 import { display } from '../utils/display';
 import { obj } from '../utils/obj';
 import { cnode } from './cnode';
@@ -112,7 +112,7 @@ export function normalize(
 
       // skip command aliases since we don't need to split them
       // and remove `-` prefix
-      if (isAlias(key)) {
+      if (isOption(key, 'short')) {
         keys.push(key.slice(1));
         safeAlias &&= !key.includes('=');
       }

@@ -1,11 +1,11 @@
 import { ParseError } from '../lib/error';
+import { isOption } from '../lib/is-option';
 import { split, Split } from '../lib/split';
 import { Schema } from '../schema/schema.class';
 import { ArgConfig, Config } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/util.types';
-import { isAlias } from '../utils/arg';
 import { display } from '../utils/display';
 import { Alias, NormalizedOptions, NormalizeOptions } from './normalize';
 
@@ -187,7 +187,7 @@ export class Node {
     // as we use opts.names for splitting which is derived from opts.aliases
     let s: PartialNodeSplit | undefined;
     if (
-      isAlias(arg) &&
+      isOption(arg, 'short') &&
       (s = split(arg.slice(1), this.opts.keys)).values.length > 0
     ) {
       // get args per alias and assume `-{name}` always exists

@@ -1,8 +1,8 @@
 import { ParseError } from '../lib/error';
+import { isOption } from '../lib/is-option';
 import { Config } from '../schema/schema.types';
 import { Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/util.types';
-import { isOption } from '../utils/arg';
 import { cnode } from './cnode';
 import { Node, ParsedArg, ParsedNodeOptions } from './node';
 import {

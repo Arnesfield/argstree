@@ -387,13 +387,13 @@ Serves as a fallback for parsed arguments that cannot be recognized using the li
 - Empty array, `true`, `undefined` - Fallback to the default behavior where the parsed argument may be treated either as a value or an unrecognized argument depending on the provided options.
 
 ```javascript
-import { command, isAlias, option } from 'argstree';
+import { command, isOption, option } from 'argstree';
 
 const cmd = command({
   strict: true,
   handler(arg) {
     // allow negative numbers in strict mode
-    if (isAlias(arg.key) && !isNaN(Number(arg.key))) {
+    if (isOption(arg.key, 'short') && !isNaN(Number(arg.key))) {
       return arg.key;
     }
     // return an option when '--option' is matched
@@ -545,17 +545,11 @@ Type: `(node: Node) => Node[]`
 
 Gets the descendant nodes of the provided node.
 
-#### isAlias
-
-Type: `(arg: string) => boolean`
-
-Determines if the argument looks like an alias (e.g. `-o`, `-opt`).
-
 #### isOption
 
-Type: `(arg: string) => boolean`
+Type: `(arg: string, type?: 'long' | 'short') => boolean`
 
-Determines if the argument looks like an option (e.g. `-o`, `-opt`, `--o`, `--option`).
+Determines if the argument looks like an option. By default, both `short` (e.g. `-a`, `-abc`) and `long` (e.g. `--option`) options are valid unless the specific type of option is provided.
 
 #### split
 
