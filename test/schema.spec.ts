@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import command, {
-  Aliases,
   Config,
   NodeType,
   option,
@@ -24,7 +23,6 @@ function describeSchemaFn(
       expect(schema).to.be.an('object').that.is.an.instanceOf(SchemaClass);
       expect(schema).to.have.property('option').that.is.a('function');
       expect(schema).to.have.property('command').that.is.a('function');
-      expect(schema).to.have.property('alias').that.is.a('function');
       expect(schema).to.have.property('config').that.is.a('function');
       expect(schema).to.have.property('parse').that.is.a('function');
     });
@@ -39,11 +37,6 @@ function describeSchemaFn(
       expect(schema).to.equal(schema.command('command'));
     });
 
-    it('should return itself for schema.alias()', () => {
-      const schema = schemaFn();
-      expect(schema).to.equal(schema.alias({}));
-    });
-
     it('should return the config for schema.config()', () => {
       const options: Options = {};
       const schema = schemaFn(options);
@@ -53,8 +46,6 @@ function describeSchemaFn(
       expect(config).to.have.property('options').that.equals(options);
       expect(config).to.have.property('args').that.is.an('object');
       expect(Object.getPrototypeOf(config.args)).to.be.null;
-      expect(config).to.have.property('aliases').that.is.an('object');
-      expect(Object.getPrototypeOf(config.aliases)).to.be.null;
     });
 
     it('should have the correct config', () => {
@@ -74,38 +65,20 @@ function describeSchemaFn(
       const schema = schemaFn(opts.root)
         .option('--foo', opts.foo)
         .option('--bar', opts.bar)
-        .command('baz', opts.baz)
-        .alias({ '-a': [], '-b': '--bar', '-c': [] })
-        .alias({
-          '-a': ['--foo', 'arg1', 'arg2'],
-          '-d': [
-            ['--bar', 'arg1', 'arg2'],
-            ['--baz', 'arg1', 'arg2']
-          ]
-        });
+        .command('baz', opts.baz);
       const config = schema.config();
 
       expect(config).to.be.an('object');
       expect(config).to.have.property('type').that.equals(type);
       expect(config).to.have.property('options').that.equals(opts.root);
 
+      const args: Config['args'] = {
+        '--foo': { type: 'option', options: opts.foo },
+        '--bar': { type: 'option', options: opts.bar },
+        baz: { type: 'command', options: opts.baz }
+      };
       expect(Object.getPrototypeOf(config.args)).to.be.null;
-      expect(config.args).to.deep.equal({
-        '--foo': { arg: '--foo', type: 'option', options: opts.foo },
-        '--bar': { arg: '--bar', type: 'option', options: opts.bar },
-        baz: { arg: 'baz', type: 'command', options: opts.baz }
-      } as Config['args']);
-
-      expect(Object.getPrototypeOf(config.aliases)).to.be.null;
-      expect(config.aliases).to.deep.equal({
-        '-a': ['--foo', 'arg1', 'arg2'],
-        '-b': '--bar',
-        '-c': [],
-        '-d': [
-          ['--bar', 'arg1', 'arg2'],
-          ['--baz', 'arg1', 'arg2']
-        ]
-      } as Aliases);
+      expect(config.args).to.deep.equal(args);
     });
   });
 }
