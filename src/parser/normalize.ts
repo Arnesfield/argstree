@@ -101,10 +101,9 @@ export function normalize(
         // this node is for current value options
         // and is not being parsed but being validated
         data = cnode({ raw, key: raw, cfg }, data.parent, []);
-
-        // assume that the display name always has value
-        // since data.key is explicitly provided
-        const msg = `${display(data)}cannot use an existing alias: ${key}`;
+        const name = display(data);
+        const msg =
+          (name ? name + 'c' : 'C') + `annot use an existing alias: ${key}`;
         throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, cfg.options);
       }
 

@@ -29,9 +29,10 @@ export function cnode(
   args: string[]
 ): NodeData {
   const { cfg, raw = null, key = null, alias = null } = opts;
+  const { id, name } = cfg.options;
   return {
-    id: cfg.options.id !== undefined ? cfg.options.id : key,
-    name: cfg.options.name ?? key,
+    id: id !== undefined ? id : key,
+    name: name !== undefined ? name : key,
     raw,
     key,
     alias,

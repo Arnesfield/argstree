@@ -23,7 +23,7 @@ describe('parse', () => {
     });
     expectNode(root, actual);
 
-    root = command({ id: null }).parse([]);
+    root = command({ id: null, name: null }).parse([]);
     actual = createNode({ id: null, name: null, type: 'command' });
     expectNode(root, actual);
 
@@ -46,14 +46,14 @@ describe('parse', () => {
     });
     expectNode(root.children[0], actual);
 
-    root = command().command('cmd', { id: null }).parse(['cmd']);
+    root = command().command('cmd', { id: null, name: null }).parse(['cmd']);
     actual = createNode({ type: 'command' });
     expectNode(root, actual);
     expect(root.children).to.have.length(1);
 
     actual = createNode({
       id: null,
-      name: 'cmd',
+      name: null,
       raw: 'cmd',
       key: 'cmd',
       type: 'command',

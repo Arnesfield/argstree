@@ -55,7 +55,7 @@ describe('error', () => {
     it('should handle duplicate aliases', () => {
       const code = ParseError.OPTIONS_ERROR;
 
-      const options: Options = { alias: '-f' };
+      let options: Options = { alias: '-f' };
       expectError({
         code,
         args: [],
@@ -73,6 +73,33 @@ describe('error', () => {
         code,
         args: [],
         message: "Command 'bar' cannot use an existing alias: -f",
+        match: options,
+        options: {
+          init(schema) {
+            schema.option('--foo', { alias: '-f' });
+            schema.command('bar', options);
+          }
+        }
+      });
+
+      options = { ...options, name: null };
+      expectError({
+        code,
+        args: [],
+        message: 'Cannot use an existing alias: -f',
+        match: options,
+        options: {
+          init(schema) {
+            schema.option('--foo', { alias: '-f' });
+            schema.option('--bar', options);
+          }
+        }
+      });
+
+      expectError({
+        code,
+        args: [],
+        message: 'Cannot use an existing alias: -f',
         match: options,
         options: {
           init(schema) {

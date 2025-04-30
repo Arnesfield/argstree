@@ -117,7 +117,7 @@ This is never used in any internal logic, but it can be useful for identifying t
 
 #### options.name
 
-Type: `string` (optional)
+Type: `string | null` (optional)
 
 The display name of the option or command for [errors](#parseerror). If not provided, the `Node.key` is used as the display name when available.
 

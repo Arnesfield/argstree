@@ -18,7 +18,7 @@ export interface Options {
    * The display name of the option or command for {@link ParseError errors}.
    * If not provided, the {@linkcode Node.key} is used as the display name when available.
    */
-  name?: string;
+  name?: string | null;
   /**
    * The initial arguments for the option or command.
    * Note that this is not a default value and additional
