@@ -533,6 +533,12 @@ UNRECOGNIZED_ARGUMENT start Command 'start' expected no arguments, but got: inde
 
 This package includes some utility functions that can be useful during and after parsing.
 
+#### flatten
+
+Type: `(node: Node) => Node[]`
+
+Flattens the node tree structure into an array of nodes.
+
 #### getAncestors
 
 Type: `(node: Node) => Node[]`

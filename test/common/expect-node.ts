@@ -21,9 +21,24 @@ export function expectNode(node: Node, actual: Node): void {
   expect(node).to.have.property('children').that.is.an('array');
 }
 
-export function expectNodes(children: Node[], actual: Node[]): void {
-  expect(children).to.have.length(actual.length);
+export function expectNodes(
+  nodes: Node[],
+  actual: Node[],
+  matchParent?: boolean
+): void {
+  expect(nodes).to.have.length(actual.length);
   for (let i = 0; i < actual.length; i++) {
-    expectNode(children[i], actual[i]);
+    const node = nodes[i];
+    const match = actual[i];
+    expectNode(node, match);
+
+    if (!matchParent) {
+      // do nothing
+    } else if (node.parent && match.parent) {
+      expectNode(node.parent, match.parent);
+    } else {
+      // expect null parent
+      expect(node.parent).to.equal(match.parent);
+    }
   }
 }

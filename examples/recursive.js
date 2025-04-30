@@ -1,5 +1,5 @@
 // @ts-check
-import { command, getDescendants, isOption, option } from '../lib/index.js';
+import { command, flatten, isOption, option } from '../lib/index.js';
 
 /** @returns {never} */
 function help() {
@@ -48,7 +48,7 @@ function run(args) {
   const cmd = command({ id: 'root', init, handler });
   const root = cmd.parse(args);
 
-  for (const node of [root].concat(getDescendants(root))) {
+  for (const node of flatten(root)) {
     console.log(
       '%s%s%s:',
       '  '.repeat(node.depth),
