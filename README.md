@@ -539,18 +539,6 @@ Type: `(node: Node) => Node[]`
 
 Flattens the node tree structure into an array of nodes.
 
-#### getAncestors
-
-Type: `(node: Node) => Node[]`
-
-Gets the ancestor nodes of the provided node starting from the parent node to the root node.
-
-#### getDescendants
-
-Type: `(node: Node) => Node[]`
-
-Gets the descendant nodes of the provided node.
-
 #### isOption
 
 Type: `(arg: string, type?: 'long' | 'short') => boolean`

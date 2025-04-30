@@ -8,4 +8,3 @@ export * from './schema/schema.types';
 export * from './types/arg.types';
 export * from './types/node.types';
 export * from './types/options.types';
-export * from './utils/node';
