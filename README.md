@@ -17,15 +17,16 @@ Parse arguments into a tree structure.
 - Preserves the order and structure of the provided arguments using a [tree structure](#tree-structure).
 - Variadic arguments by default unless [range](#range) options are specified.
 - Includes a [strict mode](#strict-mode) for unrecognized options.
-- Can recognize and split [combined aliases](#combined-aliases) (e.g. from `-abc` to `-a`, `-b`, `-c`).
+- Can recognize and split [combined aliases](#combined-aliases) (e.g. from `-abcd` to `-a`, `-bc`, `-d`).
 - Can recognize [assigned values](#optionsassign) for [options and commands](#options-and-commands) (e.g. `--option=value`, `command=value`).
 - Allows [dynamic parsing](#dynamic-parsing) of values, options, and commands.
 - Double-dash (`--`) is not treated as anything special but can be configured to be a non-strict subcommand.
 
 ## Limitations
 
-- No data types other than strings.
+- No other value data types other than strings.
 - No automated help message generation.
+- No asynchronous parsing.
 - Expects parsed shell commands as arguments (like [`process.argv.slice(2)`](https://nodejs.org/docs/latest/api/process.html#processargv)) and does not parse quoted strings (e.g. `schema.parse(['--option="Hello World"'])`). If you intend to parse a string into command-line arguments, you can use packages like [shell-quote](https://www.npmjs.com/package/shell-quote) and [shlex](https://www.npmjs.com/package/shlex).
 - Only parses and transforms arguments into a tree structure. It is still up to the consuming program to read and decide how to use the parsed arguments. This means more code to write and maintain just for arguments parsing and may not be worth the time and effort if you really only need a straightforward object of parsed options.
 
@@ -69,7 +70,6 @@ Options and commands differ only in some of the default values for the configura
 
 ```javascript
 import command, { option } from 'argstree';
-// or: import { command, option } from 'argstree';
 
 const cmd = command();
 const opt = option();
@@ -387,7 +387,7 @@ Serves as a fallback for parsed arguments that cannot be recognized using the li
 - Empty array, `true`, `undefined` - Fallback to the default behavior where the parsed argument may be treated either as a value or an unrecognized argument depending on the provided options.
 
 ```javascript
-import { command, isOption, option } from 'argstree';
+import command, { isOption, option } from 'argstree';
 
 const cmd = command({
   strict: true,
@@ -454,6 +454,15 @@ cmd.option('--help', {
   }
 });
 
+// only show version after all other nodes have been parsed
+cmd.option('--version', {
+  assign: false,
+  preValidate() {
+    console.log('v2.0.0');
+    process.exit();
+  }
+});
+
 // accepts exactly 1 argument that is then checked against
 // a list of accepted values after the validation checks for the node
 cmd.option('--log-level', {
@@ -470,7 +479,11 @@ cmd.option('--log-level', {
   }
 });
 
-const argsList = ['--log-level', '--log-level log', '--log-level log --help'];
+const argsList = [
+  '--log-level',
+  '--log-level log',
+  '--log-level log --version --help'
+];
 
 for (const args of argsList) {
   try {
