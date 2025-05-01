@@ -41,7 +41,7 @@ function run(argv) {
           });
       } else if (isOption(arg.key, 'long')) {
         // for option ids, remove first 2 hyphens
-        const id = arg.key.replace(/^--?/, '');
+        const id = arg.key.slice(2);
         // for options starting with --no-*, stop reading args
         const read = !id.startsWith(negatePrefix);
         return option({ id, max: 1, args: arg.value, read });
@@ -100,9 +100,10 @@ function run(argv) {
 
     // set value
     const { args } = node;
+    // check props.length to ensure that only the root `--` is unformatted
     if (props.length === 0 && last === '--') {
       // handle unformatted args
-      set(obj, '_', args);
+      set(obj, last, args);
     } else if (args.length > 0) {
       // handle numbers and strings
       const values = args.map(arg => {
