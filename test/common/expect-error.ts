@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import command, { Node, Options, ParseError, SchemaOptions } from '../../src';
-import { expectNode } from './expect-node';
 
 export function expectError(opts: {
   code: string;
@@ -26,8 +25,9 @@ export function expectError(opts: {
       .to.have.property('options')
       .that.equals(opts.match || opts.options);
 
+    // TODO: match node?
     if (opts.node) {
-      expectNode(error.node, opts.node);
+      expect(error.node).to.deep.equal(opts.node);
     }
   }
 }

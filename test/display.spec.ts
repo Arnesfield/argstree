@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import { display } from '../src/utils/display';
-import { createNode } from './common/create-node';
-import { Node } from '../src';
+import { createNodes, PartialNode } from './common/create-nodes';
 
 // NOTE: expect error messages to follow the display name result
 
@@ -11,22 +10,20 @@ describe('display', () => {
   });
 
   it('should return the display name of the node', () => {
-    const items: [Node, string][] = [
-      [createNode(), ''],
-      [createNode({ name: null }), ''],
-      [createNode({ key: '--foo' }), "Option '--foo' "],
-      [createNode({ name: 'FOO', key: '--foo' }), "Option 'FOO' "],
-      [createNode({ name: null, key: '--foo' }), ''],
-      [createNode({ type: 'command', key: 'foo' }), "Command 'foo' "],
-      [
-        createNode({ name: 'FOO', type: 'command', key: 'foo' }),
-        "Command 'FOO' "
-      ],
-      [createNode({ name: null, type: 'command', key: 'foo' }), '']
+    const items: [PartialNode, string][] = [
+      [{}, ''],
+      [{ name: null }, ''],
+      [{ key: '--foo' }, "Option '--foo' "],
+      [{ name: 'FOO', key: '--foo' }, "Option 'FOO' "],
+      [{ name: null, key: '--foo' }, ''],
+      [{ type: 'command', key: 'foo' }, "Command 'foo' "],
+      [{ name: 'FOO', type: 'command', key: 'foo' }, "Command 'FOO' "],
+      [{ name: null, type: 'command', key: 'foo' }, '']
     ];
 
-    for (const [node, match] of items) {
-      expect(display(node)).to.equal(match);
+    for (const [partial, match] of items) {
+      const [root] = createNodes(partial);
+      expect(display(root)).to.equal(match);
     }
   });
 });
