@@ -28,18 +28,8 @@ export function cnode(
   parent: Node | null,
   args: string[]
 ): NodeData {
-  const { cfg, raw = null, key = null, alias = null } = opts;
-  const { id, name } = cfg.options;
-  return {
-    id: id !== undefined ? id : key,
-    name: name !== undefined ? name : key,
-    raw,
-    key,
-    alias,
-    type: cfg.type,
-    depth: parent ? parent.depth + 1 : 0,
-    args,
-    parent,
-    children: []
-  };
+  // prettier-ignore
+  const { raw = null, key = null, alias = null, cfg: { type, options: { id = key, name = key } } } = opts;
+  const depth = parent ? parent.depth + 1 : 0;
+  return { id, name, raw, key, alias, type, depth, args, parent, children: [] };
 }
