@@ -416,29 +416,35 @@ for (const node of root.children) {
 
 ### Events
 
-#### options.preArgs
+#### options.onCreate
 
 Type: `(node: Node) => void` (optional)
 
 Called when the node is created with its initial arguments.
 
-#### options.postArgs
+#### options.onData
 
 Type: `(node: Node) => void` (optional)
 
-Called after the node has received all the arguments it can have.
+Called after the node has received all arguments and direct child nodes that it can have.
 
-#### options.preValidate
-
-Type: `(node: Node) => void` (optional)
-
-Called once all the [`postArgs`](#optionspostargs) callbacks have been fired for all the parsed nodes and before throwing any validation errors.
-
-#### options.postValidate
+#### options.onDepth
 
 Type: `(node: Node) => void` (optional)
 
-Called once all the [`preValidate`](#optionsprevalidate) callbacks have been fired for all the parsed nodes and after throwing any validation errors for the node.
+Called when all nodes of the same depth have been created.
+
+#### options.onBeforeValidate
+
+Type: `(node: Node) => void` (optional)
+
+Called once all nodes have been parsed and before any validation checks.
+
+#### options.onValidate
+
+Type: `(node: Node) => void` (optional)
+
+Called after throwing any validation errors for the node.
 
 ```javascript
 const logLevels = ['info', 'warn', 'error', 'debug'];
@@ -448,16 +454,16 @@ const cmd = command();
 // immediately logs the help text and exit the process once parsed
 cmd.option('--help', {
   assign: false,
-  preArgs() {
+  onCreate() {
     console.log(`Usage: cmd --log-level <${logLevels.join(' | ')}>`);
     process.exit();
   }
 });
 
-// only show version after all other nodes have been parsed
+// show version only after other nodes have been created (to prioritize '--help')
 cmd.option('--version', {
   assign: false,
-  preValidate() {
+  onDepth() {
     console.log('v2.0.0');
     process.exit();
   }
@@ -468,7 +474,7 @@ cmd.option('--version', {
 cmd.option('--log-level', {
   min: 1,
   max: 1,
-  postValidate(node) {
+  onValidate(node) {
     const value = node.args[0];
     if (!logLevels.includes(value)) {
       throw new Error(

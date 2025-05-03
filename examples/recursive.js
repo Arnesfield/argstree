@@ -26,7 +26,7 @@ function run(args) {
   /** @type {import('../lib/index.js').SchemaOptions['init']} */
   const init = schema => {
     schema
-      .option('--help', { alias: '-h', assign: false, preArgs: help })
+      .option('--help', { alias: '-h', assign: false, onCreate: help })
       .command('--', { strict: false });
   };
 

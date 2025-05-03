@@ -50,7 +50,7 @@ function run(argv) {
   });
 
   const root = cmd
-    .option('--help', { alias: '-h', assign: false, preArgs: help })
+    .option('--help', { alias: '-h', assign: false, onCreate: help })
     .command('--', { strict: false })
     .parse(argv);
 

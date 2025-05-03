@@ -159,24 +159,27 @@ export interface Options {
    * Called when the node is created with its initial arguments.
    * @param node The node object.
    */
-  preArgs?(node: Node): void;
+  onCreate?(node: Node): void;
   /**
-   * Called after the node has received all the arguments it can have.
+   * Called after the node has received all arguments and direct child nodes that it can have.
    * @param node The node object.
    */
-  postArgs?(node: Node): void;
+  onData?(node: Node): void;
   /**
-   * Called once all the {@linkcode postArgs} callbacks have been fired
-   * for all the parsed nodes and before throwing any validation errors.
+   * Called when all nodes of the same depth have been created.
    * @param node The node object.
    */
-  preValidate?(node: Node): void;
+  onDepth?(node: Node): void;
   /**
-   * Called once all the {@linkcode preValidate} callbacks have been fired for
-   * all the parsed nodes and after throwing any validation errors for the node.
+   * Called once all nodes have been parsed and before any validation checks.
    * @param node The node object.
    */
-  postValidate?(node: Node): void;
+  onBeforeValidate?(node: Node): void;
+  /**
+   * Called after throwing any validation errors for the node.
+   * @param node The node object.
+   */
+  onValidate?(node: Node): void;
 }
 
 /** The schema options. */

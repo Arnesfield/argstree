@@ -36,7 +36,7 @@ function run(args) {
   }
 
   const root = cmd
-    .option('--help', { alias: '-h', assign: false, preArgs: help })
+    .option('--help', { alias: '-h', assign: false, onCreate: help })
     .parse(args);
 
   let result = 0;

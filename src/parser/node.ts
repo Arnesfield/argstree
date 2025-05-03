@@ -5,6 +5,7 @@ import { Schema } from '../schema/schema.class';
 import { ArgConfig, Config } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
+import { Options } from '../types/options.types';
 import { NonEmptyArray } from '../types/util.types';
 import { display } from '../utils/display';
 import { Alias, NormalizedOptions, NormalizeOptions } from './normalize';
@@ -24,6 +25,10 @@ export interface HandlerResult {
 // same as INode but cannot be a value type
 export interface NodeData extends Omit<INode, 'type'>, Pick<Config, 'type'> {}
 
+export type NodeEvent = keyof {
+  [K in keyof Options as K extends `on${string}` ? K : never]: Options[K];
+};
+
 // same as NormalizeOptions but with required args
 export interface ParsedNodeOptions
   extends Omit<NormalizeOptions, 'args'>,
@@ -36,6 +41,7 @@ export interface NodeSplit extends Split {
 // NOTE: node instances will only have data types 'option' and 'command'
 // directly save value nodes into data.children instead
 export class Node {
+  readonly children: Node[] = [];
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
   private readonly dstrict: boolean | undefined;
@@ -55,10 +61,10 @@ export class Node {
           ? (this.dstrict = opts.src.strict)
           : !(this.dstrict = opts.src.strict !== 'self');
 
-    this.run('preArgs');
+    this.run('onCreate');
   }
 
-  run(name: 'preArgs' | 'postArgs' | 'preValidate' | 'postValidate'): void {
+  run(name: NodeEvent): void {
     // preserve `this` for callbacks
     typeof this.opts.src[name] === 'function' && this.opts.src[name](this.data);
   }
@@ -141,6 +147,12 @@ export class Node {
     }
   }
 
+  /** Depth parsed. */
+  done(): void {
+    this.run('onData');
+    for (const node of this.children) node.run('onDepth');
+  }
+
   check(): void {
     const { min, max } = this.opts;
 
@@ -162,7 +174,7 @@ export class Node {
       this.error(ParseError.RANGE_ERROR, 'e', 'E', err);
     }
 
-    this.run('postValidate');
+    this.run('onValidate');
   }
 
   error(code: string, prefix1: string, prefix2: string, msg: string): never {

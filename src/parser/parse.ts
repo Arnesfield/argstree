@@ -36,6 +36,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
   const ERR = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
   const root = node({ cfg });
+  root.run('onDepth');
   const nodes = [root];
   let parent: Node = root,
     child: Node | null | undefined;
@@ -107,10 +108,11 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
     for (const item of items) {
       // mark existing child as parsed then make new child
-      child?.run('postArgs');
+      child?.done();
 
       // create child node from options
       nodes.push((child = node(item, parent)));
+      parent.children.push(child);
       parent.data.children.push(child.data);
     }
 
@@ -118,7 +120,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
     // use child as next parent if it's not a leaf node
     if (!child!.opts.leaf) {
       // since we're removing reference to parent, mark it as parsed
-      parent.run('postArgs');
+      parent.done();
       parent = child!;
       child = null;
     }
@@ -269,13 +271,13 @@ export function parse(args: readonly string[], cfg: Config): INode {
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
-  child?.run('postArgs');
-  parent.run('postArgs');
+  child?.done();
+  parent.done();
 
-  // run preValidate for all nodes per depth level incrementally
-  for (const item of nodes) item.run('preValidate');
+  // run onBeforeValidate for all nodes per depth level incrementally
+  for (const item of nodes) item.run('onBeforeValidate');
 
-  // validate and run postValidate for all nodes
+  // validate and run onValidate for all nodes
   for (const item of nodes) item.check();
 
   return root.data;
