@@ -562,7 +562,7 @@ Flattens the node tree structure into an array of nodes.
 
 Type: `(arg: string, type?: 'long' | 'short') => boolean`
 
-Determines if the argument looks like an option. By default, both `short` (e.g. `-a`, `-abc`) and `long` (e.g. `--option`) options are valid unless the specific type of option is provided.
+Determines if the argument looks like an option. By default, both `long` (e.g. `--option`) and `short` (e.g. `-a`, `-abc`) options are valid unless the specific type of option is provided.
 
 #### split
 

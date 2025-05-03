@@ -1,6 +1,6 @@
 /**
  * Determines if the argument looks like an option. By default,
- * both `short` (e.g. `-a`, `-abc`) and `long` (e.g. `--option`) options
+ * both `long` (e.g. `--option`) and `short` (e.g. `-a`, `-abc`) options
  * are valid unless the specific type of option is provided.
  * @param arg The argument to check.
  * @param type The option type.
