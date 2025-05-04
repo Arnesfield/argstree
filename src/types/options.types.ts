@@ -29,21 +29,6 @@ export interface Options<T = unknown> {
    */
   args?: string | string[];
   /**
-   * The alias, list of aliases, or list of aliases with arguments for the option or command.
-   *
-   * Aliases that start with a single dash (`-`) can be grouped together after
-   * a single dash (e.g. aliases `-a`, `-b`, and `-c` can be written as `-abc`).
-   *
-   * If the option or command requires a value, it must be the last option when its alias
-   * is grouped together with other aliases, otherwise a {@linkcode ParseError} is thrown.
-   * @example
-   * const cmd = command()
-   *   .option('--help', { alias: '-h', assign: false })
-   *   .option('--flag', { alias: ['-f', ['--no-flag', '0']] })
-   *   .command('run', { alias: ['r', 'rum', 'urn'] });
-   */
-  alias?: string | (string | string[])[];
-  /**
    * The minimum number of arguments to read before the next parsed option or command.
    *
    * A {@linkcode ParseError} is thrown if the option or command does not satisfy this condition.
@@ -61,6 +46,21 @@ export interface Options<T = unknown> {
    * any more arguments.
    */
   max?: number;
+  /**
+   * The alias, list of aliases, or list of aliases with arguments for the option or command.
+   *
+   * Aliases that start with a single dash (`-`) can be grouped together after
+   * a single dash (e.g. aliases `-a`, `-b`, and `-c` can be written as `-abc`).
+   *
+   * If the option or command requires a value, it must be the last option when its alias
+   * is grouped together with other aliases, otherwise a {@linkcode ParseError} is thrown.
+   * @example
+   * const cmd = command()
+   *   .option('--help', { alias: '-h', assign: false })
+   *   .option('--flag', { alias: ['-f', ['--no-flag', '0']] })
+   *   .command('run', { alias: ['r', 'rum', 'urn'] });
+   */
+  alias?: string | (string | string[])[];
   /**
    * When disabled, the option or command will not accept any arguments
    * (except for {@link assign assigned values}) and are instead saved to
