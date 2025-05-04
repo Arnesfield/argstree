@@ -6,10 +6,10 @@ import { ArgConfig, Config, Schema as ISchema } from './schema.types';
 
 // NOTE: internal
 
-export class Schema implements ISchema {
+export class Schema<T> implements ISchema<T> {
   // expose as ArgConfig but use Config internally
-  constructor(cfg: ArgConfig);
-  constructor(private readonly cfg: Config) {
+  constructor(cfg: ArgConfig<T>);
+  constructor(private readonly cfg: Config<T>) {
     // NOTE: intentional cfg object mutation to update existing ArgConfig object
     // always replace args
     cfg.args = obj();
@@ -18,21 +18,21 @@ export class Schema implements ISchema {
     typeof cfg.options.init === 'function' && cfg.options.init(this);
   }
 
-  option(arg: string, options: Options = {}): this {
+  option(arg: string, options: Options<T> = {}): this {
     this.cfg.args[arg] = { type: 'option', options };
     return this;
   }
 
-  command(arg: string, options: Options = {}): this {
+  command(arg: string, options: Options<T> = {}): this {
     this.cfg.args[arg] = { type: 'command', options };
     return this;
   }
 
-  config(): Config {
+  config(): Config<T> {
     return this.cfg;
   }
 
-  parse(args: readonly string[]): Node {
+  parse(args: readonly string[]): Node<T> {
     // create copy of args to avoid external mutation
     return parse(args.slice(), this.cfg);
   }

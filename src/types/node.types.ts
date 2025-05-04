@@ -4,8 +4,11 @@ import { Options } from './options.types';
 /** The node type. */
 export type NodeType = 'option' | 'command' | 'value';
 
-/** The node object. */
-export interface Node {
+/**
+ * The node object.
+ * @template T The metadata type.
+ */
+export interface Node<T = unknown> {
   /** The provided {@linkcode Options.id} or the {@linkcode Node.key}. */
   id: string | null;
   /** The provided {@linkcode Options.name} or the {@linkcode Node.key}. */
@@ -24,7 +27,9 @@ export interface Node {
   /** The node arguments. */
   args: string[];
   /** The parent node. If `null`, then the node is a root node. */
-  parent: Node | null;
+  parent: Node<T> | null;
   /** The child nodes. */
-  children: Node[];
+  children: Node<T>[];
+  /** The node metadata. */
+  meta?: T;
 }

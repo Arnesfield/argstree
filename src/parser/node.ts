@@ -17,22 +17,24 @@ export interface ParsedArg extends Arg {
   alias?: string;
 }
 
-export interface HandlerResult {
+export interface HandlerResult<T> {
   values: string[];
-  opts: ParsedNodeOptions[];
+  opts: ParsedNodeOptions<T>[];
 }
 
 // same as INode but cannot be a value type
-export interface NodeData extends Omit<INode, 'type'>, Pick<Config, 'type'> {}
+export interface NodeData<T>
+  extends Omit<INode<T>, 'type'>,
+    Pick<Config<T>, 'type'> {}
 
-export type NodeEvent = keyof {
-  [K in keyof Options as K extends `on${string}` ? K : never]: Options[K];
+export type NodeEvent<T> = keyof {
+  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
 };
 
 // same as NormalizeOptions but with required args
-export interface ParsedNodeOptions
-  extends Omit<NormalizeOptions, 'args'>,
-    Required<Pick<NormalizeOptions, 'args'>> {}
+export interface ParsedNodeOptions<T>
+  extends Omit<NormalizeOptions<T>, 'args'>,
+    Required<Pick<NormalizeOptions<T>, 'args'>> {}
 
 export interface NodeSplit extends Split {
   list: NonEmptyArray<Alias>;
@@ -40,16 +42,16 @@ export interface NodeSplit extends Split {
 
 // NOTE: node instances will only have data types 'option' and 'command'
 // directly save value nodes into data.children instead
-export class Node {
-  readonly children: Node[] = [];
+export class Node<T> {
+  readonly children: Node<T>[] = [];
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
   private readonly dstrict: boolean | undefined;
 
   constructor(
-    readonly opts: NormalizedOptions,
-    readonly data: NodeData,
-    parent?: Node
+    readonly opts: NormalizedOptions<T>,
+    readonly data: NodeData<T>,
+    parent?: Node<T>
   ) {
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
@@ -64,7 +66,7 @@ export class Node {
     this.run('onCreate');
   }
 
-  run(name: NodeEvent): void {
+  run(name: NodeEvent<T>): void {
     // preserve `this` for callbacks
     typeof this.opts.src[name] === 'function' && this.opts.src[name](this.data);
   }
@@ -75,7 +77,10 @@ export class Node {
    * @param assignable Set to `true` to accept assignable option or command only.
    * @returns The parsed node options.
    */
-  parse(arg: ParsedArg, assignable?: boolean): ParsedNodeOptions | undefined {
+  parse(
+    arg: ParsedArg,
+    assignable?: boolean
+  ): ParsedNodeOptions<T> | undefined {
     // if exact match was found, check assignable only if value exists
     const { raw, key, alias, value } = arg;
     const opts = this.opts.args[key];
@@ -86,15 +91,15 @@ export class Node {
       // only create schema when needed to handle recursive init functions
       // having args and aliases means that the schema was already configured
       const cfg = opts.args
-        ? (opts as Config)
-        : new Schema(opts as ArgConfig).config();
+        ? (opts as Config<T>)
+        : new Schema(opts as ArgConfig<T>).config();
       return { raw, key, alias, args: value != null ? [value] : [], cfg };
     }
   }
 
   // NOTE: return empty arrays to ignore values
   // return falsy to fallback to default behavior
-  handle(arg: ParsedArg): HandlerResult | undefined {
+  handle(arg: ParsedArg): HandlerResult<T> | undefined {
     if (typeof this.opts.src.handler !== 'function') return;
 
     // preserve `this` for callbacks
@@ -102,7 +107,7 @@ export class Node {
     // fallback to default behavior for null, undefined, true
     if (schemas == null || schemas === true) return;
 
-    const result: HandlerResult = { values: [], opts: [] };
+    const result: HandlerResult<T> = { values: [], opts: [] };
 
     // ignore when false by returning empty results
     if (schemas === false) return result;

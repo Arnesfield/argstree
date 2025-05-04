@@ -2,7 +2,7 @@ import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 
 /** The parse error. */
-export class ParseError extends Error {
+export class ParseError<T> extends Error {
   /**
    * The {@linkcode Options} object provided is invalid
    * (e.g. incorrect range config or duplicate aliases).
@@ -31,8 +31,8 @@ export class ParseError extends Error {
   constructor(
     public code: string,
     message: string,
-    public node: Node,
-    public options: Options
+    public node: Node<T>,
+    public options: Options<T>
   ) {
     super(message);
   }

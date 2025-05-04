@@ -4,8 +4,11 @@ import { Schema } from '../schema/schema.types';
 import { Arg } from './arg.types';
 import { Node, NodeType } from './node.types';
 
-/** The options object. */
-export interface Options {
+/**
+ * The options object.
+ * @template T The metadata type.
+ */
+export interface Options<T = unknown> {
   /**
    * The option or command ID that will show up in {@linkcode Node.id}.
    * If not provided, the default value is the {@linkcode Node.key}.
@@ -114,7 +117,7 @@ export interface Options {
    *     }
    *   });
    */
-  init?(schema: Schema): void;
+  init?(schema: Schema<T>): void;
   /**
    * Serves as a fallback for parsed arguments that cannot be
    * recognized using the list of configured options and commands.
@@ -153,34 +156,37 @@ export interface Options {
    */
   handler?(
     arg: Arg,
-    node: Node
-  ): Schema | string | (Schema | string)[] | boolean | void;
+    node: Node<T>
+  ): Schema<T> | string | (Schema<T> | string)[] | boolean | void;
   /**
    * Called when the node is created with its initial arguments.
    * @param node The node object.
    */
-  onCreate?(node: Node): void;
+  onCreate?(node: Node<T>): void;
   /**
    * Called after the node has received all arguments and direct child nodes that it can have.
    * @param node The node object.
    */
-  onData?(node: Node): void;
+  onData?(node: Node<T>): void;
   /**
    * Called when all nodes of the same depth have been created.
    * @param node The node object.
    */
-  onDepth?(node: Node): void;
+  onDepth?(node: Node<T>): void;
   /**
    * Called once all nodes have been parsed and before any validation checks.
    * @param node The node object.
    */
-  onBeforeValidate?(node: Node): void;
+  onBeforeValidate?(node: Node<T>): void;
   /**
    * Called after throwing any validation errors for the node.
    * @param node The node object.
    */
-  onValidate?(node: Node): void;
+  onValidate?(node: Node<T>): void;
 }
 
-/** The schema options. */
-export type SchemaOptions = Omit<Options, 'alias' | 'assign'>;
+/**
+ * The schema options.
+ * @template T The metadata type.
+ */
+export type SchemaOptions<T = unknown> = Omit<Options<T>, 'alias' | 'assign'>;

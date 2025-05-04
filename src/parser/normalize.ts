@@ -22,7 +22,7 @@ export interface Alias {
   args: string[];
 }
 
-export interface NormalizedOptions {
+export interface NormalizedOptions<T> {
   /** The resolved {@linkcode Options.read} option. */
   readonly read: boolean;
   /** Determines if the node is a leaf node and cannot have descendants. */
@@ -36,18 +36,18 @@ export interface NormalizedOptions {
   /** The resolved {@linkcode Options.max} option. */
   readonly max: number | null;
   /** The reference to the provided options. */
-  readonly src: Options;
+  readonly src: Options<T>;
   /** Safe args object. */
-  readonly args: { [arg: string]: Config | ArgConfig | undefined };
+  readonly args: { [arg: string]: Config<T> | ArgConfig<T> | undefined };
   /** Safe aliases object. */
   readonly aliases: { [alias: string]: Alias };
   /** A sorted list of splittable alias keys without the `-` prefix. */
   readonly keys: string[];
 }
 
-export interface NormalizeOptions
-  extends Partial<Pick<Node, 'raw' | 'key' | 'alias' | 'args'>> {
-  cfg: Config;
+export interface NormalizeOptions<T>
+  extends Partial<Pick<Node<T>, 'raw' | 'key' | 'alias' | 'args'>> {
+  cfg: Config<T>;
 }
 
 // ensure non-negative number
@@ -55,11 +55,11 @@ function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
-export function normalize(
-  opts: NormalizeOptions,
+export function normalize<T>(
+  opts: NormalizeOptions<T>,
   // NOTE: data is only used for error purposes
-  data: Node
-): NormalizedOptions {
+  data: Node<T>
+): NormalizedOptions<T> {
   const c = opts.cfg;
   const src = c.options;
 
@@ -77,7 +77,7 @@ export function normalize(
   // save splittable aliases to keys array
   let safeAlias = true;
   const keys: string[] = [];
-  const aliases: NormalizedOptions['aliases'] = obj();
+  const aliases: NormalizedOptions<T>['aliases'] = obj();
 
   // apply aliases from args
   const cfgs = Object.entries(c.args);

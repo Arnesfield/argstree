@@ -14,10 +14,10 @@ import {
 
 // NOTE: internal
 
-export function parse(args: readonly string[], cfg: Config): INode {
+export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
   // keep track of and reuse existing normalized options
-  const map = new WeakMap<Config, NormalizedOptions>();
-  function node(opts: NormalizeOptions, curr?: Node) {
+  const map = new WeakMap<Config<T>, NormalizedOptions<T>>();
+  function node(opts: NormalizeOptions<T>, curr?: Node<T>) {
     let cArgs = opts.cfg.options.args;
     cArgs =
       typeof cArgs === 'string' ? [cArgs] : Array.isArray(cArgs) ? cArgs : [];
@@ -31,15 +31,15 @@ export function parse(args: readonly string[], cfg: Config): INode {
     (nOpts = map.get(opts.cfg)) ||
       map.set(opts.cfg, (nOpts = normalize(opts, data)));
 
-    return new Node(nOpts, data, curr);
+    return new Node<T>(nOpts, data, curr);
   }
 
   const ERR = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
   const root = node({ cfg });
   root.run('onDepth');
   const nodes = [root];
-  let parent: Node = root,
-    child: Node | null | undefined;
+  let parent: Node<T> = root,
+    child: Node<T> | null | undefined;
 
   function unrecognized(msg: string, code = ERR): never {
     parent.error(code, 'does not recognize the ', 'Unrecognized ', msg);
@@ -91,12 +91,12 @@ export function parse(args: readonly string[], cfg: Config): INode {
     });
 
     // assume 'items' always has value
-    set(items as NonEmptyArray<NormalizeOptions>);
+    set(items as NonEmptyArray<NormalizeOptions<T>>);
 
     return true;
   }
 
-  function set(items: NonEmptyArray<NormalizeOptions>) {
+  function set(items: NonEmptyArray<NormalizeOptions<T>>) {
     // consider items: [option1, command1, option2, command2, option3]
     // the previous implementation would only get
     // the last child that can have children (command2)
@@ -246,7 +246,7 @@ export function parse(args: readonly string[], cfg: Config): INode {
 
       // use arg.key as key here despite not using arg.value
       // assume that the consumer handles arg.value manually
-      type O = NonEmptyArray<ParsedNodeOptions>;
+      type O = NonEmptyArray<ParsedNodeOptions<T>>;
       parsed.opts.length > 0 && set(parsed.opts as O);
     }
 

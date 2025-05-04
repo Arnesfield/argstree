@@ -6,14 +6,14 @@ import { NormalizeOptions } from './normalize';
 
 // NOTE: internal
 
-export interface CreateNodeOptionsConfig extends Pick<Config, 'type'> {
-  options: Pick<Options, 'id' | 'name'>;
+export interface CreateNodeOptionsConfig<T> extends Pick<Config<T>, 'type'> {
+  options: Pick<Options<T>, 'id' | 'name'>;
 }
 
-export interface CreateNodeOptions
-  extends Pick<NormalizeOptions, 'raw' | 'key' | 'alias'> {
+export interface CreateNodeOptions<T>
+  extends Pick<NormalizeOptions<T>, 'raw' | 'key' | 'alias'> {
   // partial config
-  cfg: CreateNodeOptionsConfig;
+  cfg: CreateNodeOptionsConfig<T>;
 }
 
 /**
@@ -23,11 +23,11 @@ export interface CreateNodeOptions
  * @param args The node arguments.
  * @returns The node object.
  */
-export function cnode(
-  opts: CreateNodeOptions,
-  parent: Node | null,
+export function cnode<T>(
+  opts: CreateNodeOptions<T>,
+  parent: Node<T> | null,
   args: string[]
-): NodeData {
+): NodeData<T> {
   // prettier-ignore
   const { raw = null, key = null, alias = null, cfg: { type, options: { id = key, name = key } } } = opts;
   const depth = parent ? parent.depth + 1 : 0;
