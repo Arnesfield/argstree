@@ -506,6 +506,51 @@ Error: Option '--log-level' argument 'log' is invalid. Allowed choices are: info
 Usage: cmd --log-level <info | warn | error | debug>
 ```
 
+### Node Metadata
+
+**Nodes** can have additional metadata that can be set to `Node.meta` through the [event callbacks](#events).
+
+```typescript
+interface Metadata {
+  key: string;
+}
+
+const cmd = command<Metadata>({
+  read: false,
+  handler(arg) {
+    // format: --{id}:{key}={value}
+    const match = arg.key.match(/^--(.+?):(.+)$/);
+    if (match) {
+      const [, id, key] = match;
+      return option({
+        id,
+        read: false,
+        args: arg.value,
+        onCreate(node) {
+          node.meta = { key };
+        }
+      });
+    }
+  }
+});
+
+const root = cmd.parse([
+  '--file:package.json',
+  '--ext:.js=.mjs',
+  '--map:@scope/[name]=dist/[name]'
+]);
+
+for (const node of root.children) {
+  console.log(node.id, node.meta?.key, node.args);
+}
+```
+
+```text
+file package.json []
+ext .js [ '.mjs' ]
+map @scope/[name] [ 'dist/[name]' ]
+```
+
 ### ParseError
 
 For errors related to parsing and misconfiguration, a `ParseError` is thrown. You can import this class to reference in catch blocks.
