@@ -13,13 +13,13 @@ Parse arguments into a tree structure.
 ## Features
 
 - **argstree** is meant to be a minimal and less opinionated argument parser.
-- Pure vanilla JavaScript with no external dependencies.
+- Pure vanilla JavaScript with no external dependencies ([ESM only](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c)).
 - Preserves the order and structure of the provided arguments using a [tree structure](#tree-structure).
-- Variadic arguments by default unless [range](#range) options are specified.
-- Includes a [strict mode](#strict-mode) for unrecognized options.
-- Can recognize and split [combined aliases](#combined-aliases) (e.g. from `-abcd` to `-a`, `-bc`, `-d`).
-- Can recognize [assigned values](#optionsassign) for [options and commands](#options-and-commands) (e.g. `--option=value`, `command=value`).
-- Allows [dynamic parsing](#dynamic-parsing) of values, options, and commands.
+- Variadic arguments by default unless [range](#optionsmin) options are specified.
+- Includes a [strict mode](#optionsstrict) for unrecognized options.
+- Can recognize and split [combined aliases](#optionsalias) (e.g. from `-abcd` to `-a`, `-bc`, `-d`).
+- Can recognize [assigned values](#optionsassign) for options and commands (e.g. `--option=value`, `command=value`).
+- Allows [dynamic parsing](#optionshandler) of values, options, and commands.
 - Double-dash (`--`) is not treated as anything special but can be configured to be a non-strict subcommand.
 
 ## Limitations
@@ -38,35 +38,31 @@ If you're looking for something oddly specific and need more control when workin
 npm install argstree
 ```
 
-Import the module ([ESM only](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c)):
-
-```javascript
-import command from 'argstree';
-```
-
 ## Usage
 
 For more detailed usage, check out the [examples](examples) directory.
 
 ### Schema
 
-The `option()` and `command()` functions both return a [**Schema**](src/schema/schema.types.ts) object. Parse arguments using `schema.parse(args)` and it returns the root [**Node**](src/types/node.types.ts) object which is a tree representation of the parsed arguments.
+The `option()` and `command()` functions both return a [`Schema`](src/schema/schema.types.ts) object.
 
-#### option()
+#### schema.option()
 
-Type: `(options?: SchemaOptions) => Schema`
+Type: `(arg: string, options?: Options) => Schema`
 
-Creates an option schema.
+Adds an option. The argument is overwritten if it already exists.
 
-#### command()
+#### schema.command()
 
-Type: `(options?: SchemaOptions) => Schema`
+Type: `(arg: string, options?: Options) => Schema`
 
-Creates a command schema.
+Adds a command. The argument is overwritten if it already exists.
 
----
+#### schema.parse()
 
-Options and commands differ only in some of the default values for the configuration options. At their core, they are the same and both can be configured similarly.
+Type: `(args: readonly string[]) => Node`
+
+Parses arguments into a tree structure.
 
 ```javascript
 import command, { option } from 'argstree';
@@ -87,55 +83,11 @@ null command [ 'Hello', 'World' ]
 null option [ 'Hello', 'World' ]
 ```
 
-### Options and Commands
-
-The **Schema** object can be configured to have options and commands via the `schema.option()` and `schema.command()` methods respectively. These methods return the main **Schema** for chaining.
-
-The `arg` string is used to match the argument to create a **Node** for the option or command. This **Node** can capture arguments depending on its schema configuration.
-
-#### schema.option()
-
-Type: `(arg: string, options?: Options) => Schema`
-
-Adds an option. The argument is overwritten if it already exists.
-
-#### schema.command()
-
-Type: `(arg: string, options?: Options) => Schema`
-
-Adds a command. The argument is overwritten if it already exists.
-
-### Basic Options
-
-#### options.id
-
-Type: `string | null` (optional)
-
-The option or command ID that will show up in `Node.id`. If not provided, the default value is the `Node.key`.
-
-This is never used in any internal logic, but it can be useful for identifying the option or command after parsing.
-
-#### options.name
-
-Type: `string | null` (optional)
-
-The display name of the option or command for [errors](#parseerror). If not provided, the `Node.key` is used as the display name when available.
-
-#### options.args
-
-Type: `string | string[]` (optional)
-
-The initial arguments for the option or command. Note that this is not a default value and additional arguments will be added on top of this initial list.
+Options and commands differ only in some of the default values for the configuration options. At their core, they are the same and both can be configured similarly.
 
 ### Tree Structure
 
-#### options.init
-
-Type: `(schema: Schema) => void` (optional)
-
-Called only once when the schema is created and is used to gain a reference to the schema object to add options and/or commands.
-
-The example below introduces some of the available configuration options, but the main idea here is that the structure of the resulting **Node** object would closely resemble the provided arguments depending on the schema configuration.
+The example below introduces some of the available configuration options, but the main idea here is that the structure of the resulting [`Node`](src/types/node.types.ts) object would closely resemble the provided arguments depending on the schema configuration.
 
 ```javascript
 // `cmd` is a Schema object that expects at least 1 argument
@@ -183,38 +135,33 @@ null (command): [ 'dist', 'bin' ]
       -- (value): [ '-h', '-i' ]
 ```
 
-#### options.leaf
+### Options
 
-Type: `boolean` (optional)\
-Default: `true` for `option` types and `false` for `command` types
+All options for the schema configuration are optional.
 
-When enabled, parsed nodes will be treated as leaf nodes (no child nodes). If there are options or commands configured for the schema, then this option is ignored and becomes `false` (can have child nodes).
+#### options.id
 
-This allows command type nodes to be leaf nodes and option type nodes to have child nodes. In most cases, you wouldn't need to configure this option, but it is available in the rare chance that you do.
+Type: `string | null`
 
-```javascript
-// `leaf` option is ignored for the root command
-// since it has options and commands configured
-const root = command({ leaf: true })
-  .option('--tree', { leaf: false })
-  .command('run', { leaf: true })
-  .parse(['run', 'build', '--tree', 'run', 'build']);
+The option or command ID that will show up in `Node.id`. If not provided, the default value is the `Node.key`.
 
-for (const node of root.children) {
-  console.log(node.id, node.type, node.args);
-}
-```
+This is never used in any internal logic, but it can be useful for identifying the option or command after parsing.
 
-```text
-run command [ 'build' ]
---tree option [ 'run', 'build' ]
-```
+#### options.name
 
-### Range
+Type: `string | null`
+
+The display name of the option or command for [errors](#parseerror). If not provided, the `Node.key` is used as the display name when available.
+
+#### options.args
+
+Type: `string | string[]`
+
+The initial arguments for the option or command. Note that this is not a default value and additional arguments will be added on top of this initial list.
 
 #### options.min
 
-Type: `number` (optional)
+Type: `number`
 
 The minimum number of arguments to read before the next parsed option or command.
 
@@ -222,7 +169,7 @@ A [`ParseError`](#parseerror) is thrown if the option or command does not satisf
 
 #### options.max
 
-Type: `number` (optional)
+Type: `number`
 
 The maximum number of arguments to read before the next parsed option or command. Arguments over the maximum limit are saved to the parent option or command instead.
 
@@ -230,11 +177,9 @@ The maximum number of arguments to read before the next parsed option or command
 
 A [`ParseError`](#parseerror) is thrown if the option or command does not satisfy this condition or if the parent option or command cannot accept any more arguments.
 
-### Aliases
-
 #### options.alias
 
-Type: `string | (string | string[])[]` (optional)
+Type: `string | (string | string[])[]`
 
 The alias, list of aliases, or list of aliases with arguments for the option or command.
 
@@ -266,8 +211,6 @@ null null []
 run-script run [ 'build' ]
 ```
 
-#### Combined Aliases
-
 Aliases that start with a single dash (`-`) can be grouped together after a single dash (e.g. aliases `-a`, `-b`, and `-c` can be written as `-abc`).
 
 If the option or command requires a value, it must be the last option when its alias is grouped together with other aliases, otherwise a [`ParseError`](#parseerror) is thrown.
@@ -290,55 +233,16 @@ for (const node of root.children) {
 input -i [ 'src', 'index.js' ]
 ```
 
-### Strict Mode
-
-#### options.strict
-
-Type: `boolean` (optional)\
-Default: `false`
-
-When enabled, a [`ParseError`](#parseerror) is thrown for unrecognized arguments that look like an option (e.g. `-o`, `--option`). Can be one of the following values:
-
-- `true` - Enable strict mode for both self and descendants.
-- `false` - Disable strict mode for both self and descendants.
-- `self` - Enable strict mode for self but disable it for descendants.
-- `descendants` - Disable strict mode for self but enable it for descendants.
-
-Note that string values returned by the [`handler`](#optionshandler) callback are excluded from the strict mode checks.
-
-```javascript
-const cmd = command({ strict: true })
-  .option('--option', { min: 1 })
-  .command('run', { min: 1 });
-
-const argsList = ['--option --bar --baz', 'run build --if-present'];
-
-for (const args of argsList) {
-  try {
-    cmd.parse(args.split(' '));
-  } catch (error) {
-    console.error(error.toString());
-  }
-}
-```
-
-```text
-ParseError: Unrecognized option: --bar
-ParseError: Command 'run' does not recognize the option: --if-present
-```
-
-### Read Arguments and Assigned Values
-
 #### options.read
 
-Type: `boolean` (optional)\
+Type: `boolean`\
 Default: `true`
 
 When disabled, the option or command will not accept any arguments (except for [assigned values](#optionsassign)) and are instead saved to the parent option or command if it can accept arguments. Otherwise, a [`ParseError`](#parseerror) is thrown and the argument is treated as an unrecognized option or command.
 
 #### options.assign
 
-Type: `boolean` (optional)\
+Type: `boolean`\
 Default: `true` for `option` types and `false` for `command` types
 
 Determines if the option or command can have an assigned value using the equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option or command will not be matched and the argument is treated like a normal value.
@@ -373,11 +277,56 @@ null value [ 'src' ]
 null value [ 'yes' ]
 ```
 
-### Dynamic Parsing
+#### options.strict
 
-#### options.handler
+Type: `boolean`\
+Default: `false`
 
-Type: `(arg: Arg, node: Node) => Schema | string | (Schema | string)[] | boolean | void` (optional)
+When enabled, a [`ParseError`](#parseerror) is thrown for unrecognized arguments that look like an option (e.g. `-o`, `--option`). Can be one of the following values:
+
+- `true` - Enable strict mode for both self and descendants.
+- `false` - Disable strict mode for both self and descendants.
+- `self` - Enable strict mode for self but disable it for descendants.
+- `descendants` - Disable strict mode for self but enable it for descendants.
+
+Note that string values returned by the [`handler`](#optionshandler) callback are excluded from the strict mode checks.
+
+#### options.leaf
+
+Type: `boolean`\
+Default: `true` for `option` types and `false` for `command` types
+
+When enabled, parsed nodes will be treated as leaf nodes (no child nodes). If there are options or commands configured for the schema, then this option is ignored and becomes `false` (can have child nodes).
+
+This allows command type nodes to be leaf nodes and option type nodes to have child nodes. In most cases, you wouldn't need to configure this option, but it is available in the rare chance that you do.
+
+```javascript
+// `leaf` option is ignored for the root command
+// since it has options and commands configured
+const root = command({ leaf: true })
+  .option('--tree', { leaf: false })
+  .command('run', { leaf: true })
+  .parse(['run', 'build', '--tree', 'run', 'build']);
+
+for (const node of root.children) {
+  console.log(node.id, node.type, node.args);
+}
+```
+
+```text
+run command [ 'build' ]
+--tree option [ 'run', 'build' ]
+```
+
+#### options.init()
+
+Type: `(schema: Schema) => void`
+
+Called only once when the schema is created and is used to gain a reference to the schema object to add options and/or commands.
+
+#### options.handler()
+
+Type: `(arg: Arg, node: Node) => Schema | string | (Schema | string)[] | boolean | void`
 
 Serves as a fallback for parsed arguments that cannot be recognized using the list of configured options and commands. Can have the following return values:
 
@@ -414,35 +363,33 @@ for (const node of root.children) {
 --option option [ 'value', '-1' ]
 ```
 
-### Events
+#### options.onCreate()
 
-#### options.onCreate
-
-Type: `(node: Node) => void` (optional)
+Type: `(node: Node) => void`
 
 Called when the node is created with its initial arguments.
 
-#### options.onData
+#### options.onData()
 
-Type: `(node: Node) => void` (optional)
+Type: `(node: Node) => void`
 
 Called after the node has received all arguments and direct child nodes that it can have.
 
-#### options.onDepth
+#### options.onDepth()
 
-Type: `(node: Node) => void` (optional)
+Type: `(node: Node) => void`
 
 Called when all nodes of the same depth have been created.
 
-#### options.onBeforeValidate
+#### options.onBeforeValidate()
 
-Type: `(node: Node) => void` (optional)
+Type: `(node: Node) => void`
 
 Called once all nodes have been parsed and before any validation checks.
 
-#### options.onValidate
+#### options.onValidate()
 
-Type: `(node: Node) => void` (optional)
+Type: `(node: Node) => void`
 
 Called after throwing any validation errors for the node.
 
@@ -508,7 +455,7 @@ Usage: cmd --log-level <info | warn | error | debug>
 
 ### Node Metadata
 
-**Nodes** can have additional metadata that can be set to `Node.meta` through the [event callbacks](#events).
+**Nodes** can have additional metadata that can be set to `Node.meta`.
 
 ```typescript
 interface Metadata {
@@ -520,17 +467,17 @@ const cmd = command<Metadata>({
   handler(arg) {
     // format: --{id}:{key}={value}
     const match = arg.key.match(/^--(.+?):(.+)$/);
-    if (match) {
-      const [, id, key] = match;
-      return option({
-        id,
-        read: false,
-        args: arg.value,
-        onCreate(node) {
-          node.meta = { key };
-        }
-      });
-    }
+    if (!match) return;
+
+    const [, id, key] = match;
+    return option({
+      id,
+      read: false,
+      args: arg.value,
+      onCreate(node) {
+        node.meta = { key };
+      }
+    });
   }
 });
 
