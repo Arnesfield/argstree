@@ -20,8 +20,15 @@ try {
 
 /** @param {string[]} argv */
 function run(argv) {
+  /**
+   * The node metadata.
+   * @typedef Metadata
+   * @property {boolean} [dot] Allow dot notation for node.
+   */
+
   const negatePrefix = 'no-';
 
+  /** @type {import('../lib/index.js').Schema<Metadata>} */
   const cmd = command({
     handler(arg) {
       if (isOption(arg.key, 'short')) {
@@ -44,7 +51,17 @@ function run(argv) {
         const id = arg.key.slice(2);
         // for options starting with --no-*, stop reading args
         const read = !id.startsWith(negatePrefix);
-        return option({ id, max: 1, args: arg.value, read });
+        return option({
+          id,
+          max: 1,
+          args: arg.value,
+          read,
+          onCreate(node) {
+            // only allow dot notation for long options so that short options
+            // are not split (e.g. `-x.y` will not be treated like `--x.y`)
+            node.meta = { dot: true };
+          }
+        });
       }
     }
   });
@@ -79,7 +96,7 @@ function run(argv) {
 
   for (const node of root.children) {
     const id = node.id || '_';
-    const props = id === '.' ? [id] : id.split('.');
+    const props = node.meta?.dot ? id.split('.') : [id];
     const last = props.pop();
     if (last == null) continue;
 
