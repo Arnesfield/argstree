@@ -17,7 +17,7 @@ Parse arguments into a tree structure.
 - Preserves the order and structure of the provided arguments using a [tree structure](#tree-structure).
 - Variadic arguments by default unless [range](#optionsmin) options are specified.
 - Includes a [strict mode](#optionsstrict) for unrecognized options.
-- Can recognize and split [combined aliases](#optionsalias) (e.g. from `-abcd` to `-a`, `-bc`, `-d`).
+- Can recognize and split combined [aliases](#optionsalias) (e.g. from `-abcd` to `-a`, `-bc`, `-d`).
 - Can recognize [assigned values](#optionsassign) for options and commands (e.g. `--option=value`, `command=value`).
 - Allows [dynamic parsing](#optionshandler) of values, options, and commands.
 - Double-dash (`--`) is not treated as anything special but can be configured to be a non-strict subcommand.
@@ -27,10 +27,10 @@ Parse arguments into a tree structure.
 - No other value data types other than strings.
 - No automated help message generation.
 - No asynchronous parsing.
-- Expects parsed shell commands as arguments (like [`process.argv.slice(2)`](https://nodejs.org/docs/latest/api/process.html#processargv)) and does not parse quoted strings (e.g. `schema.parse(['--option="Hello World"'])`). If you intend to parse a string into command-line arguments, you can use packages like [shell-quote](https://www.npmjs.com/package/shell-quote) and [shlex](https://www.npmjs.com/package/shlex).
+- Expects shell commands as arguments (like [`process.argv.slice(2)`](https://nodejs.org/docs/latest/api/process.html#processargv)) and does not parse quoted strings (e.g. `schema.parse(['--option="Hello World"'])`). For parsing strings into command-line arguments, you can use packages like [shell-quote](https://www.npmjs.com/package/shell-quote) and [shlex](https://www.npmjs.com/package/shlex).
 - Only parses and transforms arguments into a tree structure. It is still up to the consuming program to read and decide how to use the parsed arguments. This means more code to write and maintain just for arguments parsing and may not be worth the time and effort if you really only need a straightforward object of parsed options.
 
-If you're looking for something oddly specific and need more control when working with arguments, then **argstree** _might_ be for you. Otherwise, you can check out more popular packages like [commander](https://www.npmjs.com/package/commander), [yargs](https://www.npmjs.com/package/yargs), [minimist](https://www.npmjs.com/package/minimist), [cac](https://www.npmjs.com/package/cac), and [many more](https://www.npmjs.com/search?q=keywords%3Aargs%2Cargv).
+If you're looking to loop through arguments for more control, then **argstree** might be for you. Otherwise, you can check out more popular packages like [commander](https://www.npmjs.com/package/commander), [yargs](https://www.npmjs.com/package/yargs), [minimist](https://www.npmjs.com/package/minimist), [cac](https://www.npmjs.com/package/cac), and [many more](https://www.npmjs.com/search?q=keywords%3Aargs%2Cargv).
 
 ## Install
 
@@ -87,7 +87,7 @@ Options and commands differ only in some of the default values for the configura
 
 ### Tree Structure
 
-The example below introduces some of the available configuration options, but the main idea here is that the structure of the resulting [`Node`](src/types/node.types.ts) object would closely resemble the provided arguments depending on the schema configuration.
+The example below introduces some of the available configuration [options](#options), but the main idea here is that the structure of the resulting [`Node`](src/types/node.types.ts) object would closely resemble the provided arguments depending on the schema configuration.
 
 ```javascript
 // `cmd` is a Schema object that expects at least 1 argument
@@ -184,7 +184,7 @@ Type: `string | (string | string[])[]`
 The alias, list of aliases, or list of aliases with arguments for the option or command.
 
 ```javascript
-// `option()` and `command()` functions cannot have an alias
+// root schema cannot have an alias
 const cmd = command();
 
 // single alias
@@ -194,9 +194,9 @@ cmd.option('--help', { alias: '-h' });
 cmd.command('run-script', { alias: ['run', 'rum', 'urn'] });
 
 // multiple aliases with additional arguments
-cmd.option('--dry-run', { alias: ['-n', ['--no-dry-run', '0']] });
+cmd.option('--force', { alias: ['-f', ['--no-force', '0']] });
 
-const root = cmd.parse(['-h', '-n', '--no-dry-run', 'run', 'build']);
+const root = cmd.parse(['-h', '-f', '--no-force', 'run', 'build']);
 
 for (const node of [root].concat(root.children)) {
   console.log(node.id, node.alias, node.args);
@@ -206,8 +206,8 @@ for (const node of [root].concat(root.children)) {
 ```text
 null null []
 --help -h []
---dry-run -n []
---dry-run --no-dry-run [ '0' ]
+--force -f []
+--force --no-force [ '0' ]
 run-script run [ 'build' ]
 ```
 
@@ -248,7 +248,7 @@ Default: `true` for `option` types and `false` for `command` types
 Determines if the option or command can have an assigned value using the equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option or command will not be matched and the argument is treated like a normal value.
 
 ```javascript
-// `option()` and `command()` functions cannot assigned values
+// root schema cannot assigned values
 const cmd = command();
 
 // cannot read arguments but can assign a value
@@ -503,20 +503,17 @@ map @scope/[name] [ 'dist/[name]' ]
 For errors related to parsing and misconfiguration, a `ParseError` is thrown. You can import this class to reference in catch blocks.
 
 ```javascript
-import command, { ParseError } from 'argstree';
-
 const cmd = command({ min: 1, max: 1, strict: true })
   .option('--input', { min: 1, max: 1, alias: '-i' })
-  .option('--interactive', { max: 0, alias: '-in' })
-  .option('--dry-run', { name: 'DRY_RUN', max: 0 })
+  .option('--force', { name: 'FORCE', max: 0, alias: '-f' })
   .command('start', { read: false });
 
 const argsList = [
   '--output',
-  '-abcinni index.js',
+  '-efghi index.js',
   '--input index.js',
-  'lib --input --dry-run=0',
-  '--input index.js lib --dry-run=0',
+  'lib -i -f=0',
+  '-i index.js lib -f=0',
   'lib start index.js'
 ];
 
@@ -533,10 +530,10 @@ for (const args of argsList) {
 
 ```text
 UNRECOGNIZED_ARGUMENT null Unrecognized option: --output
-UNRECOGNIZED_ALIAS null Unrecognized aliases: -(abc)in(n)i
+UNRECOGNIZED_ALIAS null Unrecognized aliases: -(e)f(gh)i
 RANGE null Expected 1 argument, but got 0.
 RANGE --input Option '--input' expected 1 argument, but got 0.
-RANGE --dry-run Option 'DRY_RUN' expected 0 arguments, but got 1.
+RANGE --force Option 'FORCE' expected 0 arguments, but got 1.
 UNRECOGNIZED_ARGUMENT start Command 'start' expected no arguments, but got: index.js
 ```
 

@@ -56,8 +56,8 @@ export interface Options<T = unknown> {
    * is grouped together with other aliases, otherwise a {@linkcode ParseError} is thrown.
    * @example
    * const cmd = command()
-   *   .option('--help', { alias: '-h', assign: false })
-   *   .option('--flag', { alias: ['-f', ['--no-flag', '0']] })
+   *   .option('--input', { alias: '-i' })
+   *   .option('--force', { alias: ['-f', ['--no-force', '0']] })
    *   .command('run', { alias: ['r', 'rum', 'urn'] });
    */
   alias?: string | (string | string[])[];
@@ -113,7 +113,6 @@ export interface Options<T = unknown> {
    *   .command('run', {
    *     init(run) {
    *       run.option('--help');
-   *       run.option('--option');
    *     }
    *   });
    */
@@ -138,7 +137,7 @@ export interface Options<T = unknown> {
    * @param node The node object.
    * @returns The schemas or values if any.
    * @example
-   * import { command, isOption, option } from 'argstree';
+   * import command, { isOption, option } from 'argstree';
    *
    * const cmd = command({
    *   strict: true,
