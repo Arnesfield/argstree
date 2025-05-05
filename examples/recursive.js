@@ -1,5 +1,5 @@
 // @ts-check
-import { command, flatten, isOption, option } from '../lib/index.js';
+import command, { flatten, isOption, option } from '../lib/index.js';
 
 /** @returns {never} */
 function help() {

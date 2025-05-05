@@ -1,5 +1,5 @@
 // @ts-check
-import { command, isOption, option } from '../lib/index.js';
+import command, { isOption, option } from '../lib/index.js';
 
 /** @returns {never} */
 function help() {
