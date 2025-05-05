@@ -208,43 +208,34 @@ describe('parse', () => {
     expect(root).to.deep.equal(actual);
   });
 
-  it('should handle and split provided aliases and use their args', () => {
+  it('should handle aliases and their args', () => {
     const root = command()
-      .option('bar', { alias: ['b', 'f'] })
       .option('--foo', { alias: '-f' })
+      .option('foo', { alias: 'f', args: '1' })
       .option('--bar', {
-        alias: ['-b', ['--bar-alias-1', '2']],
-        args: ['0', '1']
+        alias: ['-ba', ['-b', '4']],
+        args: ['2', '3'],
+        assign: false
       })
-      .command('cmd', { alias: ['c', 'cm', 'cdm'] })
-      .parse(
-        ([] as string[]).concat(
-          ['-f', 'foo'],
-          ['-f=bar', 'baz'],
-          ['-b', '2'],
-          ['--bar-alias-1=3', '4'],
-          ['-bf=2', '3'],
-          ['c', 'cmd', '-fb']
-        )
-      );
+      .parse(['-f=0', '1', 'f=2', '3', '-b=4', '-b', '5']);
     const [actual] = createNodes({
       type: 'command',
       children: [
         {
           id: '--foo',
           name: '--foo',
-          raw: '-f',
+          raw: '-f=0',
           key: '--foo',
           alias: '-f',
-          args: ['foo']
+          args: ['0', '1']
         },
         {
-          id: '--foo',
-          name: '--foo',
-          raw: '-f=bar',
-          key: '--foo',
-          alias: '-f',
-          args: ['bar', 'baz']
+          id: 'foo',
+          name: 'foo',
+          raw: 'f=2',
+          key: 'foo',
+          alias: 'f',
+          args: ['1', '2', '3', '-b=4']
         },
         {
           id: '--bar',
@@ -252,51 +243,43 @@ describe('parse', () => {
           raw: '-b',
           key: '--bar',
           alias: '-b',
-          args: ['0', '1', '2']
+          args: ['2', '3', '4', '5']
+        }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
+  it('should split aliases and use their args', () => {
+    const root = command()
+      .option('--input', { alias: '-i' })
+      .option('--interactive', { alias: '-in' })
+      .option('--dry-run', { alias: ['-n'] })
+      .parse(['-nini=1', '2', '--xnini']);
+    const [actual] = createNodes({
+      type: 'command',
+      children: [
+        {
+          id: '--dry-run',
+          name: '--dry-run',
+          raw: '-nini=1',
+          key: '--dry-run',
+          alias: '-n'
         },
         {
-          id: '--bar',
-          name: '--bar',
-          raw: '--bar-alias-1=3',
-          key: '--bar',
-          alias: '--bar-alias-1',
-          args: ['0', '1', '2', '3', '4']
+          id: '--interactive',
+          name: '--interactive',
+          raw: '-nini=1',
+          key: '--interactive',
+          alias: '-in'
         },
         {
-          id: '--bar',
-          name: '--bar',
-          raw: '-bf=2',
-          key: '--bar',
-          alias: '-b',
-          args: ['0', '1']
-        },
-        {
-          id: '--foo',
-          name: '--foo',
-          raw: '-bf=2',
-          key: '--foo',
-          alias: '-f',
-          args: ['2', '3']
-        },
-        {
-          id: 'cmd',
-          name: 'cmd',
-          raw: 'c',
-          key: 'cmd',
-          alias: 'c',
-          type: 'command',
-          args: ['cmd', '-fb'],
-          children: [
-            {
-              id: 'cmd',
-              name: 'cmd',
-              raw: 'c',
-              key: 'cmd',
-              alias: 'c',
-              type: 'value',
-              args: ['cmd', '-fb']
-            }
-          ]
+          id: '--input',
+          name: '--input',
+          raw: '-nini=1',
+          key: '--input',
+          alias: '-i',
+          args: ['1', '2', '--xnini']
         }
       ]
     });
