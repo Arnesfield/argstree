@@ -82,7 +82,6 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
 
       // assume parsed always contains at least 1 item
       // save alias args to the last item only
-      // const parsed = parsed[parsed.length - 1];
       parsed.args.push(...alias.args);
       // add value to the last item (assume last item is assignable)
       last && hasValue && parsed.args.push(value);

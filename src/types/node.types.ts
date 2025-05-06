@@ -18,7 +18,7 @@ export interface Node<T = unknown> {
   // NOTE: same doc as Arg.key
   /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
   key: string | null;
-  /** The alias used to get the options for the node, otherwise the value is `null`. */
+  /** The alias used to parse the node if any. */
   alias: string | null;
   /** The node type. */
   type: NodeType;
@@ -26,7 +26,7 @@ export interface Node<T = unknown> {
   depth: number;
   /** The node arguments. */
   args: string[];
-  /** The parent node. If `null`, then the node is a root node. */
+  /** The parent node. If `null`, then the node is the root node. */
   parent: Node<T> | null;
   /** The child nodes. */
   children: Node<T>[];
