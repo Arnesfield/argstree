@@ -15,7 +15,7 @@ export class Schema<T> implements ISchema<T> {
     cfg.args = obj();
 
     // only call init once all states are ready
-    typeof cfg.options.init === 'function' && cfg.options.init(this);
+    cfg.options.init?.(this);
   }
 
   option(arg: string, options: Options<T> = {}): this {

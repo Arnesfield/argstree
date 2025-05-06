@@ -68,7 +68,7 @@ export class Node<T> {
 
   run(name: NodeEvent<T>): void {
     // preserve `this` for callbacks
-    typeof this.opts.src[name] === 'function' && this.opts.src[name](this.data);
+    this.opts.src[name]?.(this.data);
   }
 
   /**
@@ -100,16 +100,13 @@ export class Node<T> {
   // NOTE: return empty arrays to ignore values
   // return falsy to fallback to default behavior
   handle(arg: ParsedArg): HandlerResult<T> | undefined {
-    if (typeof this.opts.src.handler !== 'function') return;
-
     // preserve `this` for callbacks
-    let schemas = this.opts.src.handler(arg, this.data);
+    let schemas = this.opts.src.handler?.(arg, this.data);
     // fallback to default behavior for null, undefined, true
     if (schemas == null || schemas === true) return;
 
     const result: HandlerResult<T> = { values: [], opts: [] };
-
-    // ignore when false by returning empty results
+    // ignore when false by returning empty result
     if (schemas === false) return result;
 
     schemas = Array.isArray(schemas) ? schemas : [schemas];
