@@ -3,15 +3,11 @@ import { isOption } from '../lib/is-option';
 import { ArgConfig, Config } from '../schema/schema.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { NonEmptyArray } from '../types/util.types';
 import { display } from '../utils/display';
 import { obj } from '../utils/obj';
 import { cnode } from './cnode';
 
 // NOTE: internal
-
-export type AliasArgs = NonEmptyArray<string>;
-export type AliasArgsList = NonEmptyArray<AliasArgs>;
 
 export interface Alias {
   /** Alias name. */
