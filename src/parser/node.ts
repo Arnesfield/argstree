@@ -173,13 +173,18 @@ export class Node<T> {
 
     if (msg) {
       const err = `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`;
-      this.error(ParseError.RANGE_ERROR, 'e', 'E', err);
+      this.error('e', 'E', err, ParseError.RANGE_ERROR);
     }
 
     this.run('onValidate');
   }
 
-  error(code: string, prefix1: string, prefix2: string, msg: string): never {
+  error(
+    prefix1: string,
+    prefix2: string,
+    msg: string,
+    code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
+  ): never {
     const name = display(this.data);
     msg = (name ? name + prefix1 : prefix2) + msg;
     throw new ParseError(code, msg, this.data, this.opts.src);

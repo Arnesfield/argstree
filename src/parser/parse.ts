@@ -34,15 +34,14 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
     return new Node<T>(nOpts, data, curr);
   }
 
-  const ERR = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
   const root = node({ cfg });
   root.run('onDepth');
   const nodes = [root];
   let parent: Node<T> = root,
     child: Node<T> | null | undefined;
 
-  function unrecognized(msg: string, code = ERR): never {
-    parent.error(code, 'does not recognize the ', 'Unrecognized ', msg);
+  function unrecognized(msg: string, code?: string): never {
+    parent.error('does not recognize the ', 'Unrecognized ', msg, code);
   }
 
   function setAlias(
@@ -141,7 +140,7 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
           ? parent
           : parent.opts.fertile
             ? unrecognized(`option or command: ${raw}`)
-            : parent.error(ERR, 'e', 'E', `xpected no arguments, but got: ${raw}`); // prettier-ignore
+            : parent.error('e', 'E', `xpected no arguments, but got: ${raw}`);
 
     // strict mode: throw error if arg is an option-like
     !noStrict && curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
