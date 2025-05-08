@@ -55,11 +55,12 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
 
     // convert aliases to options
     // make sure the last option is assignable
-    type A = ParsedArg;
     const hasValue = value != null;
-    const lastAlias = aliases[aliases.length - 1];
-    const lArg: A = { raw, key: lastAlias.arg, alias: lastAlias.key };
-    const lParsed = parent.parse(lArg, hasValue);
+    const lAlias = aliases[aliases.length - 1];
+    const lParsed = parent.parse(
+      { raw, key: lAlias.arg, alias: lAlias.key },
+      hasValue
+    );
 
     if (!lParsed) return;
 
@@ -67,29 +68,24 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
     // otherwise, lParsed was parsed normally like the loop below.
     // this ensures that the options.handler call is not called twice
 
-    const items = aliases.map((alias, i) => {
-      const last = i === aliases.length - 1;
-      const arg: A = last ? lArg : { raw, key: alias.arg, alias: alias.key };
-      // no need to check assignable here since
-      // we only need to check that for the last alias arg
-      // also, no handler fallback for aliases!
-      const parsed = last ? lParsed : parent.parse(arg);
-
-      if (!parsed) {
-        unrecognized(`option or command from alias '${alias.key}': ${arg.raw}`);
-      }
-
-      // assume parsed always contains at least 1 item
-      // save alias args to the last item only
-      parsed.args.push(...alias.args);
-      // add value to the last item (assume last item is assignable)
-      last && hasValue && parsed.args.push(value);
-
-      return parsed;
-    });
-
     // assume 'items' always has value
-    set(items as NonEmptyArray<NormalizeOptions<T>>);
+    const items = aliases.map((alias, i) => {
+      // reuse last parsed
+      // otherwise, assume that aliases will always map to options since
+      // it does not have to be assignable (only for the last alias arg)
+      // also, no handler fallback for aliases!
+      const parsed =
+        i === aliases.length - 1
+          ? lParsed
+          : parent.parse({ raw, key: alias.arg, alias: alias.key })!;
+      parsed.args.push(...alias.args);
+      return parsed;
+    }) as NonEmptyArray<NormalizeOptions<T>>;
+
+    // add value to the last item
+    hasValue && lParsed.args.push(value);
+
+    set(items);
 
     return true;
   }
