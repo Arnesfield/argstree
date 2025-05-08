@@ -95,12 +95,12 @@ export interface Options<T = unknown> {
    */
   strict?: boolean | 'self' | 'descendants';
   /**
-   * When enabled, parsed nodes will be treated as leaf nodes (no child nodes).
-   * If there are options or commands configured for the schema,
-   * then this option is ignored and becomes `false` (can have child nodes).
+   * When `true`, parsed nodes will be treated as leaf nodes (no child nodes).
+   * When `false`, parsed nodes will be treated as parent nodes (has child nodes).
    *
-   * Depending on the {@linkcode NodeType}, the default value is
-   * `true` for `option` types and `false` for `command` types.
+   * If not provided, this option defaults to `true` for `option` types
+   * or if there are no options or commands configured for the schema.
+   * Otherwise, this is `false`.
    */
   leaf?: boolean;
   /**

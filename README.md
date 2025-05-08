@@ -293,17 +293,16 @@ Note that string values returned by the [`handler`](#optionshandler) callback ar
 
 #### options.leaf
 
-Type: `boolean`\
-Default: `true` for `option` types and `false` for `command` types
+Type: `boolean`
 
-When enabled, parsed nodes will be treated as leaf nodes (no child nodes). If there are options or commands configured for the schema, then this option is ignored and becomes `false` (can have child nodes).
+When `true`, parsed nodes will be treated as leaf nodes (no child nodes). When `false`, parsed nodes will be treated as parent nodes (has child nodes).
+
+If not provided, this option defaults to `true` for `option` types or if there are no options or commands configured for the schema. Otherwise, this is `false`.
 
 This allows command type nodes to be leaf nodes and option type nodes to have child nodes. In most cases, you wouldn't need to configure this option, but it is available in the rare chance that you do.
 
 ```javascript
-// `leaf` option is ignored for the root command
-// since it has options and commands configured
-const root = command({ leaf: true })
+const root = command()
   .option('--tree', { leaf: false })
   .command('run', { leaf: true })
   .parse(['run', 'build', '--tree', 'run', 'build']);

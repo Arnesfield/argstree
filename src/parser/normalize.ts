@@ -120,7 +120,7 @@ export function normalize<T>(
 
   return {
     read: src.read ?? true,
-    leaf: !fertile && (src.leaf ?? c.type === 'option'),
+    leaf: src.leaf ?? (!fertile && c.type === 'option'),
     fertile,
     safeAlias,
     min,
