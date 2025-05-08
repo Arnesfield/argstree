@@ -73,10 +73,11 @@ export function normalize<T>(
   // save splittable aliases to keys array
   let safeAlias = true;
   const keys: string[] = [];
+  const args = obj(c.args);
   const aliases: NormalizedOptions<T>['aliases'] = obj();
 
   // apply aliases from args
-  const cfgs = Object.entries(c.args);
+  const cfgs = Object.entries(args);
   for (const [raw, cfg] of cfgs) {
     // use `alias[0]` as alias and `arg` as arg
     const items =
@@ -115,20 +116,11 @@ export function normalize<T>(
   }
 
   // check args length first since it is the most likely to always be true
-  const fertile =
-    cfgs.length > 0 || !!src.handler || Object.keys(aliases).length > 0;
+  const fertile = cfgs.length > 0 || !!src.handler;
+  const { read = true, leaf = !fertile && c.type === 'option' } = src;
 
-  return {
-    read: src.read ?? true,
-    leaf: src.leaf ?? (!fertile && c.type === 'option'),
-    fertile,
-    safeAlias,
-    min,
-    max,
-    src,
-    args: obj(c.args),
-    aliases,
-    // sort by length desc for splitting later on
-    keys: keys.sort((a, b) => b.length - a.length)
-  };
+  // sort by length desc for splitting later on
+  keys.sort((a, b) => b.length - a.length);
+
+  return { read, leaf, fertile, safeAlias, min, max, src, args, aliases, keys };
 }
