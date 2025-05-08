@@ -122,12 +122,8 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
 
   function setValue(raw: string, noStrict?: boolean) {
     // check if child can read one more argument
-    // fallback to parent if child cannot accept any more args:
-    // - if parent cannot read args, assume unrecognized argument
-    // - if parent cannot make children, save the argument and rely on the
-    // range check since we can safely assume it cannot have any child nodes
-    // that will need the events called first before throwing an error
-    // - if parent cannot accept args, assume unrecognized argument
+    // fallback to parent if child cannot accept any more args
+    // if parent cannot read args, assume unrecognized argument
     const curr =
       child?.opts.read &&
       (child.opts.max == null || child.opts.max > child.data.args.length)

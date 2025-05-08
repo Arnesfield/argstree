@@ -408,7 +408,6 @@ describe('error', () => {
 
       options = {
         read: false,
-        leaf: false,
         init(schema) {
           schema.option('--baz', { read: false });
         }
