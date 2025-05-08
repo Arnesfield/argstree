@@ -252,34 +252,36 @@ describe('parse', () => {
 
   it('should split aliases and use their args', () => {
     const root = command()
-      .option('--input', { alias: '-i' })
-      .option('--interactive', { alias: '-in' })
-      .option('--dry-run', { alias: ['-n'] })
-      .parse(['-nini=1', '2', '--xnini']);
+      .option('--input', { alias: [['-i', '2']], args: ['0', '1'] })
+      .option('--interactive', { alias: [['-in', '3']], args: '2' })
+      .option('--dry-run', { alias: [['-n', '5']], args: ['3', '4'] })
+      .parse(['-nini=3', '4', '--xnini']);
     const [actual] = createNodes({
       type: 'command',
       children: [
         {
           id: '--dry-run',
           name: '--dry-run',
-          raw: '-nini=1',
+          raw: '-nini=3',
           key: '--dry-run',
-          alias: '-n'
+          alias: '-n',
+          args: ['3', '4', '5']
         },
         {
           id: '--interactive',
           name: '--interactive',
-          raw: '-nini=1',
+          raw: '-nini=3',
           key: '--interactive',
-          alias: '-in'
+          alias: '-in',
+          args: ['2', '3']
         },
         {
           id: '--input',
           name: '--input',
-          raw: '-nini=1',
+          raw: '-nini=3',
           key: '--input',
           alias: '-i',
-          args: ['1', '2', '--xnini']
+          args: ['0', '1', '2', '3', '4', '--xnini']
         }
       ]
     });
