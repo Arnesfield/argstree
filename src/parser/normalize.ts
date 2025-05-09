@@ -97,7 +97,7 @@ export function normalize<T>(
       if (aliases[key]) {
         // this node is for current value options
         // and is not being parsed but being validated
-        data = cnode({ raw, key: raw, cfg }, data.parent, []);
+        data = cnode({ raw, key: raw, cfg }, data, []);
         const name = display(data);
         const msg =
           (name ? name + 'c' : 'C') + `annot use an existing alias: ${key}`;
