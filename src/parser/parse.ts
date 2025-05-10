@@ -212,8 +212,7 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
     // if unsafe, split arg.key only if it does not match raw (hasValue)
     else if (
       !parent.opts.safeAlias &&
-      (split = parent.split(raw)) &&
-      split.remainder.length === 0 &&
+      (split = parent.split(raw))?.list &&
       setAlias(split.list, raw)
     ) {
       // you would think it might be ideal to stop parent.split()
@@ -223,8 +222,7 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
       // also set alias was successful, do nothing and go to next iteration
     } else if (
       (parent.opts.safeAlias || hasValue) &&
-      (split = parent.split(arg.key)) &&
-      split.remainder.length === 0 &&
+      (split = parent.split(arg.key))?.list &&
       setAlias(split.list, raw, arg.value)
     ) {
       // setAlias was successful, do nothing and go to next iteration

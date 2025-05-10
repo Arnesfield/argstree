@@ -37,7 +37,7 @@ export interface ParsedNodeOptions<T>
     Required<Pick<NormalizeOptions<T>, 'args'>> {}
 
 export interface NodeSplit extends Split {
-  list: NonEmptyArray<Alias>;
+  list?: NonEmptyArray<Alias>;
 }
 
 // NOTE: node instances will only have data types 'option' and 'command'
@@ -193,10 +193,6 @@ export class Node<T> {
   // aliases
 
   split(arg: string): NodeSplit | undefined {
-    // accept optional for split.list (internal only)
-    interface PartialNodeSplit
-      extends Split,
-        Partial<Pick<NodeSplit, 'list'>> {}
     type A = NonEmptyArray<Alias>;
 
     // only accept aliases
@@ -204,14 +200,17 @@ export class Node<T> {
     // considered as split only if alias args were found.
     // note that split.values would always exist as keys in opts.aliases
     // as we use opts.names for splitting which is derived from opts.aliases
-    let s: PartialNodeSplit | undefined;
+    let s: NodeSplit | undefined;
     if (
       isOption(arg, 'short') &&
       (s = split(arg.slice(1), this.opts.keys)).values.length > 0
     ) {
-      // get args per alias and assume `-{name}` always exists
-      s.list = s.values.map(key => this.opts.aliases['-' + key]) as A;
-      return s as NodeSplit;
+      // only set list if has no remainder
+      if (s.remainder.length === 0) {
+        // get args per alias and assume `-{name}` always exists
+        s.list = s.values.map(key => this.opts.aliases['-' + key]) as A;
+      }
+      return s;
     }
   }
 }
