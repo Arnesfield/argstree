@@ -31,8 +31,8 @@ export class ParseError<T> extends Error {
   constructor(
     public code: string,
     message: string,
-    public node: Node<T>,
-    public options: Options<T>
+    public node?: Node<T>,
+    public options?: Options<T>
   ) {
     super(message);
   }

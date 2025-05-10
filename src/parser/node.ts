@@ -1,25 +1,18 @@
 import { ParseError } from '../lib/error';
-import { isOption } from '../lib/is-option';
-import { split, Split } from '../lib/split';
-import { Schema } from '../schema/schema.class';
-import { ArgConfig, Config } from '../schema/schema.types';
+import { Config } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { NonEmptyArray } from '../types/util.types';
 import { display } from '../utils/display';
-import { Alias, NormalizedOptions, NormalizeOptions } from './normalize';
+import { NodeOptions } from './cnode';
+import { NormalizedOptions } from './normalize';
+import { resolveArgs } from './resolver';
 
 // NOTE: internal
 
-export interface ParsedArg extends Arg {
-  /** The alias used when the argument was parsed through an alias. */
-  alias?: string;
-}
-
 export interface HandlerResult<T> {
-  values: string[];
-  opts: ParsedNodeOptions<T>[];
+  args: string[];
+  opts: NodeOptions<T>[];
 }
 
 // same as INode but cannot be a value type
@@ -30,15 +23,6 @@ export interface NodeData<T>
 export type NodeEvent<T> = keyof {
   [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
 };
-
-// same as NormalizeOptions but with required args
-export interface ParsedNodeOptions<T>
-  extends Omit<NormalizeOptions<T>, 'args'>,
-    Required<Pick<NormalizeOptions<T>, 'args'>> {}
-
-export interface NodeSplit extends Split {
-  list?: NonEmptyArray<Alias>;
-}
 
 // NOTE: node instances will only have data types 'option' and 'command'
 // directly save value nodes into data.children instead
@@ -71,41 +55,15 @@ export class Node<T> {
     this.opts.src[name]?.(this.data);
   }
 
-  /**
-   * Gets the node options from the normalized arguments using the parsed argument.
-   * @param arg The parsed argument.
-   * @param assignable Set to `true` to accept assignable option or command only.
-   * @returns The parsed node options.
-   */
-  parse(
-    arg: ParsedArg,
-    assignable?: boolean
-  ): ParsedNodeOptions<T> | undefined {
-    // if exact match was found, check assignable only if value exists
-    const { raw, key, alias, value } = arg;
-    const opts = this.opts.args[key];
-    if (
-      opts &&
-      (!assignable || (opts.options.assign ?? opts.type === 'option'))
-    ) {
-      // only create schema when needed to handle recursive init functions
-      // having args and aliases means that the schema was already configured
-      const cfg = opts.args
-        ? (opts as Config<T>)
-        : new Schema(opts as ArgConfig<T>).config();
-      return { raw, key, alias, args: value != null ? [value] : [], cfg };
-    }
-  }
-
   // NOTE: return empty arrays to ignore values
   // return falsy to fallback to default behavior
-  handle(arg: ParsedArg): HandlerResult<T> | undefined {
+  handle(arg: Arg): HandlerResult<T> | undefined {
     // preserve `this` for callbacks
     let schemas = this.opts.src.handler?.(arg, this.data);
     // fallback to default behavior for null, undefined, true
     if (schemas == null || schemas === true) return;
 
-    const result: HandlerResult<T> = { values: [], opts: [] };
+    const result: HandlerResult<T> = { args: [], opts: [] };
     // ignore when false by returning empty result
     if (schemas === false) return result;
 
@@ -113,14 +71,14 @@ export class Node<T> {
     // fallback to default behavior for empty arrays
     if (schemas.length === 0) return;
 
-    const { raw, key, alias } = arg;
     for (const schema of schemas) {
       if (typeof schema === 'string') {
-        result.values.push(schema);
+        result.args.push(schema);
       } else {
         // use arg.key as key here despite not using arg.value
         // since we assume that the consumer will handle arg.value manually
-        result.opts.push({ raw, key, alias, args: [], cfg: schema.config() });
+        const cfg = schema.config();
+        result.opts.push({ key: arg.key, args: resolveArgs(cfg), cfg });
       }
     }
 
@@ -188,29 +146,5 @@ export class Node<T> {
     const name = display(this.data);
     msg = (name ? name + prefix1 : prefix2) + msg;
     throw new ParseError(code, msg, this.data, this.opts.src);
-  }
-
-  // aliases
-
-  split(arg: string): NodeSplit | undefined {
-    type A = NonEmptyArray<Alias>;
-
-    // only accept aliases
-    // remove first `-` for alias
-    // considered as split only if alias args were found.
-    // note that split.values would always exist as keys in opts.aliases
-    // as we use opts.names for splitting which is derived from opts.aliases
-    let s: NodeSplit | undefined;
-    if (
-      isOption(arg, 'short') &&
-      (s = split(arg.slice(1), this.opts.keys)).values.length > 0
-    ) {
-      // only set list if has no remainder
-      if (s.remainder.length === 0) {
-        // get args per alias and assume `-{name}` always exists
-        s.list = s.values.map(key => this.opts.aliases['-' + key]) as A;
-      }
-      return s;
-    }
   }
 }

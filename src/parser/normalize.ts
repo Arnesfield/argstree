@@ -11,9 +11,9 @@ import { cnode } from './cnode';
 
 export interface Alias {
   /** Alias name. */
-  key: string;
+  id: string;
   /** The argument to match. */
-  arg: string;
+  key: string;
   /** Alias arguments. */
   args: string[];
 }
@@ -41,22 +41,21 @@ export interface NormalizedOptions<T> {
   readonly keys: string[];
 }
 
-export interface NormalizeOptions<T>
-  extends Partial<Pick<Node<T>, 'raw' | 'key' | 'alias' | 'args'>> {
-  cfg: Config<T>;
-}
-
 // ensure non-negative number
 function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
+// ensure array string
+function array<T>(a: T | T[] | null | undefined): T[] {
+  return typeof a === 'string' ? [a] : Array.isArray(a) ? a : [];
+}
+
 export function normalize<T>(
-  opts: NormalizeOptions<T>,
+  c: ArgConfig<T>,
   // NOTE: data is only used for error purposes
-  data: Node<T>
+  data?: Node<T>
 ): NormalizedOptions<T> {
-  const c = opts.cfg;
   const src = c.options;
 
   // get and validate range
@@ -64,7 +63,7 @@ export function normalize<T>(
   const max = number(src.max);
 
   if (min != null && max != null && min > max) {
-    const name = display(data);
+    const name = data && display(data);
     const msg =
       (name ? name + 'has i' : 'I') + `nvalid min and max range: ${min}-${max}`;
     throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, src);
@@ -78,39 +77,32 @@ export function normalize<T>(
 
   // apply aliases from args
   const cfgs = Object.entries(args);
-  for (const [raw, cfg] of cfgs) {
-    // use `alias[0]` as alias and `arg` as arg
-    const items =
-      typeof cfg.options.alias === 'string'
-        ? [cfg.options.alias]
-        : Array.isArray(cfg.options.alias)
-          ? cfg.options.alias
-          : [];
-    for (const item of items) {
+  for (const [key, cfg] of cfgs) {
+    for (const item of array(cfg.options.alias)) {
       // each item is an alias
       // if item is an array, item[0] is an alias
-      const arr =
-        typeof item === 'string' ? [item] : Array.isArray(item) ? item : [];
+      const arr = array(item);
       if (arr.length === 0) continue;
 
-      const key = arr[0];
-      if (aliases[key]) {
+      // use `alias[0]` as alias id and `arg` as arg
+      const id = arr[0];
+      if (aliases[id]) {
         // this node is for current value options
         // and is not being parsed but being validated
-        data = cnode({ raw, key: raw, cfg }, data, []);
-        const name = display(data);
+        data &&= cnode(key, { key, cfg }, data);
+        const name = display(data || { name: key, type: cfg.type });
         const msg =
-          (name ? name + 'c' : 'C') + `annot use an existing alias: ${key}`;
+          (name ? name + 'c' : 'C') + `annot use an existing alias: ${id}`;
         throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, cfg.options);
       }
 
-      aliases[key] = { key, arg: raw, args: arr.slice(1) };
+      aliases[id] = { id, key, args: arr.slice(1) };
 
       // skip command aliases since we don't need to split them
       // and remove `-` prefix
-      if (isOption(key, 'short')) {
-        keys.push(key.slice(1));
-        safeAlias &&= !key.includes('=');
+      if (isOption(id, 'short')) {
+        keys.push(id.slice(1));
+        safeAlias &&= !id.includes('=');
       }
     }
   }
