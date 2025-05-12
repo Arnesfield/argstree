@@ -73,7 +73,7 @@ export interface Options<T = unknown> {
   /**
    * Determines if the option or command can have an assigned value using the
    * equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option
-   * or command will not be matched Zand the argument is treated like a normal value.
+   * or command will not be matched and the argument is treated like a normal value.
    *
    * Depending on the {@linkcode NodeType}, the default value is
    * `true` for `option` types and `false` for `command` types.
