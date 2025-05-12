@@ -9,11 +9,12 @@ import { cnode } from './cnode';
 
 // NOTE: internal
 
+// NOTE: match interface with ParsedArg
 export interface Alias {
-  /** Alias name. */
-  id: string;
   /** The argument to match. */
   key: string;
+  /** Alias name. */
+  alias: string;
   /** Alias arguments. */
   args: string[];
 }
@@ -85,24 +86,24 @@ export function normalize<T>(
       if (arr.length === 0) continue;
 
       // use `alias[0]` as alias id and `arg` as arg
-      const id = arr[0];
-      if (aliases[id]) {
+      const a = arr[0];
+      if (aliases[a]) {
         // this node is for current value options
         // and is not being parsed but being validated
         data &&= cnode(key, { key, cfg }, data);
         const name = display(data || { name: key, type: cfg.type });
         const msg =
-          (name ? name + 'c' : 'C') + `annot use an existing alias: ${id}`;
+          (name ? name + 'c' : 'C') + `annot use an existing alias: ${a}`;
         throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, cfg.options);
       }
 
-      aliases[id] = { id, key, args: arr.slice(1) };
+      aliases[a] = { key, alias: a, args: arr.slice(1) };
 
       // skip command aliases since we don't need to split them
       // and remove `-` prefix
-      if (isOption(id, 'short')) {
-        keys.push(id.slice(1));
-        safeAlias &&= !id.includes('=');
+      if (isOption(a, 'short')) {
+        keys.push(a.slice(1));
+        safeAlias &&= !a.includes('=');
       }
     }
   }

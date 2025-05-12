@@ -61,8 +61,7 @@ export class Resolver<T> {
     // convert aliases to options
     // make sure the last option is assignable
     const hasValue = value != null;
-    const lAlias = aliases[aliases.length - 1];
-    const lItem = this.get({ key: lAlias.key, alias: lAlias.id }, hasValue);
+    const lItem = this.get(aliases[aliases.length - 1], hasValue);
 
     if (!lItem) return;
 
@@ -77,9 +76,7 @@ export class Resolver<T> {
       // it does not have to be assignable (only for the last alias arg)
       // also, no handler fallback for aliases!
       const last = i === aliases.length - 1;
-      const item = last
-        ? lItem
-        : this.get({ key: alias.key, alias: alias.id })!;
+      const item = last ? lItem : this.get(alias)!;
 
       item.args.push(...alias.args);
       // add value to the last item
