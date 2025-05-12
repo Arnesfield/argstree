@@ -17,9 +17,9 @@ export interface ResolverSplit extends Split {
   list?: NonEmptyArray<Alias>;
 }
 
-// same as NodeOptions but require all props except alias
-export type ResolverItem<T> = Required<Omit<NodeOptions<T>, 'alias'>> &
-  Pick<NodeOptions<T>, 'alias'>;
+// same as NodeOptions but some props are required
+export type ResolverItem<T> = Omit<NodeOptions<T>, 'key' | 'args'> &
+  Required<Pick<NodeOptions<T>, 'key' | 'args'>>;
 
 export interface ResolverResult<T> {
   arg: Arg;
@@ -49,7 +49,7 @@ export class Resolver<T> {
       // save value if any
       const args = resolveArgs(cfg);
       arg.value != null && args.push(arg.value);
-      return { key: arg.key, alias: arg.alias, args, cfg };
+      return { key: arg.key, alias: arg.alias, value: arg.value, args, cfg };
     }
   }
 
@@ -62,9 +62,9 @@ export class Resolver<T> {
     // make sure the last option is assignable
     const hasValue = value != null;
     const lAlias = aliases[aliases.length - 1];
-    const lParsed = this.get({ key: lAlias.key, alias: lAlias.id }, hasValue);
+    const lItem = this.get({ key: lAlias.key, alias: lAlias.id }, hasValue);
 
-    if (!lParsed) return;
+    if (!lItem) return;
 
     // at this point, if a value is assigned, lParsed would always be set
     // otherwise, lParsed was parsed normally like the loop below.
@@ -72,20 +72,23 @@ export class Resolver<T> {
 
     // assume 'items' always has value
     return aliases.map((alias, i) => {
-      // reuse last parsed
+      // reuse last parsed item
       // otherwise, assume that aliases will always map to options since
       // it does not have to be assignable (only for the last alias arg)
       // also, no handler fallback for aliases!
       const last = i === aliases.length - 1;
-      const parsed = last
-        ? lParsed
+      const item = last
+        ? lItem
         : this.get({ key: alias.key, alias: alias.id })!;
 
-      parsed.args.push(...alias.args);
+      item.args.push(...alias.args);
       // add value to the last item
-      last && hasValue && parsed.args.push(value);
+      if (last && hasValue) {
+        item.args.push(value);
+        item.value = value;
+      }
 
-      return parsed;
+      return item;
     }) as NonEmptyArray<ResolverItem<T>>;
   }
 

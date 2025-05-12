@@ -21,6 +21,8 @@ export interface Node<T = unknown> {
   key: string | null;
   /** The alias used to parse the node if any. */
   alias: string | null;
+  /** The assigned value if any. This value is included in {@linkcode args}. */
+  value: string | null;
   /** The node type. */
   type: NodeType;
   /** The node depth. */

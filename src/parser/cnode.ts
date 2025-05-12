@@ -7,6 +7,7 @@ import { NodeData } from './node';
 export interface NodeOptions<T> {
   key?: string;
   alias?: string;
+  value?: string;
   /** Resolved arguments (includes the `options.args` and parsed value). */
   args?: string[];
   /** Reference to the config object. */
@@ -28,7 +29,8 @@ export function cnode<T>(
   args: string[] = []
 ): NodeData<T> {
   // prettier-ignore
-  const { key = null, alias = null, cfg: { type, options: { id = key, name = key } } } = opts;
+  const { key = null, alias = null, value = null, cfg: { type, options: { id = key, name = key } } } = opts;
   const depth = parent ? parent.depth + 1 : 0;
-  return { id, name, raw, key, alias, type, depth, args, parent, children: [] };
+  // prettier-ignore
+  return { id, name, raw, key, alias, value, type, depth, args, parent, children: [] };
 }
