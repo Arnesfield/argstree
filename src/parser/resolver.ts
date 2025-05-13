@@ -65,8 +65,8 @@ export class Resolver<T> {
 
     if (!lItem) return;
 
-    // at this point, if a value is assigned, lParsed would always be set
-    // otherwise, lParsed was parsed normally like the loop below.
+    // at this point, if a value is assigned, lItem would always be set
+    // otherwise, lItem was parsed normally like the loop below.
     // this ensures that the options.handler call is not called twice
 
     // assume 'items' always has value
