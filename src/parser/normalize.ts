@@ -5,6 +5,7 @@ import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { display } from '../utils/display';
 import { obj } from '../utils/obj';
+import { range } from '../utils/range';
 import { cnode } from './cnode';
 
 // NOTE: internal
@@ -42,11 +43,6 @@ export interface NormalizedOptions<T> {
   readonly keys: string[];
 }
 
-// ensure non-negative number
-function number(n: number | null | undefined): number | null {
-  return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
-}
-
 // ensure array string
 function array<T>(a: T | T[] | null | undefined): T[] {
   return typeof a === 'string' ? [a] : Array.isArray(a) ? a : [];
@@ -60,15 +56,7 @@ export function normalize<T>(
   const src = c.options;
 
   // get and validate range
-  const min = number(src.min);
-  const max = number(src.max);
-
-  if (min != null && max != null && min > max) {
-    const name = data && display(data);
-    const msg =
-      (name ? name + 'has i' : 'I') + `nvalid min and max range: ${min}-${max}`;
-    throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, src);
-  }
+  const [min, max] = range(src, data, src);
 
   // save splittable aliases to keys array
   let safeAlias = true;

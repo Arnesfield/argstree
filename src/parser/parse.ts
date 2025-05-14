@@ -25,7 +25,7 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
   }
 
   const root = node(null, { cfg });
-  root.run('onDepth');
+  root.cb('onDepth');
   const nodes = [root];
   let parent: Node<T> = root,
     child: Node<T> | null | undefined;
@@ -52,6 +52,8 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
       nodes.push((child = node(raw, item, parent)));
       parent.children.push(child);
       parent.data.children.push(child.data);
+
+      parent.vcb('onChild');
     }
 
     // assume child always exists (items has length)
@@ -69,10 +71,10 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
     // fallback to parent if child cannot accept any more args
     // if parent cannot read args, assume unrecognized argument
     const curr =
-      child?.opts.read &&
-      (child.opts.max == null || child.opts.max > child.data.args.length)
+      child?.vo.read &&
+      (child.vo.max == null || child.vo.max > child.data.args.length)
         ? child
-        : parent.opts.read
+        : parent.vo.read
           ? parent
           : parent.opts.fertile
             ? unrecognized(`option or command: ${raw}`)
@@ -84,6 +86,8 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
 
     // if saving to parent, save args to the value node
     curr === parent && curr.value(raw);
+
+    curr.vcb('onArg');
   }
 
   const resolver = new Resolver<T>();
@@ -133,7 +137,7 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
   parent.done();
 
   // run onBeforeValidate for all nodes per depth level incrementally
-  for (const item of nodes) item.run('onBeforeValidate');
+  for (const item of nodes) item.cb('onBeforeValidate');
 
   // validate and run onValidate for all nodes
   for (const item of nodes) item.check();

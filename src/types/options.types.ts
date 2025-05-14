@@ -4,6 +4,16 @@ import { Schema } from '../schema/schema.types';
 import { Arg } from './arg.types';
 import { Node, NodeType } from './node.types';
 
+/** Options that can be changed during parsing for the node. */
+export interface VariableOptions {
+  /** Override or clear the {@linkcode Options.min} option for this node. */
+  min?: number | null;
+  /** Override or clear the {@linkcode Options.max} option for this node. */
+  max?: number | null;
+  /** Override the {@linkcode Options.read} option for this node. */
+  read?: boolean;
+}
+
 /**
  * The options object.
  * @template T The metadata type.
@@ -157,16 +167,35 @@ export interface Options<T = unknown> {
     arg: Arg,
     node: Node<T>
   ): Schema<T> | string | (Schema<T> | string)[] | boolean | void;
+  // TODO: params might change later to ctx: Context
   /**
    * Called when the node is created with its initial arguments.
    * @param node The node object.
+   * @param options The variable options.
+   * @returns Options to override for this node.
    */
-  onCreate?(node: Node<T>): void;
+  onCreate?(node: Node<T>, options: VariableOptions): VariableOptions | void;
+  /**
+   * Called when the node receives an argument.
+   * @param node The node object.
+   * @param options The variable options.
+   * @returns Options to override for this node.
+   */
+  onArg?(node: Node<T>, options: VariableOptions): VariableOptions | void;
+  /**
+   * Called when the node receives an option or command child node.
+   * @param node The node object.
+   * @param options The variable options.
+   * @returns Options to override for this node.
+   */
+  onChild?(node: Node<T>, options: VariableOptions): VariableOptions | void;
   /**
    * Called after the node has received all arguments and direct child nodes that it can have.
    * @param node The node object.
+   * @param options The variable options.
+   * @returns Options to override for this node.
    */
-  onData?(node: Node<T>): void;
+  onData?(node: Node<T>, options: VariableOptions): VariableOptions | void;
   /**
    * Called when all nodes of the same depth have been created.
    * @param node The node object.

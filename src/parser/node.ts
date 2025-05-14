@@ -2,8 +2,9 @@ import { ParseError } from '../lib/error';
 import { Config } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
-import { Options } from '../types/options.types';
+import { Options, VariableOptions } from '../types/options.types';
 import { display } from '../utils/display';
+import { range } from '../utils/range';
 import { NodeOptions } from './cnode';
 import { NormalizedOptions } from './normalize';
 import { resolveArgs } from './resolver';
@@ -20,8 +21,20 @@ export interface NodeData<T>
   extends Omit<INode<T>, 'type'>,
     Pick<Config<T>, 'type'> {}
 
-export type NodeEvent<T> = keyof {
-  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
+// all on* callbacks in Options
+export type CallbackOptions<T> = {
+  [K in keyof Options<T> as K extends `on${string}`
+    ? K
+    : never]-?: Options<T>[K];
+};
+
+export type EventKey<T> = {
+  [K in keyof CallbackOptions<T> as Exclude<
+    ReturnType<CallbackOptions<T>[K]>,
+    void
+  > extends never
+    ? 'default'
+    : 'variable']: K;
 };
 
 // NOTE: node instances will only have data types 'option' and 'command'
@@ -29,6 +42,8 @@ export type NodeEvent<T> = keyof {
 export class Node<T> {
   readonly children: Node<T>[] = [];
   readonly strict: boolean | undefined;
+  /** Range options for this node. */
+  readonly vo: VariableOptions;
   /** The strict mode value for descendants. */
   private readonly dstrict: boolean | undefined;
 
@@ -47,12 +62,29 @@ export class Node<T> {
           ? (this.dstrict = opts.src.strict)
           : !(this.dstrict = opts.src.strict !== 'self');
 
-    this.run('onCreate');
+    this.vo = { min: opts.min, max: opts.max, read: opts.read };
+
+    this.vcb('onCreate');
   }
 
-  run(name: NodeEvent<T>): void {
+  /** Run variable callback. */
+  vcb(e: EventKey<T>['variable']): void {
+    let opts;
+    const v = this.vo;
+
+    // create copy of read options to disallow modifying object directly
+    if (!(opts = this.opts.src[e]?.(this.data, { ...v }))) return;
+
+    if (opts.min !== undefined) v.min = opts.min;
+    if (opts.max !== undefined) v.max = opts.max;
+    if (opts.read != null) v.read = opts.read;
+
+    [v.min, v.max] = range(v, this.data, this.opts.src);
+  }
+
+  cb(e: EventKey<T>['default']): void {
     // preserve `this` for callbacks
-    this.opts.src[name]?.(this.data);
+    this.opts.src[e]?.(this.data);
   }
 
   // NOTE: return empty arrays to ignore values
@@ -109,12 +141,12 @@ export class Node<T> {
 
   /** Depth parsed. */
   done(): void {
-    this.run('onData');
-    for (const node of this.children) node.run('onDepth');
+    this.vcb('onData');
+    for (const node of this.children) node.cb('onDepth');
   }
 
   check(): void {
-    const { min, max } = this.opts;
+    const { min, max } = this.vo;
 
     // validate node
     const len = this.data.args.length;
@@ -134,7 +166,7 @@ export class Node<T> {
       this.error('e', 'E', err, ParseError.RANGE_ERROR);
     }
 
-    this.run('onValidate');
+    this.cb('onValidate');
   }
 
   error(
