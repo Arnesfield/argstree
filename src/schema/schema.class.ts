@@ -57,14 +57,13 @@ export class Schema<T> implements ISchema<T> {
     } else if (res.split) {
       return { split: res.split };
     } else if (res.items) {
-      const configs = res.items.map(
-        (r): ResolvedConfig<T> => ({
-          key: r.key,
-          alias: r.alias,
-          type: r.cfg.type,
-          options: { ...r.cfg.options, args: r.args }
-        })
-      );
+      // prettier-ignore
+      const configs = res.items.map((r): ResolvedConfig<T> => ({
+        key: r.key,
+        alias: r.alias,
+        type: r.cfg.type,
+        options: { ...r.cfg.options, args: r.args }
+      }));
       return { configs };
     }
   }
