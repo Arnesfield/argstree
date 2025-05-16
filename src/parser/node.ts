@@ -111,23 +111,23 @@ export class Node<T> {
 
   // save arg to the last value child node
   value(arg: string): void {
-    let node;
-    const { children } = this.data;
-    if (
-      children.length > 0 &&
-      (node = children[children.length - 1]).type === 'value'
-    ) {
+    let node: INode<T>;
+    const p = this.data;
+    const c = p.children;
+
+    if (c.length > 0 && (node = c[c.length - 1]).type === 'value') {
       node.args.push(arg);
     } else {
       // value node is almost the same as its parent but with different props
-      children.push({
-        ...this.data,
-        type: 'value',
-        depth: this.data.depth + 1,
-        args: [arg],
-        parent: this.data,
-        children: []
-      });
+
+      // prettier-ignore
+      node = { ...p, value: null, type: 'value', depth: p.depth + 1, args: [arg], parent: p, children: [] };
+
+      // from the consumer's point of view,
+      // the meta property is only ever set to the main node
+      delete node.meta;
+
+      c.push(node);
     }
   }
 
