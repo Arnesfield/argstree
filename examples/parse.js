@@ -56,10 +56,10 @@ function run(argv) {
           max: 1,
           args: arg.value,
           read,
-          onCreate(node) {
+          onCreate(ctx) {
             // only allow dot notation for long options so that short options
             // are not split (e.g. `-x.y` will not be treated like `--x.y`)
-            node.meta = { dot: true };
+            ctx.node.meta = { dot: true };
           }
         });
       }

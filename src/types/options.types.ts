@@ -14,6 +14,14 @@ export interface VariableOptions {
   read?: boolean;
 }
 
+/** The callback context. */
+export interface Context<T> extends VariableOptions {
+  /** The node object. */
+  node: Node<T>;
+  /** The schema object. */
+  schema: Schema<T>;
+}
+
 /**
  * The options object.
  * @template T The metadata type.
@@ -144,7 +152,7 @@ export interface Options<T = unknown> {
    * where the parsed argument may be treated either as a value or
    * an unrecognized argument depending on the provided options.
    * @param arg The parsed argument.
-   * @param node The node object.
+   * @param ctx The callback context.
    * @returns The schemas or values if any.
    * @example
    * import command, { isOption, option } from 'argstree';
@@ -165,52 +173,50 @@ export interface Options<T = unknown> {
    */
   handler?(
     arg: Arg,
-    node: Node<T>
+    ctx: Context<T>
   ): Schema<T> | string | (Schema<T> | string)[] | boolean | void;
-  // TODO: params might change later to ctx: Context
   /**
    * Called when the node is created with its initial arguments.
-   * @param node The node object.
-   * @param options The variable options.
+   * @param ctx The callback context.
    * @returns Options to override for this node.
    */
-  onCreate?(node: Node<T>, options: VariableOptions): VariableOptions | void;
+  onCreate?(ctx: Context<T>): VariableOptions | void;
   /**
    * Called when the node receives an argument.
-   * @param node The node object.
-   * @param options The variable options.
+   * @param ctx The callback context.
    * @returns Options to override for this node.
    */
-  onArg?(node: Node<T>, options: VariableOptions): VariableOptions | void;
+  onArg?(ctx: Context<T>): VariableOptions | void;
   /**
    * Called when the node receives an option or command child node.
-   * @param node The node object.
-   * @param options The variable options.
+   * @param ctx The callback context.
    * @returns Options to override for this node.
    */
-  onChild?(node: Node<T>, options: VariableOptions): VariableOptions | void;
+  onChild?(ctx: Context<T>): VariableOptions | void;
   /**
    * Called after the node has received all arguments and direct child nodes that it can have.
-   * @param node The node object.
-   * @param options The variable options.
+   * @param ctx The callback context.
    * @returns Options to override for this node.
    */
-  onData?(node: Node<T>, options: VariableOptions): VariableOptions | void;
+  onData?(ctx: Context<T>): VariableOptions | void;
   /**
    * Called when all nodes of the same depth have been created.
-   * @param node The node object.
+   * @param ctx The callback context.
+   * @returns Options to override for this node.
    */
-  onDepth?(node: Node<T>): void;
+  onDepth?(ctx: Context<T>): VariableOptions | void;
   /**
    * Called once all nodes have been parsed and before any validation checks.
-   * @param node The node object.
+   * @param ctx The callback context.
+   * @returns Options to override for this node.
    */
-  onBeforeValidate?(node: Node<T>): void;
+  onBeforeValidate?(ctx: Context<T>): VariableOptions | void;
   /**
    * Called after throwing any validation errors for the node.
-   * @param node The node object.
+   * @param ctx The callback context.
+   * @returns Options to override for this node.
    */
-  onValidate?(node: Node<T>): void;
+  onValidate?(ctx: Context<T>): VariableOptions | void;
 }
 
 /**

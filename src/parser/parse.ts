@@ -1,7 +1,7 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
 import { Schema } from '../schema/schema.class';
-import { ArgConfig, Config } from '../schema/schema.types';
+import { ArgConfig } from '../schema/schema.types';
 import { Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/util.types';
 import { cnode, NodeOptions } from './cnode';
@@ -11,20 +11,23 @@ import { Resolver } from './resolver';
 
 // NOTE: internal
 
-export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
+export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<ArgConfig<T>, NormalizedOptions<T>>();
   function node(raw: string | null, opts: NodeOptions<T>, curr?: Node<T>) {
+    // make sure to create schema before normalize
+    const sch = opts.schema || new Schema(opts.cfg);
+
     const data = cnode(raw, opts, curr ? curr.data : null, opts.args);
 
     let nOpts;
     (nOpts = map.get(opts.cfg)) ||
       map.set(opts.cfg, (nOpts = normalize(opts.cfg, data)));
 
-    return new Node<T>(nOpts, data, curr);
+    return new Node<T>(sch, nOpts, data, curr);
   }
 
-  const root = node(null, { cfg });
+  const root = node(null, { cfg: schema.config(), schema });
   root.cb('onDepth');
   const nodes = [root];
   let parent: Node<T> = root,
@@ -53,7 +56,7 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
       parent.children.push(child);
       parent.data.children.push(child.data);
 
-      parent.vcb('onChild');
+      parent.cb('onChild');
     }
 
     // assume child always exists (items has length)
@@ -87,7 +90,7 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
     // if saving to parent, save args to the value node
     curr === parent && curr.value(raw);
 
-    curr.vcb('onArg');
+    curr.cb('onArg');
   }
 
   const resolver = new Resolver<T>();
@@ -102,11 +105,6 @@ export function parse<T>(args: readonly string[], cfg: Config<T>): INode<T> {
 
     // save resolved options
     else if (res.items) {
-      for (const item of res.items) {
-        // only create schema when needed to handle recursive init functions
-        // having args and aliases means that the schema was already configured
-        item.cfg = item.cfg.args ? item.cfg : new Schema(item.cfg).config();
-      }
       set(raw, res.items);
     }
 

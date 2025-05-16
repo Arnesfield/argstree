@@ -1,8 +1,8 @@
 import { ParseError } from '../lib/error';
-import { Config } from '../schema/schema.types';
+import { Config, Schema } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
-import { Options, VariableOptions } from '../types/options.types';
+import { Context, Options, VariableOptions } from '../types/options.types';
 import { display } from '../utils/display';
 import { range } from '../utils/range';
 import { NodeOptions } from './cnode';
@@ -21,20 +21,8 @@ export interface NodeData<T>
   extends Omit<INode<T>, 'type'>,
     Pick<Config<T>, 'type'> {}
 
-// all on* callbacks in Options
-export type CallbackOptions<T> = {
-  [K in keyof Options<T> as K extends `on${string}`
-    ? K
-    : never]-?: Options<T>[K];
-};
-
-export type EventKey<T> = {
-  [K in keyof CallbackOptions<T> as Exclude<
-    ReturnType<CallbackOptions<T>[K]>,
-    void
-  > extends never
-    ? 'default'
-    : 'variable']: K;
+export type NodeEvent<T> = keyof {
+  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
 };
 
 // NOTE: node instances will only have data types 'option' and 'command'
@@ -48,6 +36,7 @@ export class Node<T> {
   private readonly dstrict: boolean | undefined;
 
   constructor(
+    readonly schema: Schema<T>,
     readonly opts: NormalizedOptions<T>,
     readonly data: NodeData<T>,
     parent?: Node<T>
@@ -64,34 +53,33 @@ export class Node<T> {
 
     this.vo = { min: opts.min, max: opts.max, read: opts.read };
 
-    this.vcb('onCreate');
+    this.cb('onCreate');
+  }
+
+  ctx(): Context<T> {
+    return { ...this.vo, node: this.data, schema: this.schema };
   }
 
   /** Run variable callback. */
-  vcb(e: EventKey<T>['variable']): void {
-    let opts;
+  cb(e: NodeEvent<T>): void {
+    // preserve `this` for callbacks
+    const { src } = this.opts;
+    const opts = src[e]?.(this.ctx());
+    if (!opts) return;
+
     const v = this.vo;
-
-    // create copy of read options to disallow modifying object directly
-    if (!(opts = this.opts.src[e]?.(this.data, { ...v }))) return;
-
     if (opts.min !== undefined) v.min = opts.min;
     if (opts.max !== undefined) v.max = opts.max;
     if (opts.read != null) v.read = opts.read;
 
-    [v.min, v.max] = range(v, this.data, this.opts.src);
-  }
-
-  cb(e: EventKey<T>['default']): void {
-    // preserve `this` for callbacks
-    this.opts.src[e]?.(this.data);
+    [v.min, v.max] = range(v, this.data, src);
   }
 
   // NOTE: return empty arrays to ignore values
   // return falsy to fallback to default behavior
   handle(arg: Arg): HandlerResult<T> | undefined {
     // preserve `this` for callbacks
-    let schemas = this.opts.src.handler?.(arg, this.data);
+    let schemas = this.opts.src.handler?.(arg, this.ctx());
     // fallback to default behavior for null, undefined, true
     if (schemas == null || schemas === true) return;
 
@@ -110,7 +98,7 @@ export class Node<T> {
         // use arg.key as key here despite not using arg.value
         // since we assume that the consumer will handle arg.value manually
         const cfg = schema.config();
-        result.opts.push({ key: arg.key, args: resolveArgs(cfg), cfg });
+        result.opts.push({ key: arg.key, args: resolveArgs(cfg), cfg, schema });
       }
     }
 
@@ -141,7 +129,7 @@ export class Node<T> {
 
   /** Depth parsed. */
   done(): void {
-    this.vcb('onData');
+    this.cb('onData');
     for (const node of this.children) node.cb('onDepth');
   }
 

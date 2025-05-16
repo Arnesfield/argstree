@@ -20,8 +20,10 @@ export class Schema<T> implements ISchema<T> {
   // expose as ArgConfig but use Config internally
   constructor(cfg: ArgConfig<T>);
   constructor(private readonly cfg: Config<T>) {
+    // consider as initialized if 'args' is already provided
+    if (cfg.args) return;
+
     // NOTE: intentional cfg object mutation to update existing ArgConfig object
-    // always replace args
     cfg.args = obj();
 
     // only call init once all states are ready
@@ -69,6 +71,6 @@ export class Schema<T> implements ISchema<T> {
 
   parse(args: readonly string[]): Node<T> {
     // create copy of args to avoid external mutation
-    return parse(args.slice(), this.cfg);
+    return parse(args.slice(), this);
   }
 }

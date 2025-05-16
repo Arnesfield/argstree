@@ -1,5 +1,6 @@
-import { ArgConfig } from '../schema/schema.types';
+import { ArgConfig, Schema } from '../schema/schema.types';
 import { Node } from '../types/node.types';
+import { Options } from '../types/options.types';
 import { NodeData } from './node';
 
 // NOTE: internal
@@ -12,6 +13,16 @@ export interface NodeOptions<T> {
   args?: string[];
   /** Reference to the config object. */
   cfg: ArgConfig<T>;
+  schema?: Schema<T>;
+}
+
+export interface PartialConfig<T> extends Pick<ArgConfig<T>, 'type'> {
+  options: Pick<Options<T>, 'id' | 'name'>;
+}
+
+export interface CreateNodeOptions<T>
+  extends Pick<NodeOptions<T>, 'key' | 'alias' | 'value'> {
+  cfg: PartialConfig<T>;
 }
 
 /**
@@ -24,7 +35,7 @@ export interface NodeOptions<T> {
  */
 export function cnode<T>(
   raw: string | null,
-  opts: NodeOptions<T>,
+  opts: CreateNodeOptions<T>,
   parent: Node<T> | null,
   args: string[] = []
 ): NodeData<T> {
