@@ -2,7 +2,8 @@ import { ParseError } from '../lib/error';
 import { Config, Schema } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
-import { Context, Options, VariableOptions } from '../types/options.types';
+import { Context, Options } from '../types/options.types';
+import { Mutable } from '../types/util.types';
 import { display } from '../utils/display';
 import { range } from '../utils/range';
 import { NodeOptions } from './cnode';
@@ -29,57 +30,60 @@ export type NodeEvent<T> = keyof {
 // directly save value nodes into data.children instead
 export class Node<T> {
   readonly children: Node<T>[] = [];
+  readonly ctx: Mutable<Context<T>>;
   readonly strict: boolean | undefined;
-  /** Variable options for this node. */
-  readonly vo: VariableOptions;
   /** The strict mode value for descendants. */
   private readonly dstrict: boolean | undefined;
 
   constructor(
-    readonly schema: Schema<T>,
+    schema: Schema<T>,
     readonly opts: NormalizedOptions<T>,
     readonly data: NodeData<T>,
     parent?: Node<T>
   ) {
+    // prettier-ignore
+    const { min, max, read, src: { strict } } = opts;
+
+    // set context for callbacks
+    this.ctx = { min, max, read, node: data, schema };
+
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
     // for descendant nodes
     this.strict =
-      opts.src.strict == null
+      strict == null
         ? (this.dstrict = parent?.dstrict)
-        : typeof opts.src.strict === 'boolean'
-          ? (this.dstrict = opts.src.strict)
-          : !(this.dstrict = opts.src.strict !== 'self');
-
-    this.vo = { min: opts.min, max: opts.max, read: opts.read };
+        : typeof strict === 'boolean'
+          ? (this.dstrict = strict)
+          : !(this.dstrict = strict !== 'self');
 
     this.cb('onCreate');
   }
 
-  ctx(): Context<T> {
-    return { ...this.vo, node: this.data, schema: this.schema };
-  }
-
   /** Run variable callback. */
   cb(e: NodeEvent<T>): void {
-    // preserve `this` for callbacks
+    // NOTE: consumer can directly modify the context object and skip validation
+    // should we prevent this? nope. probably not worth creating a shallow copy
+    // of the context object for this edge case
+
+    const c = this.ctx;
     const { src } = this.opts;
-    const opts = src[e]?.(this.ctx());
+
+    // preserve `this` for callbacks
+    const opts = src[e]?.(c);
     if (!opts) return;
 
-    const v = this.vo;
-    if (opts.min !== undefined) v.min = opts.min;
-    if (opts.max !== undefined) v.max = opts.max;
-    if (opts.read != null) v.read = opts.read;
+    const { min = c.min, max = c.max } = opts;
+    if (opts.read != null) c.read = opts.read;
 
-    [v.min, v.max] = range(v, this.data, src);
+    [c.min, c.max] = range({ min, max }, this.data, src);
   }
 
   // NOTE: return empty arrays to ignore values
   // return falsy to fallback to default behavior
   handle(arg: Arg): HandlerResult<T> | undefined {
     // preserve `this` for callbacks
-    let schemas = this.opts.src.handler?.(arg, this.ctx());
+    let schemas = this.opts.src.handler?.(arg, this.ctx);
     // fallback to default behavior for null, undefined, true
     if (schemas == null || schemas === true) return;
 
@@ -134,7 +138,7 @@ export class Node<T> {
   }
 
   check(): void {
-    const { min, max } = this.vo;
+    const { min, max } = this.ctx;
 
     // validate node
     const len = this.data.args.length;

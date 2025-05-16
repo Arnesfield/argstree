@@ -74,10 +74,10 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // fallback to parent if child cannot accept any more args
     // if parent cannot read args, assume unrecognized argument
     const curr =
-      child?.vo.read &&
-      (child.vo.max == null || child.vo.max > child.data.args.length)
+      child?.ctx.read &&
+      (child.ctx.max == null || child.ctx.max > child.data.args.length)
         ? child
-        : parent.vo.read
+        : parent.ctx.read
           ? parent
           : parent.opts.fertile
             ? unrecognized(`option or command: ${raw}`)

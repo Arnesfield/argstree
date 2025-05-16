@@ -15,11 +15,11 @@ export interface VariableOptions {
 }
 
 /** The callback context. */
-export interface Context<T> extends VariableOptions {
+export interface Context<T> extends Readonly<VariableOptions> {
   /** The node object. */
-  node: Node<T>;
+  readonly node: Node<T>;
   /** The schema object. */
-  schema: Schema<T>;
+  readonly schema: Schema<T>;
 }
 
 /**

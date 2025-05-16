@@ -5,3 +5,6 @@ export type Prettify<T> = { [K in keyof T]: T[K] } & {};
 
 /** An array with at least one element (prettified). */
 export type NonEmptyArray<T> = Prettify<[T, ...T[]]>;
+
+/** Removes the `readonly` modifier. */
+export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
