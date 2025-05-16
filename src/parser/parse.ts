@@ -5,7 +5,7 @@ import { ArgConfig } from '../schema/schema.types';
 import { Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/util.types';
 import { cnode, NodeOptions } from './cnode';
-import { Node } from './node';
+import { HandlerResult, Node } from './node';
 import { normalize, NormalizedOptions } from './normalize';
 import { Resolver } from './resolver';
 
@@ -95,7 +95,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
   const resolver = new Resolver<T>();
   for (const raw of args) {
-    let parsed;
+    let hres: HandlerResult<T> | undefined;
     const res = resolver.resolve(raw, parent.opts);
 
     // treat as value
@@ -109,14 +109,15 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     }
 
     // parse options using handler before error
-    else if ((parsed = parent.handle(res.arg))) {
-      for (const arg of parsed.args) setValue(arg, true);
+    else if ((hres = parent.handle(res.arg))) {
+      for (const arg of hres.args) setValue(arg, true);
 
-      // use arg.key as key here despite not using arg.value
-      // assume that the consumer handles arg.value manually
       type O = NonEmptyArray<NodeOptions<T>>;
-      parsed.opts.length > 0 && set(raw, parsed.opts as O);
-    } else if (res.split) {
+      hres.opts.length > 0 && set(raw, hres.opts as O);
+    }
+
+    // throw error if split remainders are present
+    else if (res.split) {
       const msg =
         'alias' +
         (res.split.remainder.length === 1 ? '' : 'es') +
@@ -125,7 +126,10 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
           .map(item => (item.remainder ? `(${item.value})` : item.value))
           .join('');
       unrecognized(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
-    } else {
+    }
+
+    // treat as value
+    else {
       setValue(raw);
     }
   }

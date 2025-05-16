@@ -33,9 +33,10 @@ export function resolveArgs<T>(cfg: Pick<Config<T>, 'options'>): string[] {
 }
 
 /**
- * WARNING: Note that `resolve()` should finish before another `resolve()` call
- * since the normalized options state is persisted every call and would
- * overwrite the options of the previous call if it was still ongoing.
+ * WARNING: Note that {@linkcode resolve} should finish before another
+ * {@linkcode resolve} call since the normalized options state {@linkcode opts}
+ * is persisted every call and would overwrite the options of the previous call
+ * if it was still ongoing.
  */
 export class Resolver<T> {
   private opts!: NormalizedOptions<T>;
@@ -137,7 +138,6 @@ export class Resolver<T> {
 
     // parse options from options.args only
     if (hasValue && (items = this.get(arg, true))) {
-      // ok, do nothing and return value
       items = [items] as NonEmptyArray<ResolverItem<T>>;
     }
 
@@ -148,13 +148,13 @@ export class Resolver<T> {
     // - a value (or, if in strict mode, an unknown option-like)
     // for this case, handle exact alias
     else if ((alias = opts.aliases[raw]) && (items = this.alias([alias]))) {
-      // setAlias was successful, do nothing and return value
+      // alias items found, do nothing and return value
     } else if (
       hasValue &&
       (alias = opts.aliases[arg.key]) &&
       (items = this.alias([alias], arg.value))
     ) {
-      // setAlias was successful, do nothing and return value
+      // alias items found, do nothing and return value
     }
 
     // now, arg cannot be an exact alias.
@@ -194,10 +194,10 @@ export class Resolver<T> {
       (split = this.split(arg.key))?.list &&
       (items = this.alias(split.list, arg.value))
     ) {
-      // setAlias was successful, do nothing and return value
+      // alias items found, do nothing and return value
     }
 
-    // NOTE: no handler parsing for match
+    // NOTE: parse by handler outside of resolver
 
     // split can be unset by the 2nd parent.split() call
     // which is ok since it would be weird to show remainders from raw
@@ -205,7 +205,7 @@ export class Resolver<T> {
       return { arg, split };
     }
 
-    // either treat as raw value or use parsed config(s)
+    // either treat as raw value or use parsed configs
     return { arg, items };
   }
 }

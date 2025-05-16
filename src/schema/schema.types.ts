@@ -90,10 +90,9 @@ export interface Schema<T = unknown> {
    * Parses arguments into a tree structure.
    * @param args The arguments to parse.
    * @returns The node object.
-   * @throws A {@linkcode ParseError} for invalid options,
-   * unrecognized arguments, and unsatisfied ranges.
-   * Other types of errors can also be thrown through callbacks like
-   * {@linkcode Options.onValidate}.
+   * @throws A {@linkcode ParseError} for invalid options, unrecognized arguments,
+   * and unsatisfied ranges. Other types of errors can also be thrown through
+   * callbacks like {@linkcode Options.onValidate}.
    */
   parse(args: readonly string[]): Node<T>;
 }

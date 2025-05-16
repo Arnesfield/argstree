@@ -30,7 +30,7 @@ export type NodeEvent<T> = keyof {
 export class Node<T> {
   readonly children: Node<T>[] = [];
   readonly strict: boolean | undefined;
-  /** Range options for this node. */
+  /** Variable options for this node. */
   readonly vo: VariableOptions;
   /** The strict mode value for descendants. */
   private readonly dstrict: boolean | undefined;
@@ -96,7 +96,7 @@ export class Node<T> {
         result.args.push(schema);
       } else {
         // use arg.key as key here despite not using arg.value
-        // since we assume that the consumer will handle arg.value manually
+        // assume that the consumer handles arg.value manually
         const cfg = schema.config();
         result.opts.push({ key: arg.key, args: resolveArgs(cfg), cfg, schema });
       }
