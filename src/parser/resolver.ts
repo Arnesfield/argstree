@@ -119,7 +119,7 @@ export class Resolver<T> {
     opts: NormalizedOptions<T>
   ): ResolverResult<T> | undefined {
     // immediately treat as value if the current node cannot actually create children
-    if (!opts.fertile) return;
+    if (!opts.fertile || opts.leaf) return;
 
     // NOTE: set normalized options for other methods to access
     this.opts = opts;
