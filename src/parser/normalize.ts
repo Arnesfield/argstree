@@ -56,7 +56,7 @@ export function normalize<T>(
   const src = c.options;
 
   // get and validate range
-  const [min, max] = range(src, data, src);
+  const [min, max] = range(src.min, src.max, data, src);
 
   // save splittable aliases to keys array
   let safeAlias = true;

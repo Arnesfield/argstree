@@ -76,7 +76,7 @@ export class Node<T> {
     const { min = c.min, max = c.max } = opts;
     if (opts.read != null) c.read = opts.read;
 
-    [c.min, c.max] = range({ min, max }, this.data, src);
+    [c.min, c.max] = range(min, max, this.data, src);
   }
 
   // NOTE: return empty arrays to ignore values
