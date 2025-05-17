@@ -1,5 +1,5 @@
 import { ParseError } from '../lib/error';
-import { Config, Schema } from '../schema/schema.types';
+import { Schema } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
 import { Context, Options } from '../types/options.types';
@@ -20,7 +20,7 @@ export interface HandlerResult<T> {
 // same as INode but cannot be a value type
 export interface NodeData<T>
   extends Omit<INode<T>, 'type'>,
-    Pick<Config<T>, 'type'> {}
+    Pick<Schema<T>, 'type'> {}
 
 export type NodeEvent<T> = keyof {
   [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
@@ -101,8 +101,7 @@ export class Node<T> {
       } else {
         // use arg.key as key here despite not using arg.value
         // assume that the consumer handles arg.value manually
-        const cfg = schema.config();
-        result.opts.push({ key: arg.key, args: resolveArgs(cfg), cfg, schema });
+        result.opts.push({ key: arg.key, args: resolveArgs(schema), schema });
       }
     }
 

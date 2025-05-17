@@ -5,33 +5,26 @@ import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { obj } from '../utils/obj';
 import {
-  ArgConfig,
-  Config,
   Schema as ISchema,
   ResolvedArg,
-  ResolvedConfig
+  ResolvedConfig,
+  SchemaMap,
+  SchemaType
 } from './schema.types';
 
 // NOTE: internal
 
 export class Schema<T> implements ISchema<T> {
+  private map: SchemaMap<T> | undefined;
   private opts: NormalizedOptions<T> | null | undefined;
 
-  // expose as ArgConfig but use Config internally
-  constructor(cfg: ArgConfig<T>);
-  constructor(private readonly cfg: Config<T>) {
-    // consider as initialized if 'args' is already provided
-    if (cfg.args) return;
+  constructor(
+    readonly type: SchemaType,
+    readonly options: Options<T> = {}
+  ) {}
 
-    // NOTE: intentional cfg object mutation to update existing ArgConfig object
-    cfg.args = obj();
-
-    // only call init once all states are ready
-    cfg.options.init?.(this);
-  }
-
-  private add(arg: string, type: Config<T>['type'], options: Options<T> = {}) {
-    this.cfg.args[arg] = { type, options };
+  private add(arg: string, type: SchemaType, options?: Options<T>) {
+    this.schemas()[arg] = new Schema(type, options);
     // clear cached options to re-evaluate it when needed
     this.opts = null;
     return this;
@@ -45,13 +38,18 @@ export class Schema<T> implements ISchema<T> {
     return this.add(arg, 'command', options);
   }
 
-  config(): Config<T> {
-    return this.cfg;
+  schemas(): SchemaMap<T> {
+    // consider as initialized if 'args' is already provided
+    if (!this.map) {
+      this.map = obj<SchemaMap<T>>();
+      // only call init once and only after setting args
+      this.options.init?.(this);
+    }
+    return this.map;
   }
 
   resolve(arg: string): ResolvedArg<T> | undefined {
-    // prettier-ignore
-    const res = new Resolver<T>().resolve(arg, (this.opts ||= normalize(this.cfg)));
+    const res = new Resolver<T>().resolve(arg, (this.opts ||= normalize(this)));
     if (!res) {
       // do nothing
     } else if (res.split) {
@@ -61,8 +59,8 @@ export class Schema<T> implements ISchema<T> {
       const configs = res.items.map((r): ResolvedConfig<T> => ({
         key: r.key,
         alias: r.alias,
-        type: r.cfg.type,
-        options: { ...r.cfg.options, args: r.args }
+        type: r.schema.type,
+        options: { ...r.schema.options, args: r.args }
       }));
       return { configs };
     }

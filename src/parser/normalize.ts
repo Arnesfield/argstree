@@ -1,6 +1,6 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { ArgConfig, Config } from '../schema/schema.types';
+import { Schema, SchemaMap } from '../schema/schema.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { display } from '../utils/display';
@@ -36,7 +36,7 @@ export interface NormalizedOptions<T> {
   /** The reference to the provided options. */
   readonly src: Options<T>;
   /** Safe args object. */
-  readonly args: { [arg: string]: Config<T> | ArgConfig<T> | undefined };
+  readonly args: Partial<SchemaMap<T>>;
   /** Safe aliases object. */
   readonly aliases: { [alias: string]: Alias };
   /** A sorted list of splittable alias keys without the `-` prefix. */
@@ -49,11 +49,13 @@ function array<T>(a: T | T[] | null | undefined): T[] {
 }
 
 export function normalize<T>(
-  c: ArgConfig<T>,
+  s: Schema<T>,
   // NOTE: data is only used for error purposes
   data?: Node<T>
 ): NormalizedOptions<T> {
-  const src = c.options;
+  // initialize schema args before anything else
+  const args = obj(s.schemas());
+  const src = s.options;
 
   // get and validate range
   const [min, max] = range(src.min, src.max, data, src);
@@ -61,13 +63,12 @@ export function normalize<T>(
   // save splittable aliases to keys array
   let safeAlias = true;
   const keys: string[] = [];
-  const args = obj(c.args);
   const aliases: NormalizedOptions<T>['aliases'] = obj();
 
   // apply aliases from args
-  const cfgs = Object.entries(args);
-  for (const [key, cfg] of cfgs) {
-    for (const item of array(cfg.options.alias)) {
+  const items = Object.entries(args);
+  for (const [key, c] of items) {
+    for (const item of array(c.options.alias)) {
       // each item is an alias
       // if item is an array, item[0] is an alias
       const arr = array(item);
@@ -78,11 +79,11 @@ export function normalize<T>(
       if (aliases[a]) {
         // this node is for current value options
         // and is not being parsed but being validated
-        data &&= cnode(key, { key, cfg }, data);
-        const name = display(data || { name: key, type: cfg.type });
+        data &&= cnode(key, { key, schema: c }, data);
+        const name = display(data || { name: key, type: c.type });
         const msg =
           (name ? name + 'c' : 'C') + `annot use an existing alias: ${a}`;
-        throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, cfg.options);
+        throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, c.options);
       }
 
       aliases[a] = { key, alias: a, args: arr.slice(1) };
@@ -97,8 +98,8 @@ export function normalize<T>(
   }
 
   // check args length first since it is the most likely to always be true
-  const fertile = cfgs.length > 0 || !!src.handler;
-  const { read = true, leaf = !fertile && c.type === 'option' } = src;
+  const fertile = items.length > 0 || !!src.handler;
+  const { read = true, leaf = !fertile && s.type === 'option' } = src;
 
   // sort by length desc for splitting later on
   keys.sort((a, b) => b.length - a.length);

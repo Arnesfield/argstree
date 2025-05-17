@@ -1,6 +1,6 @@
 import { isOption } from '../lib/is-option';
 import { split as $split, Split } from '../lib/split';
-import { Config } from '../schema/schema.types';
+import { Schema } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { NonEmptyArray } from '../types/util.types';
 import { NodeOptions } from './cnode';
@@ -27,8 +27,8 @@ export interface ResolverResult<T> {
   items?: NonEmptyArray<ResolverItem<T>>;
 }
 
-export function resolveArgs<T>(cfg: Pick<Config<T>, 'options'>): string[] {
-  const a = cfg.options.args;
+export function resolveArgs<T>(s: Pick<Schema<T>, 'options'>): string[] {
+  const a = s.options.args;
   return typeof a === 'string' ? [a] : Array.isArray(a) ? a.slice() : [];
 }
 
@@ -45,12 +45,15 @@ export class Resolver<T> {
     arg: ParsedArg,
     assignable?: boolean
   ): ResolverItem<T> | undefined {
-    const cfg = this.opts.args[arg.key];
-    if (cfg && (!assignable || (cfg.options.assign ?? cfg.type === 'option'))) {
+    const schema = this.opts.args[arg.key];
+    if (
+      schema &&
+      (!assignable || (schema.options.assign ?? schema.type === 'option'))
+    ) {
       // save value if any
-      const args = resolveArgs(cfg);
+      const args = resolveArgs(schema);
       arg.value != null && args.push(arg.value);
-      return { key: arg.key, alias: arg.alias, value: arg.value, args, cfg };
+      return { key: arg.key, alias: arg.alias, value: arg.value, args, schema };
     }
   }
 

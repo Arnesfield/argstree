@@ -1,7 +1,6 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { Schema } from '../schema/schema.class';
-import { ArgConfig } from '../schema/schema.types';
+import { Schema } from '../schema/schema.types';
 import { Node as INode } from '../types/node.types';
 import { NonEmptyArray } from '../types/util.types';
 import { cnode, NodeOptions } from './cnode';
@@ -13,21 +12,18 @@ import { Resolver } from './resolver';
 
 export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   // keep track of and reuse existing normalized options
-  const map = new WeakMap<ArgConfig<T>, NormalizedOptions<T>>();
+  const map = new WeakMap<Schema<T>, NormalizedOptions<T>>();
   function node(raw: string | null, opts: NodeOptions<T>, curr?: Node<T>) {
-    // make sure to create schema before normalize
-    const sch = opts.schema || new Schema(opts.cfg);
-
+    const s = opts.schema;
     const data = cnode(raw, opts, curr ? curr.data : null, opts.args);
 
     let nOpts;
-    (nOpts = map.get(opts.cfg)) ||
-      map.set(opts.cfg, (nOpts = normalize(opts.cfg, data)));
+    (nOpts = map.get(s)) || map.set(s, (nOpts = normalize(s, data)));
 
-    return new Node<T>(sch, nOpts, data, curr);
+    return new Node<T>(s, nOpts, data, curr);
   }
 
-  const root = node(null, { cfg: schema.config(), schema });
+  const root = node(null, { schema });
   root.cb('onDepth');
   const nodes = [root];
   let parent: Node<T> = root,

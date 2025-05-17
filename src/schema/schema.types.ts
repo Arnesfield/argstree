@@ -8,37 +8,26 @@ import { Options } from '../types/options.types';
 export type SchemaType = 'option' | 'command';
 
 /**
- * The schema config.
+ * The schema map.
  * @template T The metadata type.
  */
-export interface Config<T = unknown> {
-  /** The schema type. */
-  type: SchemaType;
-  /** The options object. */
-  options: Options<T>;
-  /**
-   * The list of configs for the options and commands.
-   * Note that the config properties may change during parsing.
-   */
-  args: { [arg: string]: ArgConfig<T> };
+export interface SchemaMap<T> {
+  [arg: string]: Schema<T>;
 }
-
-/**
- * The config for options and commands.
- * @template T The metadata type.
- */
-export type ArgConfig<T = unknown> = Omit<Config<T>, 'args'> &
-  Partial<Pick<Config<T>, 'args'>>;
 
 /**
  * The resolved config.
  * @template T The metadata type.
  */
-export interface ResolvedConfig<T = unknown> extends Omit<Config<T>, 'args'> {
+export interface ResolvedConfig<T = unknown> {
   /** The matched argument. */
   key: string;
   /** The alias used to parse argument if any. */
   alias?: string;
+  /** The schema type. */
+  type: SchemaType;
+  /** The options object. */
+  options: Options<T>;
 }
 
 /** The resolved argument. */
@@ -59,6 +48,10 @@ export type ResolvedArg<T> =
  * @template T The metadata type.
  */
 export interface Schema<T = unknown> {
+  /** The schema type. */
+  readonly type: SchemaType;
+  /** The options object. */
+  readonly options: Options<T>;
   /**
    * Adds an option. The argument is overwritten if it already exists.
    * @param arg The argument to match.
@@ -74,10 +67,10 @@ export interface Schema<T = unknown> {
    */
   command(arg: string, options?: Options<T>): this;
   /**
-   * Gets the schema config. This is mainly used internally during parsing.
-   * @returns The schema config.
+   * Gets the list configured schemas.
+   * @returns The schema map.
    */
-  config(): Config<T>;
+  schemas(): SchemaMap<T>;
   /**
    * Resolves the argument and returns the configuration for the matching
    * options and commands. If the argument cannot be resolved, this returns
