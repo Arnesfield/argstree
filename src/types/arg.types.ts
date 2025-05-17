@@ -5,6 +5,7 @@ export interface Arg {
   // NOTE: same doc as Node.key
   /** The parsed key from the argument (e.g. `--option` from `--option=value`). */
   key: string;
+  // NOTE: same doc as Node.value
   /** The parsed value from the argument (e.g. `value` from `--option=value`). */
   value?: string;
 }
