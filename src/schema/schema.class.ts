@@ -1,6 +1,6 @@
 import { normalize, NormalizedOptions } from '../parser/normalize';
 import { parse } from '../parser/parse';
-import { Resolver } from '../parser/resolver';
+import { resolve } from '../parser/resolve';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { obj } from '../utils/obj';
@@ -49,7 +49,7 @@ export class Schema<T> implements ISchema<T> {
   }
 
   resolve(arg: string): ResolvedArg<T> | undefined {
-    const res = new Resolver<T>().resolve(arg, (this.opts ||= normalize(this)));
+    const res = resolve(arg, (this.opts ||= normalize(this)));
     if (!res) {
       // do nothing
     } else if (res.split) {

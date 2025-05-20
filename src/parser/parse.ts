@@ -6,7 +6,7 @@ import { NonEmptyArray } from '../types/util.types';
 import { cnode, NodeOptions } from './cnode';
 import { HandlerResult, Node } from './node';
 import { normalize, NormalizedOptions } from './normalize';
-import { Resolver } from './resolver';
+import { resolve } from './resolve';
 
 // NOTE: internal
 
@@ -89,10 +89,9 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     curr.cb('onArg');
   }
 
-  const resolver = new Resolver<T>();
   for (const raw of args) {
     let hres: HandlerResult<T> | undefined;
-    const res = resolver.resolve(raw, parent.opts);
+    const res = resolve(raw, parent.opts);
 
     // treat as value
     if (!res) {

@@ -8,7 +8,7 @@ import { display } from '../utils/display';
 import { range } from '../utils/range';
 import { NodeOptions } from './cnode';
 import { NormalizedOptions } from './normalize';
-import { resolveArgs } from './resolver';
+import { resolveArgs } from './resolve';
 
 // NOTE: internal
 
