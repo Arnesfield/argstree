@@ -52,8 +52,6 @@ export class Schema<T> implements ISchema<T> {
     const res = resolve(arg, (this.opts ||= normalize(this)));
     if (!res) {
       // do nothing
-    } else if (res.split) {
-      return { split: res.split };
     } else if (res.items) {
       // prettier-ignore
       const configs = res.items.map((r): ResolvedConfig<T> => ({
@@ -63,6 +61,8 @@ export class Schema<T> implements ISchema<T> {
         options: { ...r.schema.options, args: r.args }
       }));
       return { configs };
+    } else if (res.split) {
+      return { split: res.split };
     }
   }
 
