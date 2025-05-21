@@ -8,10 +8,10 @@ import { Alias, NormalizedOptions } from './normalize';
 
 // NOTE: internal
 
-export interface ParsedArg extends Omit<Arg, 'raw'> {
-  /** The alias used to parse argument if any. */
-  alias?: string;
-}
+// make props optional except 'key'
+export interface ParsedArg
+  extends Pick<Alias, 'key'>,
+    Partial<Omit<Alias, 'key'>> {}
 
 export interface ResolveSplit extends Split {
   list?: NonEmptyArray<Alias>;
@@ -35,17 +35,19 @@ export function resolveArgs<T>(s: Pick<Schema<T>, 'options'>): string[] {
 function get<T>(
   opts: NormalizedOptions<T>,
   arg: ParsedArg,
-  assignable?: boolean
+  value?: string
 ): ResolveItem<T> | undefined {
   const schema = opts.args[arg.key];
+  const hasValue = value != null;
   if (
     schema &&
-    (!assignable || (schema.options.assign ?? schema.type === 'option'))
+    (!hasValue || (schema.options.assign ?? schema.type === 'option'))
   ) {
-    // save value if any
+    // save alias args and value if any
     const args = resolveArgs(schema);
-    arg.value != null && args.push(arg.value);
-    return { key: arg.key, alias: arg.alias, value: arg.value, args, schema };
+    arg.args && args.push(...arg.args);
+    hasValue && args.push(value);
+    return { key: arg.key, alias: arg.alias, value, args, schema };
   }
 }
 
@@ -55,38 +57,23 @@ function getAlias<T>(
   value?: string
 ) {
   // assignable arg --option: initial 1, 2
-  // alias -a: --option 3, 4, 5
-  // scenario: -a=6
+  // alias -a: --option 3, 4
+  // scenario: -a=5
 
   // convert aliases to options
-  // make sure the last option is assignable
-  const hasValue = value != null;
-  const lItem = get(opts, aliases[aliases.length - 1], hasValue);
+  // make sure the last option is assignable if value exists
 
-  if (!lItem) return;
-
-  // at this point, if a value is assigned, lItem would always be set
-  // otherwise, lItem was parsed normally like the loop below.
-  // this ensures that the options.handler call is not called twice
-
-  // assume 'items' always has value
-  return aliases.map((alias, i) => {
+  const item = get(opts, aliases[aliases.length - 1], value);
+  if (item) {
     // reuse last parsed item
-    // otherwise, assume that aliases will always map to options since
+    // assume that aliases will always map to options since
     // it does not have to be assignable (only for the last alias arg)
-    // also, no handler fallback for aliases!
-    const last = i === aliases.length - 1;
-    const item = last ? lItem : get(opts, alias)!;
+    // also, no more handler fallback for aliases!
 
-    item.args.push(...alias.args);
-    // add value to the last item
-    if (last && hasValue) {
-      item.args.push(value);
-      item.value = value;
-    }
-
-    return item;
-  }) as NonEmptyArray<ResolveItem<T>>;
+    type I = NonEmptyArray<ResolveItem<T>>;
+    // prettier-ignore
+    return aliases.map((alias, i) => i === aliases.length - 1 ? item : get(opts, alias)!) as I;
+  }
 }
 
 function splitArg<T>(opts: NormalizedOptions<T>, arg: string) {
@@ -133,7 +120,7 @@ export function resolve<T>(
   }
 
   // parse options from options.args only
-  if (hasValue && (items = get(opts, arg, true))) {
+  if (hasValue && (items = get(opts, arg, arg.value))) {
     items = [items] as NonEmptyArray<ResolveItem<T>>;
   }
 
