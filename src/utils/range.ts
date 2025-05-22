@@ -11,18 +11,18 @@ function number(n: number | null | undefined): number | null {
 export function range<T>(
   min: number | null | undefined,
   max: number | null | undefined,
-  data: Node<T> | undefined,
-  schema: Schema<T> | undefined
+  schema: Schema<T>,
+  node: Node<T> | undefined
 ): [number | null, number | null] {
   // get and validate range
   min = number(min);
   max = number(max);
 
   if (min != null && max != null && min > max) {
-    const name = data && display(data);
+    const name = node && display(node);
     const msg =
       (name ? name + 'has i' : 'I') + `nvalid min and max range: ${min}-${max}`;
-    throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, schema);
+    throw new ParseError(ParseError.OPTIONS_ERROR, msg, schema, node);
   }
 
   return [min, max];

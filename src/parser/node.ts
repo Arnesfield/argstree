@@ -41,11 +41,10 @@ export class Node<T> {
     readonly data: NodeData<T>,
     parent?: Node<T>
   ) {
-    // prettier-ignore
-    const { min, max, read, src: { strict } } = opts;
+    const { strict, read = true } = schema.options;
 
     // set context for callbacks
-    this.ctx = { min, max, read, node: data, schema };
+    this.ctx = { min: opts.min, max: opts.max, read, node: data, schema };
 
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
@@ -67,10 +66,9 @@ export class Node<T> {
     // of the context object for this edge case
 
     const c = this.ctx;
-    const { src } = this.opts;
 
     // preserve `this` for callbacks
-    const opts = src[e]?.(c);
+    const opts = c.schema.options[e]?.(c);
     if (!opts) return;
 
     const { min = c.min, max = c.max } = opts;
@@ -83,7 +81,7 @@ export class Node<T> {
   // return falsy to fallback to default behavior
   handle(arg: Arg): HandlerResult<T> | undefined {
     // preserve `this` for callbacks
-    let schemas = this.opts.src.handler?.(arg, this.ctx);
+    let schemas = this.ctx.schema.options.handler?.(arg, this.ctx);
     // fallback to default behavior for null, undefined, true
     if (schemas == null || schemas === true) return;
 

@@ -3,6 +3,7 @@ import { isOption } from '../lib/is-option';
 import { Schema, SchemaMap } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node } from '../types/node.types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Options } from '../types/options.types';
 import { display } from '../utils/display';
 import { obj } from '../utils/obj';
@@ -19,8 +20,10 @@ export interface Alias extends Pick<Arg, 'key'> {
 }
 
 export interface NormalizedOptions<T> {
-  /** The resolved {@linkcode Options.read} option. */
-  readonly read: boolean;
+  /** The resolved {@linkcode Options.min} option. */
+  readonly min: number | null;
+  /** The resolved {@linkcode Options.max} option. */
+  readonly max: number | null;
   /** Determines if the node is a leaf node and cannot have descendants. */
   readonly leaf: boolean;
   /** Determines if the node can actually have children. */
@@ -29,12 +32,6 @@ export interface NormalizedOptions<T> {
   readonly skip: boolean;
   /** Determines if the {@linkcode keys} have no equal signs (`=`). */
   readonly safeAlias: boolean;
-  /** The resolved {@linkcode Options.min} option. */
-  readonly min: number | null;
-  /** The resolved {@linkcode Options.max} option. */
-  readonly max: number | null;
-  /** The reference to the provided options. */
-  readonly src: Options<T>;
   /** Safe args object. */
   readonly args: Partial<SchemaMap<T>>;
   /** Safe aliases object. */
@@ -51,14 +48,14 @@ function array<T>(a: T | T[] | null | undefined): T[] {
 export function normalize<T>(
   s: Schema<T>,
   // NOTE: data is only used for error purposes
-  data?: Node<T>
+  node?: Node<T>
 ): NormalizedOptions<T> {
   // initialize schema args before anything else
   const args = obj(s.schemas());
-  const src = s.options;
+  const o = s.options;
 
   // get and validate range
-  const [min, max] = range(src.min, src.max, s, data);
+  const [min, max] = range(o.min, o.max, s, node);
 
   // save splittable aliases to keys array
   let safeAlias = true;
@@ -79,11 +76,11 @@ export function normalize<T>(
       if (aliases[a]) {
         // this node is for current value options
         // and is not being parsed but being validated
-        data &&= cnode(key, { key, schema: c }, data);
-        const name = display(data || { name: key, type: c.type });
+        node &&= cnode(key, { key, schema: c }, node);
+        const name = display(node || { name: key, type: c.type });
         const msg =
           (name ? name + 'c' : 'C') + `annot use an existing alias: ${a}`;
-        throw new ParseError(ParseError.OPTIONS_ERROR, msg, c, data);
+        throw new ParseError(ParseError.OPTIONS_ERROR, msg, c, node);
       }
 
       aliases[a] = { key, alias: a, args: arr.slice(1) };
@@ -98,12 +95,12 @@ export function normalize<T>(
   }
 
   // check args length first since it is the most likely to always be true
-  const fertile = items.length > 0 || !!src.handler;
-  const { read = true, leaf = !fertile && s.type === 'option' } = src;
+  const fertile = items.length > 0 || !!o.handler;
+  const { leaf = !fertile && s.type === 'option' } = o;
 
   // sort by length desc for splitting later on
   keys.sort((a, b) => b.length - a.length);
 
   // prettier-ignore
-  return { read, leaf, fertile, skip: !fertile || leaf, safeAlias, min, max, src, args, aliases, keys };
+  return { min, max, leaf, fertile, skip: !fertile || leaf, safeAlias, args, aliases, keys };
 }
