@@ -6,7 +6,6 @@ import { Node } from '../types/node.types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Options } from '../types/options.types';
 import { display } from '../utils/display';
-import { obj } from '../utils/obj';
 import { range } from '../utils/range';
 import { cnode } from './cnode';
 
@@ -51,7 +50,7 @@ export function normalize<T>(
   node?: Node<T>
 ): NormalizedOptions<T> {
   // initialize schema args before anything else
-  const args = obj(s.schemas());
+  const args: SchemaMap<T> = { __proto__: null!, ...s.schemas() };
   const o = s.options;
 
   // get and validate range
@@ -60,7 +59,7 @@ export function normalize<T>(
   // save splittable aliases to keys array
   let safeAlias = true;
   const keys: string[] = [];
-  const aliases: NormalizedOptions<T>['aliases'] = obj();
+  const aliases: NormalizedOptions<T>['aliases'] = { __proto__: null! };
 
   // apply aliases from args
   const items = Object.entries(args);

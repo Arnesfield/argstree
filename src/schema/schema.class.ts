@@ -3,7 +3,6 @@ import { parse } from '../parser/parse';
 import { resolve } from '../parser/resolve';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { obj } from '../utils/obj';
 import {
   Schema as ISchema,
   ResolvedArg,
@@ -41,7 +40,7 @@ export class Schema<T> implements ISchema<T> {
   schemas(): SchemaMap<T> {
     // consider as initialized if 'args' is already provided
     if (!this.map) {
-      this.map = obj<SchemaMap<T>>();
+      this.map = { __proto__: null! };
       // only call init once and only after setting args
       this.options.init?.(this);
     }
