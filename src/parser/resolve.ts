@@ -13,18 +13,18 @@ export interface ParsedArg
   extends Pick<Alias, 'key'>,
     Partial<Omit<Alias, 'key'>> {}
 
-export interface ResolveSplit extends Split {
+export interface ResolvedSplit extends Split {
   list?: NonEmptyArray<Alias>;
 }
 
 // same as NodeOptions but some props are required
-export type ResolveItem<T> = Omit<NodeOptions<T>, 'key' | 'args'> &
+export type ResolvedItem<T> = Omit<NodeOptions<T>, 'key' | 'args'> &
   Required<Pick<NodeOptions<T>, 'key' | 'args'>>;
 
 export interface ResolveResult<T> {
   arg: Arg;
-  split?: ResolveSplit;
-  items?: NonEmptyArray<ResolveItem<T>>;
+  split?: ResolvedSplit;
+  items?: NonEmptyArray<ResolvedItem<T>>;
 }
 
 export function resolveArgs<T>(s: Pick<Schema<T>, 'options'>): string[] {
@@ -36,7 +36,7 @@ function get<T>(
   opts: NormalizedOptions<T>,
   arg: ParsedArg,
   value?: string
-): ResolveItem<T> | undefined {
+): ResolvedItem<T> | undefined {
   const schema = opts.args[arg.key];
   const hasValue = value != null;
   if (
@@ -70,7 +70,7 @@ function getAlias<T>(
     // it does not have to be assignable (only for the last alias arg)
     // also, no more handler fallback for aliases!
 
-    type I = NonEmptyArray<ResolveItem<T>>;
+    type I = NonEmptyArray<ResolvedItem<T>>;
     // prettier-ignore
     return aliases.map((alias, i) => i === aliases.length - 1 ? item : get(opts, alias)!) as I;
   }
@@ -82,7 +82,7 @@ function splitArg<T>(opts: NormalizedOptions<T>, arg: string) {
   // considered as split only if alias args were found.
   // note that split.values would always exist as keys in opts.aliases
   // as we use opts.names for splitting which is derived from opts.aliases
-  let s: ResolveSplit | undefined;
+  let s: ResolvedSplit | undefined;
   if (
     isOption(arg, 'short') &&
     (s = $split(arg.slice(1), opts.keys)).values.length > 0
@@ -121,7 +121,7 @@ export function resolve<T>(
 
   // parse options from options.args only
   if (hasValue && (items = get(opts, arg, arg.value))) {
-    items = [items] as NonEmptyArray<ResolveItem<T>>;
+    items = [items] as NonEmptyArray<ResolvedItem<T>>;
   }
 
   // at this point, if there are no parsed options, arg can be:
