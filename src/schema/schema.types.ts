@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ParseError } from '../lib/error';
 import { Split } from '../lib/split';
 import { Node } from '../types/node.types';

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ParseError } from '../lib/error';
 import { Schema } from '../schema/schema.types';
 import { Arg } from './arg.types';

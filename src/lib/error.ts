@@ -1,6 +1,5 @@
 import { Schema } from '../schema/schema.types';
 import { Node } from '../types/node.types';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Options } from '../types/options.types';
 
 /** The parse error. */
