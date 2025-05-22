@@ -58,7 +58,7 @@ export function normalize<T>(
   const src = s.options;
 
   // get and validate range
-  const [min, max] = range(src.min, src.max, data, src);
+  const [min, max] = range(src.min, src.max, s, data);
 
   // save splittable aliases to keys array
   let safeAlias = true;
@@ -83,7 +83,7 @@ export function normalize<T>(
         const name = display(data || { name: key, type: c.type });
         const msg =
           (name ? name + 'c' : 'C') + `annot use an existing alias: ${a}`;
-        throw new ParseError(ParseError.OPTIONS_ERROR, msg, data, c.options);
+        throw new ParseError(ParseError.OPTIONS_ERROR, msg, c, data);
       }
 
       aliases[a] = { key, alias: a, args: arr.slice(1) };

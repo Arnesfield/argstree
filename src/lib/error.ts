@@ -1,4 +1,6 @@
+import { Schema } from '../schema/schema.types';
 import { Node } from '../types/node.types';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Options } from '../types/options.types';
 
 /** The parse error. */
@@ -25,14 +27,14 @@ export class ParseError<T> extends Error {
    * - {@linkcode ParseError.UNRECOGNIZED_ALIAS_ERROR}
    * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
    * @param message The error message.
+   * @param schema The schema object.
    * @param node The node object.
-   * @param options The options object.
    */
   constructor(
     public code: string,
     message: string,
-    public node?: Node<T>,
-    public options?: Options<T>
+    public schema: Schema<T>,
+    public node?: Node<T>
   ) {
     super(message);
   }

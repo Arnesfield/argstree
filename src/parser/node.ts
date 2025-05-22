@@ -76,7 +76,7 @@ export class Node<T> {
     const { min = c.min, max = c.max } = opts;
     if (opts.read != null) c.read = opts.read;
 
-    [c.min, c.max] = range(min, max, this.data, src);
+    [c.min, c.max] = range(min, max, c.schema, this.data);
   }
 
   // NOTE: return empty arrays to ignore values
@@ -169,6 +169,6 @@ export class Node<T> {
   ): never {
     const name = display(this.data);
     msg = (name ? name + prefix1 : prefix2) + msg;
-    throw new ParseError(code, msg, this.data, this.opts.src);
+    throw new ParseError(code, msg, this.ctx.schema, this.data);
   }
 }
