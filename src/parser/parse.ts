@@ -134,10 +134,10 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   parent.done();
 
   // run onBeforeValidate for all nodes per depth level incrementally
-  for (const item of nodes) item.cb('onBeforeValidate');
+  for (const n of nodes) n.cb('onBeforeValidate');
 
   // validate and run onValidate for all nodes
-  for (const item of nodes) item.check();
+  for (const n of nodes) n.check();
 
   return root.data;
 }
