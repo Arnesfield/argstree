@@ -102,7 +102,7 @@ export function resolve<T>(
   opts: NormalizedOptions<T>
 ): ResolveResult<T> | undefined {
   // immediately treat as value if the current node cannot actually create children
-  if (!opts.fertile || opts.leaf) return;
+  if (opts.skip) return;
 
   let items, alias, split;
   const arg: Arg = { raw, key: raw };

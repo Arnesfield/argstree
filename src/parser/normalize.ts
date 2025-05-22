@@ -25,6 +25,8 @@ export interface NormalizedOptions<T> {
   readonly leaf: boolean;
   /** Determines if the node can actually have children. */
   readonly fertile: boolean;
+  /** Determines if the node should skip parsing and treat arguments as values instead. */
+  readonly skip: boolean;
   /** Determines if the {@linkcode keys} have no equal signs (`=`). */
   readonly safeAlias: boolean;
   /** The resolved {@linkcode Options.min} option. */
@@ -102,5 +104,6 @@ export function normalize<T>(
   // sort by length desc for splitting later on
   keys.sort((a, b) => b.length - a.length);
 
-  return { read, leaf, fertile, safeAlias, min, max, src, args, aliases, keys };
+  // prettier-ignore
+  return { read, leaf, fertile, skip: !fertile || leaf, safeAlias, min, max, src, args, aliases, keys };
 }
