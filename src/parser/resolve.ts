@@ -14,7 +14,7 @@ export interface ParsedArg
     Partial<Omit<Alias, 'key'>> {}
 
 export interface ResolvedSplit extends Split {
-  list?: NonEmptyArray<Alias>;
+  list?: NonEmptyArray<Alias> | false;
 }
 
 // same as NodeOptions but some props are required
@@ -88,11 +88,11 @@ function splitArg<T>(opts: NormalizedOptions<T>, arg: string) {
     (s = $split(arg.slice(1), opts.keys)).values.length > 0
   ) {
     // only set list if has no remainder
-    if (s.remainder.length === 0) {
-      // get args per alias and assume `-{name}` always exists
-      type A = NonEmptyArray<Alias>;
-      s.list = s.values.map(key => opts.aliases['-' + key]) as A;
-    }
+    // get args per alias and assume `-{name}` always exists
+    type A = NonEmptyArray<Alias>;
+    s.list =
+      s.remainder.length === 0 &&
+      (s.values.map(key => opts.aliases['-' + key]) as A);
     return s;
   }
 }
