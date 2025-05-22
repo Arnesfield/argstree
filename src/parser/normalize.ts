@@ -4,6 +4,7 @@ import { Schema, SchemaMap } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
+import { array } from '../utils/array';
 import { display } from '../utils/display';
 import { range } from '../utils/range';
 import { cnode } from './cnode';
@@ -38,11 +39,6 @@ export interface NormalizedOptions<T> {
   readonly keys: string[];
 }
 
-// ensure array string
-function array<T>(a: T | T[] | null | undefined): T[] {
-  return typeof a === 'string' ? [a] : Array.isArray(a) ? a : [];
-}
-
 export function normalize<T>(
   s: Schema<T>,
   // NOTE: data is only used for error purposes
@@ -63,10 +59,10 @@ export function normalize<T>(
   // apply aliases from args
   const items = Object.entries(map);
   for (const [key, c] of items) {
-    for (const item of array(c.options.alias)) {
+    for (const item of array(c.options.alias, true)) {
       // each item is an alias
       // if item is an array, item[0] is an alias
-      const arr = array(item);
+      const arr = array(item, true);
       if (arr.length === 0) continue;
 
       // use `alias[0]` as alias id and `arg` as arg

@@ -1,8 +1,8 @@
 import { isOption } from '../lib/is-option';
 import { split as $split, Split } from '../lib/split';
-import { Schema } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { NonEmptyArray } from '../types/util.types';
+import { array } from '../utils/array';
 import { NodeOptions } from './cnode';
 import { Alias, NormalizedOptions } from './normalize';
 
@@ -27,11 +27,6 @@ export interface ResolveResult<T> {
   items?: NonEmptyArray<ResolvedItem<T>>;
 }
 
-export function resolveArgs<T>(s: Pick<Schema<T>, 'options'>): string[] {
-  const a = s.options.args;
-  return typeof a === 'string' ? [a] : Array.isArray(a) ? a.slice() : [];
-}
-
 function get<T>(
   opts: NormalizedOptions<T>,
   arg: ParsedArg,
@@ -44,7 +39,7 @@ function get<T>(
     (!hasValue || (schema.options.assign ?? schema.type === 'option'))
   ) {
     // save alias args and value if any
-    const args = resolveArgs(schema);
+    const args = array(schema.options.args);
     arg.args && args.push(...arg.args);
     hasValue && args.push(value);
     return { key: arg.key, alias: arg.alias, value, args, schema };
