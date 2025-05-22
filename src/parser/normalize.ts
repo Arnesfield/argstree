@@ -31,10 +31,10 @@ export interface NormalizedOptions<T> {
   readonly skip: boolean;
   /** Determines if the {@linkcode keys} have no equal signs (`=`). */
   readonly safeAlias: boolean;
-  /** Safe args object. */
-  readonly args: Partial<SchemaMap<T>>;
-  /** Safe aliases object. */
-  readonly aliases: { [alias: string]: Alias };
+  /** Safe schema map object. */
+  readonly map: Partial<SchemaMap<T>>;
+  /** Safe alias map object. */
+  readonly alias: { [alias: string]: Alias };
   /** A sorted list of splittable alias keys without the `-` prefix. */
   readonly keys: string[];
 }
@@ -50,7 +50,7 @@ export function normalize<T>(
   node?: Node<T>
 ): NormalizedOptions<T> {
   // initialize schema args before anything else
-  const args: SchemaMap<T> = { __proto__: null!, ...s.schemas() };
+  const map: SchemaMap<T> = { __proto__: null!, ...s.schemas() };
   const o = s.options;
 
   // get and validate range
@@ -59,10 +59,10 @@ export function normalize<T>(
   // save splittable aliases to keys array
   let safeAlias = true;
   const keys: string[] = [];
-  const aliases: NormalizedOptions<T>['aliases'] = { __proto__: null! };
+  const alias: NormalizedOptions<T>['alias'] = { __proto__: null! };
 
   // apply aliases from args
-  const items = Object.entries(args);
+  const items = Object.entries(map);
   for (const [key, c] of items) {
     for (const item of array(c.options.alias)) {
       // each item is an alias
@@ -72,7 +72,7 @@ export function normalize<T>(
 
       // use `alias[0]` as alias id and `arg` as arg
       const a = arr[0];
-      if (aliases[a]) {
+      if (alias[a]) {
         // this node is for current value options
         // and is not being parsed but being validated
         node &&= cnode(key, { key, schema: c }, node);
@@ -82,7 +82,7 @@ export function normalize<T>(
         throw new ParseError(ParseError.OPTIONS_ERROR, msg, c, node);
       }
 
-      aliases[a] = { key, alias: a, args: arr.slice(1) };
+      alias[a] = { key, alias: a, args: arr.slice(1) };
 
       // skip command aliases since we don't need to split them
       // and remove `-` prefix
@@ -101,5 +101,5 @@ export function normalize<T>(
   keys.sort((a, b) => b.length - a.length);
 
   // prettier-ignore
-  return { min, max, leaf, fertile, skip: !fertile || leaf, safeAlias, args, aliases, keys };
+  return { min, max, leaf, fertile, skip: !fertile || leaf, safeAlias, map, alias, keys };
 }

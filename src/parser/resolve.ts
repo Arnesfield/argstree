@@ -37,7 +37,7 @@ function get<T>(
   arg: ParsedArg,
   value?: string
 ): ResolvedItem<T> | undefined {
-  const schema = opts.args[arg.key];
+  const schema = opts.map[arg.key];
   const hasValue = value != null;
   if (
     schema &&
@@ -77,11 +77,10 @@ function getAlias<T>(
 }
 
 function splitArg<T>(opts: NormalizedOptions<T>, arg: string) {
-  // only accept aliases
-  // remove first `-` for alias
+  // only accept aliases and remove first `-` for alias
   // considered as split only if alias args were found.
-  // note that split.values would always exist as keys in opts.aliases
-  // as we use opts.names for splitting which is derived from opts.aliases
+  // note that split.values would always exist as keys in opts.alias
+  // as we use opts.keys for splitting which is derived from opts.alias
   let s: ResolvedSplit | undefined;
   if (
     isOption(arg, 'short') &&
@@ -92,7 +91,7 @@ function splitArg<T>(opts: NormalizedOptions<T>, arg: string) {
     type A = NonEmptyArray<Alias>;
     s.list =
       s.remainder.length === 0 &&
-      (s.values.map(key => opts.aliases['-' + key]) as A);
+      (s.values.map(key => opts.alias['-' + key]) as A);
     return s;
   }
 }
@@ -130,11 +129,11 @@ export function resolve<T>(
   // - options from handler
   // - a value (or, if in strict mode, an unknown option-like)
   // for this case, handle exact alias
-  else if ((alias = opts.aliases[raw]) && (items = getAlias(opts, [alias]))) {
+  else if ((alias = opts.alias[raw]) && (items = getAlias(opts, [alias]))) {
     // alias items found, do nothing and return value
   } else if (
     hasValue &&
-    (alias = opts.aliases[arg.key]) &&
+    (alias = opts.alias[arg.key]) &&
     (items = getAlias(opts, [alias], arg.value))
   ) {
     // alias items found, do nothing and return value
