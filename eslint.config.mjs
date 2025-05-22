@@ -2,6 +2,7 @@
 import eslint from '@eslint/js';
 // @ts-expect-error: package has no type declarations
 import pluginChaiFriendly from 'eslint-plugin-chai-friendly';
+import jsdoc from 'eslint-plugin-jsdoc';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
@@ -50,6 +51,11 @@ export default tseslint.config(
       quotes: ['warn', 'single', 'avoid-escape'],
       semi: 'warn'
     }
+  },
+  {
+    // for imported types used only in jsdoc comments
+    plugins: { jsdoc },
+    rules: { 'jsdoc/no-undefined-types': ['warn', { disableReporting: true }] }
   },
   {
     // for tests only, override no-unused-expressions
