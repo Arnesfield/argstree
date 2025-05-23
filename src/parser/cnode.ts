@@ -1,7 +1,6 @@
 import { Schema } from '../schema/schema.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { NodeData } from './node';
 
 // NOTE: internal
 
@@ -22,6 +21,11 @@ export interface CreateNodeOptions<T>
   extends Pick<NodeOptions<T>, 'key' | 'alias' | 'value'> {
   schema: PartialSchema<T>;
 }
+
+// same as INode but cannot be a value type
+export interface NodeData<T>
+  extends Omit<Node<T>, 'type'>,
+    Pick<Schema<T>, 'type'> {}
 
 /**
  * Creates a node object.

@@ -7,24 +7,19 @@ import { Mutable } from '../types/util.types';
 import { array } from '../utils/array';
 import { display } from '../utils/display';
 import { range } from '../utils/range';
-import { NodeOptions } from './cnode';
+import { NodeData, NodeOptions } from './cnode';
 import { NormalizedOptions } from './normalize';
 
 // NOTE: internal
+
+export type NodeEvent<T> = keyof {
+  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
+};
 
 export interface HandlerResult<T> {
   args: string[];
   opts: NodeOptions<T>[];
 }
-
-// same as INode but cannot be a value type
-export interface NodeData<T>
-  extends Omit<INode<T>, 'type'>,
-    Pick<Schema<T>, 'type'> {}
-
-export type NodeEvent<T> = keyof {
-  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
-};
 
 // NOTE: node instances will only have data types 'option' and 'command'
 // directly save value nodes into data.children instead
