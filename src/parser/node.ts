@@ -36,12 +36,12 @@ export class Node<T> {
   private readonly dstrict: boolean | undefined;
 
   constructor(
-    schema: Schema<T>,
+    private readonly schema: Schema<T>,
     readonly opts: NormalizedOptions<T>,
     readonly data: NodeData<T>,
     parent?: Node<T>
   ) {
-    const { strict, read = true } = schema.options;
+    const { read = true, strict } = schema.options;
 
     // set context for callbacks
     this.ctx = { min: opts.min, max: opts.max, read, node: data, schema };
@@ -68,20 +68,20 @@ export class Node<T> {
     const c = this.ctx;
 
     // preserve `this` for callbacks
-    const opts = c.schema.options[e]?.(c);
+    const opts = this.schema.options[e]?.(c);
     if (!opts) return;
 
     const { min = c.min, max = c.max } = opts;
     if (opts.read != null) c.read = opts.read;
 
-    [c.min, c.max] = range(min, max, c.schema, this.data);
+    [c.min, c.max] = range(min, max, this.schema, this.data);
   }
 
   // NOTE: return empty arrays to ignore values
   // return falsy to fallback to default behavior
   handle(arg: Arg): HandlerResult<T> | undefined {
     // preserve `this` for callbacks
-    let schemas = this.ctx.schema.options.handler?.(arg, this.ctx);
+    let schemas = this.schema.options.handler?.(arg, this.ctx);
     // fallback to default behavior for null, undefined, true
     if (schemas == null || schemas === true) return;
 
@@ -168,6 +168,6 @@ export class Node<T> {
   ): never {
     const name = display(this.data);
     msg = (name ? name + prefix1 : prefix2) + msg;
-    throw new ParseError(code, msg, this.ctx.schema, this.data);
+    throw new ParseError(code, msg, this.schema, this.data);
   }
 }
