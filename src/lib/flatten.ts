@@ -2,6 +2,7 @@ import { Node } from '../types/node.types';
 
 /**
  * Flattens the node tree structure into an array of nodes.
+ * @template T The metadata type.
  * @param node The root node of the tree.
  * @returns The nodes from the tree.
  */

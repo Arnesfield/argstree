@@ -2,7 +2,10 @@ import { Schema } from '../schema/schema.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 
-/** The parse error. */
+/**
+ * The parse error.
+ * @template T The metadata type.
+ */
 export class ParseError<T> extends Error {
   /**
    * The {@linkcode Options} object provided is invalid

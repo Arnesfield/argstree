@@ -29,7 +29,10 @@ export interface ResolvedConfig<T = unknown> {
   options: Options<T>;
 }
 
-/** The resolved argument. */
+/**
+ * The resolved argument.
+ * @template T The metadata type.
+ */
 export type ResolvedArg<T> =
   | {
       /** The split result with remaining values. */
