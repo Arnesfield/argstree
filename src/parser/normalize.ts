@@ -40,16 +40,16 @@ export interface NormalizedOptions<T> {
 }
 
 export function normalize<T>(
-  s: Schema<T>,
+  schema: Schema<T>,
   // NOTE: data is only used for error purposes
   node?: Node<T>
 ): NormalizedOptions<T> {
   // initialize schema args before anything else
-  const map: SchemaMap<T> = { __proto__: null!, ...s.schemas() };
-  const o = s.options;
+  const map: SchemaMap<T> = { __proto__: null!, ...schema.schemas() };
+  const o = schema.options;
 
   // get and validate range
-  const [min, max] = range(o.min, o.max, s, node);
+  const [min, max] = range(o.min, o.max, schema, node);
 
   // save splittable aliases to keys array
   let safeAlias = true;
@@ -58,8 +58,8 @@ export function normalize<T>(
 
   // apply aliases from args
   const items = Object.entries(map);
-  for (const [key, c] of items) {
-    for (const item of array(c.options.alias, true)) {
+  for (const [key, s] of items) {
+    for (const item of array(s.options.alias, true)) {
       // each item is an alias
       // if item is an array, item[0] is an alias
       const arr = array(item, true);
@@ -70,11 +70,11 @@ export function normalize<T>(
       if (alias[a]) {
         // this node is for current value options
         // and is not being parsed but being validated
-        node &&= cnode(key, { key, schema: c }, node);
-        const name = display(node || { name: key, type: c.type });
+        node &&= cnode(key, { key, schema: s }, node);
+        const name = display(node || { name: key, type: s.type });
         const msg =
           (name ? name + 'c' : 'C') + `annot use an existing alias: ${a}`;
-        throw new ParseError(ParseError.OPTIONS_ERROR, msg, c, node);
+        throw new ParseError(ParseError.OPTIONS_ERROR, msg, s, node);
       }
 
       alias[a] = { key, alias: a, args: arr.slice(1) };
@@ -90,7 +90,7 @@ export function normalize<T>(
 
   // check args length first since it is the most likely to always be true
   const fertile = items.length > 0 || !!o.handler;
-  const { leaf = !fertile && s.type === 'option' } = o;
+  const { leaf = !fertile && schema.type === 'option' } = o;
 
   // sort by length desc for splitting later on
   keys.sort((a, b) => b.length - a.length);
