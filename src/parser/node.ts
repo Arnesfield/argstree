@@ -22,7 +22,7 @@ export interface HandlerResult<T> {
 }
 
 // NOTE: node instances will only have data types 'option' and 'command'
-// directly save value nodes into data.children instead
+// directly save value nodes into `this.node.children` instead
 export class Node<T> {
   readonly children: Node<T>[] = [];
   readonly ctx: Mutable<Context<T>>;
@@ -33,13 +33,13 @@ export class Node<T> {
   constructor(
     private readonly schema: Schema<T>,
     readonly opts: NormalizedOptions<T>,
-    readonly data: NodeData<T>,
+    readonly node: NodeData<T>,
     parent?: Node<T>
   ) {
     const { read = true, strict } = schema.options;
 
     // set context for callbacks
-    this.ctx = { min: opts.min, max: opts.max, read, node: data, schema };
+    this.ctx = { min: opts.min, max: opts.max, read, node, schema };
 
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
@@ -69,7 +69,7 @@ export class Node<T> {
     const { min = c.min, max = c.max } = opts;
     if (opts.read != null) c.read = opts.read;
 
-    [c.min, c.max] = range(min, max, this.schema, this.data);
+    [c.min, c.max] = range(min, max, this.schema, this.node);
   }
 
   // NOTE: return empty arrays to ignore values
@@ -105,7 +105,7 @@ export class Node<T> {
   // save arg to the last value child node
   value(arg: string): void {
     let node: INode<T>;
-    const p = this.data;
+    const p = this.node;
     const c = p.children;
 
     if (c.length > 0 && (node = c[c.length - 1]).type === 'value') {
@@ -135,7 +135,7 @@ export class Node<T> {
     const { min, max } = this.ctx;
 
     // validate node
-    const len = this.data.args.length;
+    const len = this.node.args.length;
     const msg: [string | number, number] | null =
       min != null && max != null && (len < min || len > max)
         ? min === max
@@ -161,8 +161,8 @@ export class Node<T> {
     msg: string,
     code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
   ): never {
-    const name = display(this.data);
+    const name = display(this.node);
     msg = (name ? name + prefix1 : prefix2) + msg;
-    throw new ParseError(code, msg, this.schema, this.data);
+    throw new ParseError(code, msg, this.schema, this.node);
   }
 }

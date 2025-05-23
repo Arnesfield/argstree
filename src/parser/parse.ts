@@ -15,7 +15,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   const map = new WeakMap<Schema<T>, NormalizedOptions<T>>();
   function node(raw: string | null, opts: NodeOptions<T>, curr?: Node<T>) {
     const s = opts.schema;
-    const data = cnode(raw, opts, curr ? curr.data : null, opts.args);
+    const data = cnode(raw, opts, curr ? curr.node : null, opts.args);
 
     let nOpts;
     (nOpts = map.get(s)) || map.set(s, (nOpts = normalize(s, data)));
@@ -50,7 +50,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
       // create child node from options
       nodes.push((child = node(raw, item, parent)));
       parent.children.push(child);
-      parent.data.children.push(child.data);
+      parent.node.children.push(child.node);
 
       parent.cb('onChild');
     }
@@ -71,7 +71,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // if parent cannot read args, assume unrecognized argument
     const curr =
       child?.ctx.read &&
-      (child.ctx.max == null || child.ctx.max > child.data.args.length)
+      (child.ctx.max == null || child.ctx.max > child.node.args.length)
         ? child
         : parent.ctx.read
           ? parent
@@ -81,7 +81,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     // strict mode: throw error if arg is an option-like
     !noStrict && curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
-    curr.data.args.push(raw);
+    curr.node.args.push(raw);
 
     // if saving to parent, save args to the value node
     curr === parent && curr.value(raw);
@@ -139,5 +139,5 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   // validate and run onValidate for all nodes
   for (const n of nodes) n.check();
 
-  return root.data;
+  return root.node;
 }

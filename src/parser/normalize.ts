@@ -41,7 +41,7 @@ export interface NormalizedOptions<T> {
 
 export function normalize<T>(
   schema: Schema<T>,
-  // NOTE: data is only used for error purposes
+  // NOTE: node is only used for error purposes
   node?: Node<T>
 ): NormalizedOptions<T> {
   // initialize schema args before anything else
