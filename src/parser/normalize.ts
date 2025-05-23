@@ -42,7 +42,7 @@ export interface NormalizedOptions<T> {
 export function normalize<T>(
   schema: Schema<T>,
   // NOTE: node is only used for error purposes
-  node?: Node<T>
+  node: Node<T> = cnode({ schema })
 ): NormalizedOptions<T> {
   // initialize schema args before anything else
   const map: SchemaMap<T> = { __proto__: null!, ...schema.schemas() };
@@ -70,8 +70,8 @@ export function normalize<T>(
       if (alias[a]) {
         // this node is for current value options
         // and is not being parsed but being validated
-        node &&= cnode(key, { key, schema: s }, node);
-        const name = display(node || { name: key, type: s.type });
+        node = cnode({ key, schema: s }, key, node);
+        const name = display(node);
         const msg =
           (name ? name + 'c' : 'C') + `annot use an existing alias: ${a}`;
         throw new ParseError(ParseError.OPTIONS_ERROR, msg, s, node);

@@ -13,9 +13,9 @@ import { resolve } from './resolve';
 export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Schema<T>, NormalizedOptions<T>>();
-  function node(raw: string | null, opts: NodeOptions<T>, curr?: Node<T>) {
+  function node(opts: NodeOptions<T>, raw?: string | null, curr?: Node<T>) {
     const s = opts.schema;
-    const data = cnode(raw, opts, curr ? curr.node : null, opts.args);
+    const data = cnode(opts, raw, curr?.node, opts.args);
 
     let nOpts;
     (nOpts = map.get(s)) || map.set(s, (nOpts = normalize(s, data)));
@@ -23,7 +23,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     return new Node<T>(s, nOpts, data, curr);
   }
 
-  const root = node(null, { schema });
+  const root = node({ schema });
   root.cb('onDepth');
   const nodes = [root];
   let parent: Node<T> = root,
@@ -48,7 +48,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
       child?.done();
 
       // create child node from options
-      nodes.push((child = node(raw, item, parent)));
+      nodes.push((child = node(item, raw, parent)));
       parent.children.push(child);
       parent.node.children.push(child.node);
 

@@ -12,7 +12,7 @@ export function range<T>(
   min: number | null | undefined,
   max: number | null | undefined,
   schema: Schema<T>,
-  node: Node<T> | undefined
+  node: Node<T>
 ): [number | null, number | null] {
   // get and validate range
   min = number(min);

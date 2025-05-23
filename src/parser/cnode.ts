@@ -29,16 +29,16 @@ export interface NodeData<T>
 
 /**
  * Creates a node object.
- * @param raw The unparsed argument.
  * @param opts The options.
+ * @param raw The unparsed argument.
  * @param parent The parent node object.
  * @param args The node arguments.
  * @returns The node object.
  */
 export function cnode<T>(
-  raw: string | null,
   opts: CreateNodeOptions<T>,
-  parent: Node<T> | null,
+  raw: string | null = null,
+  parent: Node<T> | null = null,
   args: string[] = []
 ): NodeData<T> {
   // prettier-ignore

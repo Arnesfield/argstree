@@ -33,7 +33,7 @@ export class ParseError<T> extends Error {
     public code: string,
     message: string,
     public schema: Schema<T>,
-    public node?: Node<T>
+    public node: Node<T>
   ) {
     super(message);
   }
