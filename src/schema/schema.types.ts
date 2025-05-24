@@ -10,7 +10,7 @@ export type SchemaType = 'option' | 'command';
  * The schema map.
  * @template T The metadata type.
  */
-export interface SchemaMap<T> {
+export interface SchemaMap<T = unknown> {
   [arg: string]: Schema<T>;
 }
 
@@ -33,7 +33,7 @@ export interface ResolvedConfig<T = unknown> {
  * The resolved argument.
  * @template T The metadata type.
  */
-export type ResolvedArg<T> =
+export type ResolvedArg<T = unknown> =
   | {
       /** The split result with remaining values. */
       split: Split;

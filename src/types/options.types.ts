@@ -17,7 +17,7 @@ export interface VariableOptions {
  * The callback context.
  * @template T The metadata type.
  */
-export interface Context<T> extends Readonly<VariableOptions> {
+export interface Context<T = unknown> extends Readonly<VariableOptions> {
   /** The node object. */
   readonly node: Node<T>;
   /** The schema object. */
