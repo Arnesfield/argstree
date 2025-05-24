@@ -4,7 +4,6 @@ import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
 import { Context, Options } from '../types/options.types';
 import { Mutable } from '../types/util.types';
-import { array } from '../utils/array';
 import { display } from '../utils/display';
 import { range } from '../utils/range';
 import { NodeData, NodeOptions } from './cnode';
@@ -94,8 +93,7 @@ export class Node<T> {
       } else {
         // use arg.key as key here despite not using arg.value
         // assume that the consumer handles arg.value manually
-        // prettier-ignore
-        result.opts.push({ key: arg.key, args: array(schema.options.args), schema });
+        result.opts.push({ key: arg.key, schema });
       }
     }
 

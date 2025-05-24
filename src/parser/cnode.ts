@@ -1,6 +1,7 @@
 import { Schema } from '../schema/schema.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
+import { array } from '../utils/array';
 
 // NOTE: internal
 
@@ -14,7 +15,7 @@ export interface NodeOptions<T> {
 }
 
 export interface PartialSchema<T> extends Pick<Schema<T>, 'type'> {
-  options: Pick<Options<T>, 'id' | 'name'>;
+  options: Pick<Options<T>, 'id' | 'name' | 'args'>;
 }
 
 export interface CreateNodeOptions<T>
@@ -39,7 +40,7 @@ export function cnode<T>(
   opts: CreateNodeOptions<T>,
   raw: string | null = null,
   parent: Node<T> | null = null,
-  args: string[] = []
+  args = array(opts.schema.options.args)
 ): NodeData<T> {
   // prettier-ignore
   const { key = null, alias = null, value = null, schema: { type, options: { id = key, name = key } } } = opts;
