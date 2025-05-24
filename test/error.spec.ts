@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import command, { Node, option, Options, ParseError } from '../src';
+import command, { option, Options, ParseError } from '../src';
+import { createNodes } from './common/create-nodes';
 import { expectError } from './common/expect-error';
 
 describe('error', () => {
@@ -21,19 +22,7 @@ describe('error', () => {
 
   it('should contain class members', () => {
     const id = '--option';
-    const node: Node = {
-      id,
-      name: id,
-      raw: id,
-      key: id,
-      alias: null,
-      value: null,
-      type: 'option',
-      depth: 1,
-      args: [],
-      parent: null,
-      children: []
-    };
+    const [node] = createNodes({ id, name: id, raw: id, key: id, depth: 1 });
     const schema = command();
     const error = new ParseError(ParseError.OPTIONS_ERROR, 'foo', schema, node);
 
@@ -114,6 +103,27 @@ describe('error', () => {
         args: [],
         message: 'Invalid min and max range: 1-0',
         options: { min: 1, max: 0 }
+      });
+
+      expectError({
+        code,
+        args: [],
+        message: "Command 'foo' has invalid min and max range: 2-0",
+        options: { name: 'foo', min: 2, max: 0 }
+      });
+
+      const match = option({ min: 3, max: 1 });
+      match.schemas();
+      expectError({
+        code,
+        args: ['--foo'],
+        message: "Option '--foo' has invalid min and max range: 3-1",
+        match,
+        options: {
+          init(schema) {
+            schema.option('--foo', match.options);
+          }
+        }
       });
     });
   });
@@ -296,18 +306,24 @@ describe('error', () => {
         }
       });
 
+      const match = option({
+        init(schema) {
+          schema
+            .option('--baz', { alias: '-ba' })
+            .option('--bar', { alias: '-oob' })
+            .option('--foo', { alias: '-foo' });
+        }
+      });
+      match.schemas();
       expectError({
         code,
-        args: ['-foobarbaz'],
+        args: ['--foo', '-foobarbaz'],
         message:
-          "Command 'foo' does not recognize the aliases: -(f)oob(ar)ba(z)",
+          "Option '--foo' does not recognize the aliases: -(f)oob(ar)ba(z)",
+        match,
         options: {
-          name: 'foo',
           init(schema) {
-            schema
-              .option('--baz', { alias: '-ba' })
-              .option('--bar', { alias: '-oob' })
-              .option('--foo', { alias: '-foo' });
+            schema.option('--foo', match.options);
           }
         }
       });
