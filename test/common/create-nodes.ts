@@ -23,7 +23,8 @@ export function createNodes(partial: PartialNode = {}): Node[] {
     }
 
     item.node = cnode(
-      { raw: pNode.key, key: pNode.key, cfg: { type: 'option', options: {} } },
+      { key: pNode.key ?? undefined, schema: { type: 'option', options: {} } },
+      pNode.key,
       parent,
       pNode.args || []
     );

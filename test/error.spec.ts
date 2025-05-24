@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Node, Options, ParseError } from '../src';
+import command, { Node, option, Options, ParseError } from '../src';
 import { expectError } from './common/expect-error';
 
 describe('error', () => {
@@ -27,19 +27,15 @@ describe('error', () => {
       raw: id,
       key: id,
       alias: null,
+      value: null,
       type: 'option',
       depth: 1,
       args: [],
       parent: null,
       children: []
     };
-    const options: Options = {};
-    const error = new ParseError(
-      ParseError.OPTIONS_ERROR,
-      'foo',
-      node,
-      options
-    );
+    const schema = command();
+    const error = new ParseError(ParseError.OPTIONS_ERROR, 'foo', schema, node);
 
     expect(error).to.be.instanceOf(Error).and.instanceOf(ParseError);
     expect(error).to.have.property('name').that.equals('ParseError');
@@ -47,8 +43,8 @@ describe('error', () => {
       .to.have.property('code')
       .that.equals(ParseError.OPTIONS_ERROR);
     expect(error).to.have.property('message').that.equals('foo');
+    expect(error).to.have.property('schema').that.equals(schema);
     expect(error).to.have.property('node').that.equals(node);
-    expect(error).to.have.property('options').that.equals(options);
   });
 
   describe('options error', () => {
@@ -60,7 +56,7 @@ describe('error', () => {
         code,
         args: [],
         message: "Option '--bar' cannot use an existing alias: -f",
-        match: options,
+        match: option(options),
         options: {
           init(schema) {
             schema.option('--foo', { alias: '-f' });
@@ -73,7 +69,7 @@ describe('error', () => {
         code,
         args: [],
         message: "Command 'bar' cannot use an existing alias: -f",
-        match: options,
+        match: command(options),
         options: {
           init(schema) {
             schema.option('--foo', { alias: '-f' });
@@ -87,7 +83,7 @@ describe('error', () => {
         code,
         args: [],
         message: 'Cannot use an existing alias: -f',
-        match: options,
+        match: option(options),
         options: {
           init(schema) {
             schema.option('--foo', { alias: '-f' });
@@ -100,7 +96,7 @@ describe('error', () => {
         code,
         args: [],
         message: 'Cannot use an existing alias: -f',
-        match: options,
+        match: command(options),
         options: {
           init(schema) {
             schema.option('--foo', { alias: '-f' });
@@ -140,15 +136,16 @@ describe('error', () => {
         options: { name: 'foo', min: 1 }
       });
 
-      const options: Options = { min: 2 };
+      const match = option({ min: 2 });
+      match.schemas();
       expectError({
         code,
         args: ['--foo', 'bar'],
         message: "Option '--foo' expected at least 2 arguments, but got 1.",
-        match: options,
+        match,
         options: {
           init(schema) {
-            schema.option('--foo', options);
+            schema.option('--foo', match.options);
           }
         }
       });
@@ -171,15 +168,16 @@ describe('error', () => {
         options: { name: 'foo', max: 2 }
       });
 
-      const options: Options = { max: 2, leaf: false };
+      const match = option({ max: 2, leaf: false });
+      match.schemas();
       expectError({
         code,
         args: ['--foo', 'foo', 'bar', 'baz'],
         message: "Option '--foo' expected up to 2 arguments, but got 3.",
-        match: options,
+        match,
         options: {
           init(schema) {
-            schema.option('--foo', options);
+            schema.option('--foo', match.options);
           }
         }
       });
@@ -209,15 +207,16 @@ describe('error', () => {
         options: { name: 'foo', min: 2, max: 2 }
       });
 
-      const options: Options = { min: 2, max: 2, leaf: false };
+      const match = option({ min: 2, max: 2, leaf: false });
+      match.schemas();
       expectError({
         code,
         args: ['--foo', 'foo', 'bar', 'baz'],
         message: "Option '--foo' expected 2 arguments, but got 3.",
-        match: options,
+        match,
         options: {
           init(schema) {
-            schema.option('--foo', options);
+            schema.option('--foo', match.options);
           }
         }
       });
@@ -240,15 +239,16 @@ describe('error', () => {
         options: { name: 'foo', min: 2, max: 3 }
       });
 
-      const options: Options = { min: 2, max: 3 };
+      const match = option({ min: 2, max: 3 });
+      match.schemas();
       expectError({
         code,
         args: ['--foo', 'bar'],
         message: "Option '--foo' expected 2-3 arguments, but got 1.",
-        match: options,
+        match,
         options: {
           init(schema) {
-            schema.option('--foo', options);
+            schema.option('--foo', match.options);
           }
         }
       });
@@ -338,31 +338,33 @@ describe('error', () => {
         }
       });
 
-      let options: Options = {};
+      let match = command();
+      match.schemas();
       expectError({
         code,
         args: ['--foo', 'foo', '--foo=--bar', 'bar', 'baz', '--bar', '--baz'],
         message: "Command 'bar' does not recognize the option: --bar",
-        match: options,
+        match,
         options: {
           strict: true,
           init(schema) {
             schema.option('--foo');
-            schema.command('bar', options);
+            schema.command('bar', match.options);
           }
         }
       });
 
-      options = { leaf: false };
+      match = option({ leaf: false });
+      match.schemas();
       expectError({
         code,
         args: ['-f', '--foo', '--bar=--foo', 'foo', '--bar', '--baz'],
         message: "Option '--bar' does not recognize the option: --bar",
-        match: options,
+        match,
         options: {
           strict: 'descendants',
           init(schema) {
-            schema.option('--bar', options);
+            schema.option('--bar', match.options);
           }
         }
       });
@@ -391,37 +393,40 @@ describe('error', () => {
         }
       });
 
-      let options: Options = { read: false };
+      let match = command({ read: false });
+      match.schemas();
       expectError({
         code,
         args: ['--foo', 'bar', '--baz'],
         message: "Command 'bar' expected no arguments, but got: --baz",
-        match: options,
+        match,
         options: {
           strict: true,
           init(schema) {
             schema.option('--foo');
-            schema.command('bar', options);
+            schema.command('bar', match.options);
           }
         }
       });
 
-      options = {
+      match = option({
         read: false,
         init(schema) {
           schema.option('--baz', { read: false });
         }
-      };
+      });
+      const map = match.schemas();
+      map['--baz'].schemas();
       expectError({
         code,
         args: ['--foo', 'bar', '--baz', 'foo'],
         message: "Option 'bar' does not recognize the option or command: foo",
-        match: options,
+        match,
         options: {
           strict: true,
           init(schema) {
             schema.option('--foo');
-            schema.option('bar', options);
+            schema.option('bar', match.options);
           }
         }
       });

@@ -183,6 +183,7 @@ describe('parse', () => {
           name: '--foo',
           raw: '--foo=3',
           key: '--foo',
+          value: '3',
           args: ['1', '2', '3', '4']
         },
         {
@@ -227,6 +228,7 @@ describe('parse', () => {
           raw: '-f=0',
           key: '--foo',
           alias: '-f',
+          value: '0',
           args: ['0', '1']
         },
         {
@@ -235,6 +237,7 @@ describe('parse', () => {
           raw: 'f=2',
           key: 'foo',
           alias: 'f',
+          value: '2',
           args: ['1', '2', '3', '-b=4']
         },
         {
@@ -281,6 +284,7 @@ describe('parse', () => {
           raw: '-nini=3',
           key: '--input',
           alias: '-i',
+          value: '3',
           args: ['0', '1', '2', '3', '4', '--xnini']
         }
       ]

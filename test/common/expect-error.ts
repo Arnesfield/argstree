@@ -1,17 +1,18 @@
 import { expect } from 'chai';
-import command, { Node, Options, ParseError, SchemaOptions } from '../../src';
+import command, { Node, ParseError, Schema, SchemaOptions } from '../../src';
 
-export function expectError(opts: {
+export function expectError<T>(opts: {
   code: string;
-  options: SchemaOptions;
-  match?: Options;
-  node?: Node;
+  options: SchemaOptions<T>;
+  match?: Schema<T>;
+  node?: Node<T>;
   message: string;
   args: string[];
 }): void {
   let error: unknown;
+  const cmd = command(opts.options);
   try {
-    command(opts.options).parse(opts.args);
+    cmd.parse(opts.args);
   } catch (err) {
     error = err;
   }
@@ -22,8 +23,8 @@ export function expectError(opts: {
     expect(error).to.have.property('message').that.equals(opts.message);
     expect(error).to.have.property('node').that.is.an('object');
     expect(error)
-      .to.have.property('options')
-      .that.equals(opts.match || opts.options);
+      .to.have.property('schema')
+      .that.deep.equals(opts.match || cmd);
 
     // TODO: match node?
     if (opts.node) {

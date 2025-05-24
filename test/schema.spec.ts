@@ -1,10 +1,10 @@
 import { expect } from 'chai';
 import command, {
-  Config,
   NodeType,
   option,
   Options,
   Schema,
+  SchemaMap,
   SchemaOptions
 } from '../src';
 import { Schema as SchemaClass } from '../src/schema/schema.class';
@@ -21,9 +21,12 @@ function describeSchemaFn(
     it('should return a schema object', () => {
       const schema = schemaFn();
       expect(schema).to.be.an('object').that.is.an.instanceOf(SchemaClass);
+      expect(schema).to.have.property('type').that.equals(type);
+      expect(schema).to.have.property('options').that.is.an('object');
       expect(schema).to.have.property('option').that.is.a('function');
       expect(schema).to.have.property('command').that.is.a('function');
-      expect(schema).to.have.property('config').that.is.a('function');
+      expect(schema).to.have.property('schemas').that.is.a('function');
+      expect(schema).to.have.property('resolve').that.is.a('function');
       expect(schema).to.have.property('parse').that.is.a('function');
     });
 
@@ -37,18 +40,18 @@ function describeSchemaFn(
       expect(schema).to.equal(schema.command('command'));
     });
 
-    it('should return the config for schema.config()', () => {
+    it('should return the schema map for schema.schemas()', () => {
       const options: Options = {};
       const schema = schemaFn(options);
-      const config = schema.config();
-      expect(config).to.be.an('object');
-      expect(config).to.have.property('type').that.is.a('string');
-      expect(config).to.have.property('options').that.equals(options);
-      expect(config).to.have.property('args').that.is.an('object');
-      expect(Object.getPrototypeOf(config.args)).to.be.null;
+      expect(schema).to.have.property('type').that.equals(type);
+      expect(schema).to.have.property('options').that.equals(options);
+
+      const map = schema.schemas();
+      expect(map).to.be.an('object');
+      expect(Object.getPrototypeOf(map)).to.be.null;
     });
 
-    it('should have the correct config', () => {
+    it('should have the correct schema map', () => {
       const opts = {
         root: {} as Options,
         foo: { alias: '-f' } as Options,
@@ -66,19 +69,19 @@ function describeSchemaFn(
         .option('--foo', opts.foo)
         .option('--bar', opts.bar)
         .command('baz', opts.baz);
-      const config = schema.config();
+      expect(schema).to.have.property('type').that.equals(type);
+      expect(schema).to.have.property('options').that.equals(opts.root);
 
-      expect(config).to.be.an('object');
-      expect(config).to.have.property('type').that.equals(type);
-      expect(config).to.have.property('options').that.equals(opts.root);
+      const map = schema.schemas();
+      expect(map).to.be.an('object');
+      expect(Object.getPrototypeOf(map)).to.be.null;
 
-      const args: Config['args'] = {
-        '--foo': { type: 'option', options: opts.foo },
-        '--bar': { type: 'option', options: opts.bar },
-        baz: { type: 'command', options: opts.baz }
+      const args: SchemaMap = {
+        '--foo': option(opts.foo),
+        '--bar': option(opts.bar),
+        baz: command(opts.baz)
       };
-      expect(Object.getPrototypeOf(config.args)).to.be.null;
-      expect(config.args).to.deep.equal(args);
+      expect(map).to.deep.equal(args);
     });
   });
 }
