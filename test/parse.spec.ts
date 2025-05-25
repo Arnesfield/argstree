@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import command, { NodeType, option } from '../src';
+import command, { NodeType, option, SchemaMap } from '../src';
 import { createNodes } from './common/create-nodes';
 
 describe('parse', () => {
@@ -169,6 +169,32 @@ describe('parse', () => {
     expect(root).to.deep.equal(actual);
   });
 
+  it('should override existing options or commands', () => {
+    const schema = command()
+      .option('--foo', { alias: '-f' })
+      .option('--foo', { id: 'FOO' })
+      .command('bar', { id: 'BAR' })
+      .command('bar', { alias: 'b' });
+
+    const map = schema.schemas();
+    const actualMap: SchemaMap = {
+      '--foo': option({ id: 'FOO' }),
+      bar: command({ alias: 'b' })
+    };
+    expect(Object.getPrototypeOf(map)).to.be.null;
+    expect(map).to.deep.equal(actualMap);
+
+    const root = schema.parse(['--foo', 'bar']);
+    const [actual] = createNodes({
+      type: 'command',
+      children: [
+        { id: 'FOO', name: '--foo', raw: '--foo', key: '--foo' },
+        { id: 'bar', name: 'bar', raw: 'bar', key: 'bar', type: 'command' }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
   it('should save initial arguments', () => {
     const root = command({ args: ['foo', 'bar'] })
       .option('--foo', { args: ['1', '2'] })
@@ -205,6 +231,21 @@ describe('parse', () => {
           ]
         }
       ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
+  it('should not split short options', () => {
+    const root = command()
+      .option('-i')
+      .option('-o')
+      .option('-n')
+      .command('n')
+      .parse(['-ion']);
+    const [actual] = createNodes({
+      type: 'command',
+      args: ['-ion'],
+      children: [{ type: 'value', args: ['-ion'] }]
     });
     expect(root).to.deep.equal(actual);
   });
@@ -255,9 +296,9 @@ describe('parse', () => {
 
   it('should split aliases and use their args', () => {
     const root = command()
-      .option('--input', { alias: [['-i', '2']], args: ['0', '1'] })
-      .option('--interactive', { alias: [['-in', '3']], args: '2' })
-      .option('--dry-run', { alias: [['-n', '5']], args: ['3', '4'] })
+      .option('--input', { alias: ['i', ['-i', '2']], args: ['0', '1'] })
+      .option('--interactive', { alias: ['in', ['-in', '3']], args: '2' })
+      .option('--dry-run', { alias: ['--n', ['-n', '5']], args: ['3', '4'] })
       .parse(['-nini=3', '4', '--xnini']);
     const [actual] = createNodes({
       type: 'command',
@@ -287,6 +328,53 @@ describe('parse', () => {
           value: '3',
           args: ['0', '1', '2', '3', '4', '--xnini']
         }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
+  it('should ignore empty aliases', () => {
+    const root = command()
+      .option('--input', { alias: [] })
+      .option('--output', { alias: [[], [], []] })
+      .parse(['--input', '--output']);
+    const [actual] = createNodes({
+      type: 'command',
+      children: [
+        { id: '--input', name: '--input', raw: '--input', key: '--input' },
+        { id: '--output', name: '--output', raw: '--output', key: '--output' }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
+  it('should prioritize matching arguments over similar aliases', () => {
+    const root = command()
+      .option('-i')
+      .option('--input', { alias: ['-i', 'run'] })
+      .option('--output', { alias: '-o' })
+      .command('run', { alias: '--input' })
+      .parse(['-i', '0', '-io', '--input', 'run']);
+    const [actual] = createNodes({
+      type: 'command',
+      children: [
+        { id: '-i', name: '-i', raw: '-i', key: '-i', args: ['0'] },
+        {
+          id: '--input',
+          name: '--input',
+          raw: '-io',
+          key: '--input',
+          alias: '-i'
+        },
+        {
+          id: '--output',
+          name: '--output',
+          raw: '-io',
+          key: '--output',
+          alias: '-o'
+        },
+        { id: '--input', name: '--input', raw: '--input', key: '--input' },
+        { id: 'run', name: 'run', raw: 'run', key: 'run', type: 'command' }
       ]
     });
     expect(root).to.deep.equal(actual);
