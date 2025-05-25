@@ -6,7 +6,7 @@ import { Options } from '../types/options.types';
 import {
   Schema as ISchema,
   ResolvedArg,
-  ResolvedConfig,
+  ResolvedItem,
   ResolvedOptions,
   SchemaMap,
   SchemaType
@@ -60,12 +60,12 @@ export class Schema<T> implements ISchema<T> {
       // do nothing
     } else if (res.items) {
       type O = ResolvedOptions<T>;
-      const configs = res.items.map((r): ResolvedConfig<T> => {
+      const items = res.items.map((r): ResolvedItem<T> => {
         const { id = r.key, name = r.key } = r.schema.options;
         const options: O = { ...r.schema.options, id, name, args: r.args };
         return { key: r.key, alias: r.alias, type: r.schema.type, options };
       });
-      return { configs };
+      return { items };
     } else if (res.split) {
       return { split: res.split };
     }

@@ -27,10 +27,10 @@ export interface ResolvedOptions<T = unknown> extends Options<T> {
 }
 
 /**
- * The resolved config.
+ * The resolved item.
  * @template T The metadata type.
  */
-export interface ResolvedConfig<T = unknown> {
+export interface ResolvedItem<T = unknown> {
   /** The matched argument. */
   key: string;
   /** The alias used to parse argument if any. */
@@ -49,12 +49,12 @@ export type ResolvedArg<T = unknown> =
   | {
       /** The split result with remaining values. */
       split: Split;
-      configs?: never;
+      items?: never;
     }
   | {
       split?: never;
-      /** The resolved configs. */
-      configs: ResolvedConfig<T>[];
+      /** The resolved items. */
+      items: ResolvedItem<T>[];
     };
 
 /**
@@ -86,7 +86,7 @@ export interface Schema<T = unknown> {
    */
   schemas(): SchemaMap<T>;
   /**
-   * Resolves the argument and returns the configuration for the matching
+   * Resolves the argument and returns the configuration for the matched
    * options and commands. If the argument cannot be resolved, this returns
    * either `undefined` or the split result if the argument is a short option.
    * @param arg The argument to resolve.

@@ -13,25 +13,25 @@ export interface ParsedArg
   extends Pick<Alias, 'key'>,
     Partial<Omit<Alias, 'key'>> {}
 
-export interface ResolvedSplit extends Split {
+export interface ResolveSplit extends Split {
   list?: NonEmptyArray<Alias> | false;
 }
 
 // same as NodeOptions but some props are required
-export type ResolvedItem<T> = Omit<NodeOptions<T>, 'key' | 'args'> &
+export type ResolveItem<T> = Omit<NodeOptions<T>, 'key' | 'args'> &
   Required<Pick<NodeOptions<T>, 'key' | 'args'>>;
 
 export interface ResolveResult<T> {
   arg: Arg;
-  split?: ResolvedSplit;
-  items?: NonEmptyArray<ResolvedItem<T>>;
+  split?: ResolveSplit;
+  items?: NonEmptyArray<ResolveItem<T>>;
 }
 
 function get<T>(
   opts: NormalizedOptions<T>,
   arg: ParsedArg,
   value?: string
-): ResolvedItem<T> | undefined {
+): ResolveItem<T> | undefined {
   const schema = opts.map[arg.key];
   const hasValue = value != null;
   if (
@@ -65,7 +65,7 @@ function getAlias<T>(
     // it does not have to be assignable (only for the last alias arg)
     // also, no more handler fallback for aliases!
 
-    type I = NonEmptyArray<ResolvedItem<T>>;
+    type I = NonEmptyArray<ResolveItem<T>>;
     // prettier-ignore
     return aliases.map((alias, i) => i === aliases.length - 1 ? item : get(opts, alias)!) as I;
   }
@@ -76,7 +76,7 @@ function splitArg<T>(opts: NormalizedOptions<T>, arg: string) {
   // considered as split only if alias args were found.
   // note that split.values would always exist as keys in opts.alias
   // as we use opts.keys for splitting which is derived from opts.alias
-  let s: ResolvedSplit | undefined;
+  let s: ResolveSplit | undefined;
   if (
     isOption(arg, 'short') &&
     (s = $split(arg.slice(1), opts.keys)).values.length > 0
@@ -115,7 +115,7 @@ export function resolve<T>(
 
   // parse options from options.args only
   if (hasValue && (items = get(opts, arg, arg.value))) {
-    items = [items] as NonEmptyArray<ResolvedItem<T>>;
+    items = [items] as NonEmptyArray<ResolveItem<T>>;
   }
 
   // at this point, if there are no parsed options, arg can be:
@@ -182,6 +182,6 @@ export function resolve<T>(
     return { arg, split };
   }
 
-  // either treat as raw value or use parsed configs
+  // either treat as raw value or use parsed items
   return { arg, items };
 }

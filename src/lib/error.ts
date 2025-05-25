@@ -9,7 +9,7 @@ import { Options } from '../types/options.types';
 export class ParseError<T> extends Error {
   /**
    * The {@linkcode Options} object provided is invalid
-   * (e.g. incorrect range config or duplicate aliases).
+   * (e.g. incorrect range options or duplicate aliases).
    */
   static readonly OPTIONS_ERROR = 'OPTIONS';
   /** The option or command did not satisfy the required number of arguments. */
