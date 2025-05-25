@@ -30,7 +30,7 @@ export interface Context<T = unknown> extends Readonly<VariableOptions> {
  */
 export interface Options<T = unknown> {
   /**
-   * The option or command ID that will show up in {@linkcode Node.id}.
+   * The option or command ID that is set to {@linkcode Node.id}.
    * If not provided, the default value is the {@linkcode Node.key}.
    *
    * This is never used in any internal logic, but it can be
@@ -38,8 +38,9 @@ export interface Options<T = unknown> {
    */
   id?: string | null;
   /**
-   * The display name of the option or command for {@link ParseError errors}.
-   * If not provided, the {@linkcode Node.key} is used as the display name when available.
+   * The option or command display name that is set to {@linkcode Node.name}
+   * and is used for {@linkcode ParseError} messages.
+   * If not provided, the default value is the {@linkcode Node.key}.
    */
   name?: string | null;
   /**
