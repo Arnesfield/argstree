@@ -4,12 +4,12 @@ import { Arg } from './arg.types';
 import { Node, NodeType } from './node.types';
 
 /** Options that can be changed during parsing for the node. */
-export interface VariableOptions {
-  /** Override or clear the {@linkcode Options.min} option for the node. */
+export interface ParseOptions {
+  /** Overrides or clears the {@linkcode Options.min} option for the node. */
   min?: number | null;
-  /** Override or clear the {@linkcode Options.max} option for the node. */
+  /** Overrides or clears the {@linkcode Options.max} option for the node. */
   max?: number | null;
-  /** Override the {@linkcode Options.read} option for the node. */
+  /** Overrides the {@linkcode Options.read} option for the node. */
   read?: boolean;
 }
 
@@ -17,7 +17,13 @@ export interface VariableOptions {
  * The callback context.
  * @template T The metadata type.
  */
-export interface Context<T = unknown> extends Readonly<VariableOptions> {
+export interface Context<T = unknown> {
+  /** The current {@linkcode Options.min} option for the node. */
+  readonly min: number | null;
+  /** The current {@linkcode Options.max} option for the node. */
+  readonly max: number | null;
+  /** The current {@linkcode Options.read} option for the node. */
+  readonly read: boolean;
   /** The node object. */
   readonly node: Node<T>;
   /** The schema object. */
@@ -183,41 +189,41 @@ export interface Options<T = unknown> {
    * @param ctx The callback context.
    * @returns Options to override for the node.
    */
-  onCreate?(ctx: Context<T>): VariableOptions | void;
+  onCreate?(ctx: Context<T>): ParseOptions | void;
   /**
    * Called when the node receives an argument.
    * @param ctx The callback context.
    * @returns Options to override for the node.
    */
-  onArg?(ctx: Context<T>): VariableOptions | void;
+  onArg?(ctx: Context<T>): ParseOptions | void;
   /**
    * Called when the node receives an option or command child node.
    * @param ctx The callback context.
    * @returns Options to override for the node.
    */
-  onChild?(ctx: Context<T>): VariableOptions | void;
+  onChild?(ctx: Context<T>): ParseOptions | void;
   /**
    * Called after the node has received all arguments and direct child nodes that it can have.
    * @param ctx The callback context.
    * @returns Options to override for the node.
    */
-  onData?(ctx: Context<T>): VariableOptions | void;
+  onData?(ctx: Context<T>): ParseOptions | void;
   /**
    * Called when all nodes of the same depth have been created.
    * @param ctx The callback context.
    * @returns Options to override for the node.
    */
-  onDepth?(ctx: Context<T>): VariableOptions | void;
+  onDepth?(ctx: Context<T>): ParseOptions | void;
   /**
    * Called once all nodes have been parsed and before any validation checks.
    * @param ctx The callback context.
    * @returns Options to override for the node.
    */
-  onBeforeValidate?(ctx: Context<T>): VariableOptions | void;
+  onBeforeValidate?(ctx: Context<T>): ParseOptions | void;
   /**
    * Called after throwing any validation errors for the node.
    * @param ctx The callback context.
    * @returns Options to override for the node.
    */
-  onValidate?(ctx: Context<T>): VariableOptions | void;
+  onValidate?(ctx: Context<T>): ParseOptions | void;
 }

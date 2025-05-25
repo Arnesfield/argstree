@@ -53,7 +53,7 @@ export class Node<T> {
     this.cb('onCreate');
   }
 
-  /** Run variable callback. */
+  /** Run callback option and handle options. */
   cb(e: NodeEvent<T>): void {
     // NOTE: consumer can directly modify the context object and skip validation
     // should we prevent this? nope. probably not worth creating a shallow copy
