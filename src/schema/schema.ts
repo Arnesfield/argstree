@@ -1,4 +1,4 @@
-import { SchemaOptions } from '../types/options.types';
+import { Options } from '../types/options.types';
 import { Schema as SchemaClass } from './schema.class';
 import { Schema } from './schema.types';
 
@@ -8,7 +8,7 @@ import { Schema } from './schema.types';
  * @param options The schema options.
  * @returns The schema object.
  */
-export function option<T>(options?: SchemaOptions<T>): Schema<T> {
+export function option<T>(options?: Options<T>): Schema<T> {
   return new SchemaClass('option', options);
 }
 
@@ -18,6 +18,6 @@ export function option<T>(options?: SchemaOptions<T>): Schema<T> {
  * @param options The schema options.
  * @returns The schema object.
  */
-export function command<T>(options?: SchemaOptions<T>): Schema<T> {
+export function command<T>(options?: Options<T>): Schema<T> {
   return new SchemaClass('command', options);
 }

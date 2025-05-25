@@ -15,6 +15,18 @@ export interface SchemaMap<T = unknown> {
 }
 
 /**
+ * The resolved options.
+ * @template T The metadata type.
+ */
+export interface ResolvedOptions<T = unknown> extends Options<T> {
+  // require id and name
+  id: string | null;
+  name: string | null;
+  // use string array for args
+  args: string[];
+}
+
+/**
  * The resolved config.
  * @template T The metadata type.
  */
@@ -25,8 +37,8 @@ export interface ResolvedConfig<T = unknown> {
   alias?: string;
   /** The schema type. */
   type: SchemaType;
-  /** The options object. */
-  options: Options<T>;
+  /** The resolved options. */
+  options: ResolvedOptions<T>;
 }
 
 /**
@@ -52,7 +64,7 @@ export type ResolvedArg<T = unknown> =
 export interface Schema<T = unknown> {
   /** The schema type. */
   readonly type: SchemaType;
-  /** The options object. */
+  /** The schema options. */
   readonly options: Options<T>;
   /**
    * Adds an option. The argument is overwritten if it already exists.

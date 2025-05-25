@@ -25,7 +25,7 @@ export interface Context<T = unknown> extends Readonly<VariableOptions> {
 }
 
 /**
- * The options object.
+ * The schema options.
  * @template T The metadata type.
  */
 export interface Options<T = unknown> {
@@ -221,9 +221,3 @@ export interface Options<T = unknown> {
    */
   onValidate?(ctx: Context<T>): VariableOptions | void;
 }
-
-/**
- * The schema options.
- * @template T The metadata type.
- */
-export type SchemaOptions<T = unknown> = Omit<Options<T>, 'alias' | 'assign'>;

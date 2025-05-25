@@ -1,17 +1,10 @@
 import { expect } from 'chai';
-import command, {
-  NodeType,
-  option,
-  Options,
-  Schema,
-  SchemaMap,
-  SchemaOptions
-} from '../src';
+import command, { NodeType, option, Options, Schema, SchemaMap } from '../src';
 import { Schema as SchemaClass } from '../src/schema/schema.class';
 
 function describeSchemaFn(
   type: NodeType,
-  schemaFn: (options?: SchemaOptions) => Schema
+  schemaFn: (options?: Options) => Schema
 ) {
   describe(type, () => {
     it('should be a function', () => {
