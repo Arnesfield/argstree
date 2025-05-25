@@ -152,12 +152,12 @@ export function resolve<T>(
   // - raw equal sign, different key no equal sign (-abc=1, -abc, 1)
   // - raw equal sign, different key equal sign (-abc=a=1, -abc=a, 1)
 
-  // if safe alias (no alias equal signs),
+  // if safe alias keys (no alias equal signs),
   // then there is no reason to split raw as raw could contain an equal sign
   // if unsafe, split raw
   // if unsafe, split arg.key only if it does not match raw (hasValue)
   else if (
-    !opts.safeAlias &&
+    !opts.safeKeys &&
     (split = splitArg(opts, raw))?.list &&
     (items = getAlias(opts, split.list))
   ) {
@@ -167,7 +167,7 @@ export function resolve<T>(
     // so this is probably ok.
     // also set alias was successful, do nothing and return value
   } else if (
-    (opts.safeAlias || hasValue) &&
+    (opts.safeKeys || hasValue) &&
     (split = splitArg(opts, arg.key))?.list &&
     (items = getAlias(opts, split.list, arg.value))
   ) {

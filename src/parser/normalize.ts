@@ -30,7 +30,7 @@ export interface NormalizedOptions<T> {
   /** Determines if the node should skip parsing and treat arguments as values instead. */
   readonly skip: boolean;
   /** Determines if the {@linkcode keys} have no equal signs (`=`). */
-  readonly safeAlias: boolean;
+  readonly safeKeys: boolean;
   /** Safe schema map object. */
   readonly map: Partial<SchemaMap<T>>;
   /** Safe alias map object. */
@@ -52,7 +52,7 @@ export function normalize<T>(
   const [min, max] = range(o.min, o.max, schema, node);
 
   // save splittable aliases to keys array
-  let safeAlias = true;
+  let safeKeys = true;
   const keys: string[] = [];
   const alias: NormalizedOptions<T>['alias'] = { __proto__: null! };
 
@@ -83,7 +83,7 @@ export function normalize<T>(
       // and remove `-` prefix
       if (isOption(a, 'short')) {
         keys.push(a.slice(1));
-        safeAlias &&= !a.includes('=');
+        safeKeys &&= !a.includes('=');
       }
     }
   }
@@ -96,5 +96,5 @@ export function normalize<T>(
   keys.sort((a, b) => b.length - a.length);
 
   // prettier-ignore
-  return { min, max, leaf, fertile, skip: !fertile || leaf, safeAlias, map, alias, keys };
+  return { min, max, leaf, fertile, skip: !fertile || leaf, safeKeys, map, alias, keys };
 }
