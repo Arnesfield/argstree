@@ -52,13 +52,12 @@ export class Schema<T> implements ISchema<T> {
     if (!res) {
       // do nothing
     } else if (res.items) {
-      // prettier-ignore
-      const configs = res.items.map((r): ResolvedConfig<T> => ({
-        key: r.key,
-        alias: r.alias,
-        type: r.schema.type,
-        options: { ...r.schema.options, args: r.args }
-      }));
+      type O = Options<T>;
+      const configs = res.items.map((r): ResolvedConfig<T> => {
+        const { id = r.key, name = r.key } = r.schema.options;
+        const options: O = { ...r.schema.options, id, name, args: r.args };
+        return { key: r.key, alias: r.alias, type: r.schema.type, options };
+      });
       return { configs };
     } else if (res.split) {
       return { split: res.split };
