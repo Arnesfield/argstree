@@ -49,13 +49,16 @@ export function split(value: string, matches: string[]): Split {
       item.remainder = true;
       s.remainder.push(item.value);
     } else {
+      type I = SplitItem;
       const match = matches[item.index];
-      const items = item.value.split(match).flatMap((part, j) => {
-        const a: InternalSplitItem[] = [];
-        j > 0 && a.push({ value: match, remainder: false } as SplitItem);
-        part && a.push({ value: part, index: item.index! + 1 });
-        return a;
-      });
+      const items: InternalSplitItem[] = [];
+      // skip first iteration condition
+      let c: true | undefined;
+
+      for (const part of item.value.split(match)) {
+        c ? items.push({ value: match, remainder: false } as I) : (c = true);
+        part && items.push({ value: part, index: item.index + 1 });
+      }
 
       // use the same index for the next iteration
       s.items.splice(i--, 1, ...items);
