@@ -87,8 +87,8 @@ export interface Schema<T = unknown> {
   schemas(): SchemaMap<T>;
   /**
    * Resolves the argument and returns the configuration for the matched
-   * options and commands. If the argument cannot be resolved, this returns
-   * either `undefined` or the split result if the argument is a short option.
+   * options and commands. If the argument cannot be resolved, this returns either
+   * `undefined` or the {@linkcode Split} result if the argument is a short option.
    * @param arg The argument to resolve.
    * @returns The resolved argument.
    */

@@ -19,8 +19,8 @@ export interface Split {
 /**
  * Splits the string based on the provided matches in order.
  *
- * Consider sorting the {@linkcode matches} array by length in
- * descending order to ensure that longer matches are split first.
+ * Consider sorting the {@linkcode matches} array by length
+ * in descending order to ensure that longer matches are split first.
  * @param value The string to split.
  * @param matches The list of matches.
  * @returns The split result.

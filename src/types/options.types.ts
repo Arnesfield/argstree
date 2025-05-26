@@ -1,7 +1,7 @@
 import { ParseError } from '../lib/error';
 import { Schema } from '../schema/schema.types';
 import { Arg } from './arg.types';
-import { Node, NodeType } from './node.types';
+import { Node } from './node.types';
 
 /** Options that can be changed during parsing for the node. */
 export interface ParseOptions {
@@ -38,9 +38,6 @@ export interface Options<T = unknown> {
   /**
    * The option or command ID that is set to {@linkcode Node.id}.
    * If not provided, the default value is the {@linkcode Node.key}.
-   *
-   * This is never used in any internal logic, but it can be
-   * useful for identifying the option or command after parsing.
    */
   id?: string | null;
   /**
@@ -102,8 +99,7 @@ export interface Options<T = unknown> {
    * equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option
    * or command will not be matched and the argument is treated like a normal value.
    *
-   * Depending on the {@linkcode NodeType}, the default value is
-   * `true` for `option` types and `false` for `command` types.
+   * The default value is `true` for `option` types and `false` for `command` types.
    */
   assign?: boolean;
   /**
