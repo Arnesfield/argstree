@@ -49,10 +49,6 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
       // create child node from options
       nodes.push((child = node(item, raw, parent)));
-      parent.children.push(child);
-      parent.node.children.push(child.node);
-
-      parent.cb('onChild');
     }
 
     // assume child always exists (items has length)

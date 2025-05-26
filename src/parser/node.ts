@@ -33,7 +33,7 @@ export class Node<T> {
     private readonly schema: Schema<T>,
     readonly opts: NormalizedOptions<T>,
     readonly node: NodeData<T>,
-    parent?: Node<T>
+    parent: Node<T> | undefined
   ) {
     const { read = true, strict } = schema.options;
 
@@ -50,7 +50,13 @@ export class Node<T> {
           ? (this.dstrict = strict)
           : !(this.dstrict = strict !== 'self');
 
+    // make sure the parent node adds the child node before any callbacks are fired
+    parent?.children.push(this);
+    parent?.node.children.push(node);
+
     this.cb('onCreate');
+
+    parent?.cb('onChild');
   }
 
   /** Run callback option and handle options. */
