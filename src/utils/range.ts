@@ -1,6 +1,6 @@
 import { ParseError } from '../lib/error';
-import { Schema } from '../schema/schema.types';
 import { Node } from '../types/node.types';
+import { Schema } from '../types/schema.types';
 import { display } from './display';
 
 // ensure non-negative number

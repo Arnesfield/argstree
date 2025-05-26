@@ -1,7 +1,7 @@
 import { ParseError } from '../lib/error';
-import { Schema } from '../schema/schema.types';
 import { Arg } from './arg.types';
 import { Node } from './node.types';
+import { Schema } from './schema.types';
 
 /** Options that can be changed during parsing for the node. */
 export interface ParseOptions {

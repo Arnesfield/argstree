@@ -1,8 +1,8 @@
 import { ParseError } from '../lib/error';
-import { Schema } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
 import { Context, Options } from '../types/options.types';
+import { Schema } from '../types/schema.types';
 import { Mutable } from '../types/util.types';
 import { display } from '../utils/display';
 import { range } from '../utils/range';

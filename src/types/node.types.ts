@@ -1,5 +1,5 @@
-import { SchemaType } from '../schema/schema.types';
 import { Options } from './options.types';
+import { SchemaType } from './schema.types';
 
 /** The node type. */
 export type NodeType = SchemaType | 'value';

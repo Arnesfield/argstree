@@ -10,7 +10,7 @@ import {
   ResolvedOptions,
   SchemaMap,
   SchemaType
-} from './schema.types';
+} from '../types/schema.types';
 
 // NOTE: internal
 

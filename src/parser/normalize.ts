@@ -1,9 +1,9 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { Schema, SchemaMap } from '../schema/schema.types';
 import { Arg } from '../types/arg.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
+import { Schema, SchemaMap } from '../types/schema.types';
 import { array } from '../utils/array';
 import { display } from '../utils/display';
 import { range } from '../utils/range';

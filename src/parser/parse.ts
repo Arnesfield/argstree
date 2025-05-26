@@ -1,7 +1,7 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { Schema } from '../schema/schema.types';
 import { Node as INode } from '../types/node.types';
+import { Schema } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
 import { cnode, NodeOptions } from './cnode';
 import { HandlerResult, Node } from './node';

@@ -1,6 +1,6 @@
 import { Options } from '../types/options.types';
+import { Schema } from '../types/schema.types';
 import { Schema as SchemaClass } from './schema.class';
-import { Schema } from './schema.types';
 
 /**
  * Creates an option schema.

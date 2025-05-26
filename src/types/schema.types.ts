@@ -1,7 +1,7 @@
 import { ParseError } from '../lib/error';
 import { Split } from '../lib/split';
-import { Node } from '../types/node.types';
-import { Options } from '../types/options.types';
+import { Node } from './node.types';
+import { Options } from './options.types';
 
 /** The schema type. */
 export type SchemaType = 'option' | 'command';

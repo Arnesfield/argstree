@@ -1,6 +1,6 @@
-import { Schema } from '../schema/schema.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
+import { Schema } from '../types/schema.types';
 
 /**
  * The parse error.
