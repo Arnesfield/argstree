@@ -40,23 +40,33 @@ npm install argstree
 
 ## Usage
 
-For more detailed usage, check out the [examples](examples) directory.
+For the sake of brevity, not all features/properties are included in this document and it is advised to view the referenced types and code documentation to learn more. You can also check out the [examples](examples) directory for more detailed usage.
 
 ### Schema
 
 The `option()` and `command()` functions both return a [`Schema`](src/schema/schema.types.ts) object.
 
+```js
+import command, { option } from 'argstree';
+```
+
 #### schema.option()
 
-Type: `(arg: string, options?: Options) => Schema`
+Type: `(arg: string, options?: Options) => this`
 
 Adds an option. The argument is overwritten if it already exists.
 
 #### schema.command()
 
-Type: `(arg: string, options?: Options) => Schema`
+Type: `(arg: string, options?: Options) => this`
 
 Adds a command. The argument is overwritten if it already exists.
+
+#### schema.resolve()
+
+Type: `(arg: string) => ResolvedArg | undefined`
+
+Resolves the argument and returns the [configuration](src/types/schema.types.ts) for the matched options and commands. If the argument cannot be resolved, this returns either `undefined` or the [`Split`](#split) result if the argument is a short option.
 
 #### schema.parse()
 
@@ -64,46 +74,32 @@ Type: `(args: readonly string[]) => Node`
 
 Parses arguments into a tree structure.
 
-```javascript
-import command, { option } from 'argstree';
-
-const cmd = command();
-const opt = option();
-
-const cmdNode = cmd.parse(['Hello', 'World']);
-const optNode = opt.parse(['Hello', 'World']);
-
-for (const node of [cmdNode, optNode]) {
-  console.log(node.id, node.type, node.args);
-}
-```
-
-```text
-null command [ 'Hello', 'World' ]
-null option [ 'Hello', 'World' ]
-```
-
-Options and commands differ only in some of the default values for the configuration options. At their core, they are the same and both can be configured similarly.
+This returns the root [`Node`](src/types/node.types.ts) which is a tree representation of the parsed arguments.
 
 ### Tree Structure
 
-The example below introduces some of the available configuration [options](#options), but the main idea here is that the structure of the resulting [`Node`](src/types/node.types.ts) object would closely resemble the provided arguments depending on the schema configuration.
+The example below introduces some of the available [options](#options), but the main idea here is that the structure of the resulting **node** would closely resemble the provided arguments depending on the schema configuration.
 
-```javascript
-// `cmd` is a Schema object that expects at least 1 argument
+```js
+import command, { option } from 'argstree';
+
+// `option()` can also create a schema,
+// but `command()` is more suitable as the root schema
+
+// creates a schema that expects at least 1 argument
 const cmd = command({ min: 1, strict: true });
 
 // adds an option '--input' that expects exactly 1 argument
 cmd.option('--input', { min: 1, max: 1, alias: '-i' });
 
 // adds a command 'run-script' that expects exactly 1 argument
-// and will then take over the parsing of the rest of the arguments
+// and will then take over the parsing of the rest of the arguments once matched
 cmd.command('run-script', {
   min: 1,
   max: 1,
   alias: ['run', 'rum', 'urn'],
   init(run) {
-    // `run` is a Schema object for the 'run-script' subcommand
+    // `run` is a schema for the 'run-script' subcommand
     run.option('--if-present', { max: 0 });
     run.command('--', { strict: false });
   }
@@ -135,23 +131,23 @@ null (command): [ 'dist', 'bin' ]
       -- (value): [ '-h', '-i' ]
 ```
 
+Option and command schemas differ only in some of the default values for the configuration options. At their core, they are the same and both can be configured similarly.
+
 ### Options
 
-All options for the schema configuration are optional.
+All options are optional.
 
 #### options.id
 
 Type: `string | null`
 
-The option or command ID that will show up in `Node.id`. If not provided, the default value is the `Node.key`.
-
-This is never used in any internal logic, but it can be useful for identifying the option or command after parsing.
+The option or command ID that is set to `Node.id`. If not provided, the default value is the `Node.key`.
 
 #### options.name
 
 Type: `string | null`
 
-The display name of the option or command for [errors](#parseerror). If not provided, the `Node.key` is used as the display name when available.
+The option or command display name that is set to `Node.name` and is used for [`ParseError`](#parseerror) messages. If not provided, the default value is the `Node.key`.
 
 #### options.args
 
@@ -183,7 +179,7 @@ Type: `string | (string | string[])[]`
 
 The alias, list of aliases, or list of aliases with arguments for the option or command.
 
-```javascript
+```js
 // root schema cannot have an alias
 const cmd = command();
 
@@ -215,7 +211,7 @@ Aliases that start with a single dash (`-`) can be grouped together after a sing
 
 If the option or command requires a value, it must be the last option when its alias is grouped together with other aliases, otherwise a [`ParseError`](#parseerror) is thrown.
 
-```javascript
+```js
 const root = command()
   .option('input', { alias: '-i' })
   .option('--interactive', { alias: '-in' })
@@ -247,7 +243,7 @@ Default: `true` for `option` types and `false` for `command` types
 
 Determines if the option or command can have an assigned value using the equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option or command will not be matched and the argument is treated like a normal value.
 
-```javascript
+```js
 // root schema cannot assigned values
 const cmd = command();
 
@@ -301,7 +297,7 @@ If not provided, this option defaults to `true` for `option` types or if there a
 
 This allows command type nodes to be leaf nodes and option type nodes to have child nodes. In most cases, you wouldn't need to configure this option, but it is available in the rare chance that you do.
 
-```javascript
+```js
 const root = command()
   .option('--tree', { leaf: false })
   .command('run', { leaf: true })
@@ -325,7 +321,7 @@ Called only once when the schema is created and is used to gain a reference to t
 
 #### options.handler()
 
-Type: `(arg: Arg, node: Node) => Schema | string | (Schema | string)[] | boolean | void`
+Type: `(arg: Arg, ctx: Context) => Schema | string | (Schema | string)[] | boolean | void`
 
 Serves as a fallback for parsed arguments that cannot be recognized using the list of configured options and commands. Can have the following return values:
 
@@ -334,7 +330,7 @@ Serves as a fallback for parsed arguments that cannot be recognized using the li
 - `false` - The argument is ignored as if it was never parsed.
 - Empty array, `true`, `undefined` - Fallback to the default behavior where the parsed argument may be treated either as a value or an unrecognized argument depending on the provided options.
 
-```javascript
+```js
 import command, { isOption, option } from 'argstree';
 
 const cmd = command({
@@ -362,37 +358,41 @@ for (const node of root.children) {
 --option option [ 'value', '-1' ]
 ```
 
-#### options.onCreate()
+### Callback Options
 
-Type: `(node: Node) => void`
+Type: `(ctx: Context) => ParseOptions | void`
+
+Callback options are fired at specific events during parsing and can also override some options for the node by returning a [`ParseOptions`](src/types/options.types.ts) object.
+
+#### options.onCreate()
 
 Called when the node is created with its initial arguments.
 
-#### options.onData()
+#### options.onArg()
 
-Type: `(node: Node) => void`
+Called when the node receives an argument.
+
+#### options.onChild()
+
+Called when the node receives an option or command child node.
+
+#### options.onData()
 
 Called after the node has received all arguments and direct child nodes that it can have.
 
 #### options.onDepth()
 
-Type: `(node: Node) => void`
-
 Called when all nodes of the same depth have been created.
 
 #### options.onBeforeValidate()
-
-Type: `(node: Node) => void`
 
 Called once all nodes have been parsed and before any validation checks.
 
 #### options.onValidate()
 
-Type: `(node: Node) => void`
-
 Called after throwing any validation errors for the node.
 
-```javascript
+```js
 const logLevels = ['info', 'warn', 'error', 'debug'];
 
 const cmd = command();
@@ -420,11 +420,11 @@ cmd.option('--version', {
 cmd.option('--log-level', {
   min: 1,
   max: 1,
-  onValidate(node) {
-    const value = node.args[0];
+  onValidate(ctx) {
+    const value = ctx.node.args[0];
     if (!logLevels.includes(value)) {
       throw new Error(
-        `Option '${node.id}' argument '${value}' is invalid. ` +
+        `Option '${ctx.node.id}' argument '${value}' is invalid. ` +
           `Allowed choices are: ${logLevels.join(', ')}`
       );
     }
@@ -441,7 +441,7 @@ for (const args of argsList) {
   try {
     cmd.parse(args.split(' '));
   } catch (error) {
-    console.error(error.toString());
+    console.error(String(error));
   }
 }
 ```
@@ -456,7 +456,7 @@ Usage: cmd --log-level <info | warn | error | debug>
 
 **Nodes** can have additional metadata that can be set to `Node.meta`.
 
-```typescript
+```ts
 interface Metadata {
   key: string;
 }
@@ -473,8 +473,8 @@ const cmd = command<Metadata>({
       id,
       read: false,
       args: arg.value,
-      onCreate(node) {
-        node.meta = { key };
+      onCreate(ctx) {
+        ctx.node.meta = { key };
       }
     });
   }
@@ -501,7 +501,9 @@ map @scope/[name] [ 'dist/[name]' ]
 
 For errors related to parsing and misconfiguration, a `ParseError` is thrown. You can import this class to reference in catch blocks.
 
-```javascript
+```js
+import command, { ParseError } from 'argstree';
+
 const cmd = command({ min: 1, max: 1, strict: true })
   .option('--input', { min: 1, max: 1, alias: '-i' })
   .option('--force', { name: 'FORCE', max: 0, alias: '-f' })
@@ -560,13 +562,13 @@ Splits the string based on the provided matches in order.
 
 Consider sorting the `matches` array by length in descending order to ensure that longer matches are split first.
 
-```javascript
+```js
 import { split } from 'argstree';
 
 console.log(split('foobarbaz', ['ba', 'foo']));
 ```
 
-```javascript
+```text
 {
   items: [
     { value: 'foo', remainder: false },
