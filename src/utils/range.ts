@@ -1,5 +1,5 @@
 import { ParseError } from '../lib/error';
-import { Node } from '../types/node.types';
+import { NodeData } from '../parser/cnode';
 import { Schema } from '../types/schema.types';
 import { display } from './display';
 
@@ -12,7 +12,7 @@ export function range<T>(
   min: number | null | undefined,
   max: number | null | undefined,
   schema: Schema<T>,
-  node: Node<T>
+  node: NodeData<T>
 ): [number | null, number | null] {
   // get and validate range
   min = number(min);

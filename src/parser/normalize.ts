@@ -1,7 +1,6 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
 import { Arg } from '../types/arg.types';
-import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { Schema, SchemaMap } from '../types/schema.types';
 import { array } from '../utils/array';
@@ -42,7 +41,7 @@ export interface NormalizedOptions<T> {
 export function normalize<T>(
   schema: Schema<T>,
   // NOTE: node is only used for error purposes
-  node: Node<T> = cnode({ schema })
+  node = cnode<T>({ schema })
 ): NormalizedOptions<T> {
   // initialize schema args before anything else
   const map: SchemaMap<T> = { __proto__: null!, ...schema.schemas() };
