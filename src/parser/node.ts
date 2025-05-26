@@ -23,11 +23,11 @@ export interface HandlerResult<T> {
 // NOTE: node instances will only have data types 'option' and 'command'
 // directly save value nodes into `this.node.children` instead
 export class Node<T> {
-  readonly children: Node<T>[] = [];
   readonly ctx: Mutable<Context<T>>;
   readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
   private readonly dstrict: boolean | undefined;
+  private readonly children: Node<T>[] = [];
 
   constructor(
     private readonly schema: Schema<T>,
