@@ -159,14 +159,21 @@ export class Node<T> {
     this.cb('onValidate');
   }
 
+  /**
+   * Throw an error.
+   * @param p1 Prefix before {@linkcode msg} if a display name is available.
+   * @param p2 Prefix before {@linkcode msg} if a display name is not available.
+   * @param msg The error message after the prefix.
+   * @param code The error code.
+   */
   error(
-    prefix1: string,
-    prefix2: string,
+    p1: string,
+    p2: string,
     msg: string,
     code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
   ): never {
     const name = display(this.node);
-    msg = (name ? name + prefix1 : prefix2) + msg;
+    msg = (name ? name + p1 : p2) + msg;
     throw new ParseError(code, msg, this.schema, this.node);
   }
 }
