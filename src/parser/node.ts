@@ -160,7 +160,7 @@ export class Node<T> {
   }
 
   /**
-   * Throw an error.
+   * Throws an error.
    * @param p1 Prefix before {@linkcode msg} if a display name is available.
    * @param p2 Prefix before {@linkcode msg} if a display name is not available.
    * @param msg The error message after the prefix.
