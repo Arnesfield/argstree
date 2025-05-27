@@ -8,9 +8,9 @@ function expectSplit(opts: {
   items: string[];
 }) {
   const expected: Split = { items: [], values: [], remainder: [] };
-  for (const part of opts.items) {
-    const remainder = part.startsWith(':');
-    const value = remainder ? part.slice(1) : part;
+  for (const item of opts.items) {
+    const remainder = item.startsWith(':');
+    const value = remainder ? item.slice(1) : item;
     (remainder ? expected.remainder : expected.values).push(value);
     expected.items.push({ value, remainder });
   }
