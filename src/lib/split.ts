@@ -27,43 +27,41 @@ export interface Split {
  */
 export function split(value: string, matches: string[]): Split {
   // like SplitItem but with partial remainder and index
-  interface InternalSplitItem
+  interface StackItem
     extends Pick<SplitItem, 'value'>,
       Partial<Pick<SplitItem, 'remainder'>> {
     index?: number;
   }
-  interface InternalSplit extends Omit<Split, 'items'> {
-    items: InternalSplitItem[];
-  }
 
-  const s: InternalSplit = { items: [], values: [], remainder: [] };
-  value && s.items.push({ value, index: 0 });
+  const s: Split = { items: [], values: [], remainder: [] };
+  const stack: StackItem[] = [];
+  value && stack.push({ value, index: 0 });
 
-  for (let i = 0; i < s.items.length; i++) {
-    const item = s.items[i];
+  let item;
+  while ((item = stack.pop())) {
     if (item.index == null) {
+      s.items.push(item as SplitItem);
       s.values.push(item.value);
     } else if (item.index > matches.length - 1) {
       // reuse current item object (convert to SplitItem)
       delete item.index;
       item.remainder = true;
+      s.items.push(item as SplitItem);
       s.remainder.push(item.value);
     } else {
+      // increment index to be used for new remaining split items
+      const match = matches[item.index++];
+      const strs = item.value.split(match);
       type I = SplitItem;
-      const match = matches[item.index];
-      const items: InternalSplitItem[] = [];
-      // skip first iteration condition
-      let c: true | undefined;
 
-      for (const part of item.value.split(match)) {
-        c ? items.push({ value: match, remainder: false } as I) : (c = true);
-        part && items.push({ value: part, index: item.index + 1 });
+      // push into stack to process
+      for (let i = strs.length - 1; i >= 0; i--) {
+        const str = strs[i];
+        str && stack.push({ value: str, index: item.index });
+        i > 0 && stack.push({ value: match, remainder: false } satisfies I);
       }
-
-      // use the same index for the next iteration
-      s.items.splice(i--, 1, ...items);
     }
   }
 
-  return s as Split;
+  return s;
 }
