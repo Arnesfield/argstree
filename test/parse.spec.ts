@@ -13,56 +13,39 @@ describe('parse', () => {
     expect(root).to.deep.equal(actual);
   });
 
-  it("should use the provided 'id' and 'name' options", () => {
-    let root = command({ id: 'root', name: 'root-name' }).parse([]);
-    let [actual] = createNodes({
-      id: 'root',
-      name: 'root-name',
-      type: 'command'
-    });
-    expect(root).to.deep.equal(actual);
-
-    root = command({ id: null, name: null }).parse([]);
-    [actual] = createNodes({ id: null, name: null, type: 'command' });
-    expect(root).to.deep.equal(actual);
-
-    // for child nodes
-
-    root = command()
-      .command('cmd', { id: 'subcmd', name: 'subcmd-name' })
-      .parse(['cmd']);
-    [actual] = createNodes({
+  it("should fallback to 'key' for undefined options 'id' and 'name'", () => {
+    const root = command()
+      .option('--input')
+      .command('run', { id: undefined, name: undefined })
+      .parse(['--input', 'run']);
+    const [actual] = createNodes({
       type: 'command',
       children: [
-        {
-          id: 'subcmd',
-          name: 'subcmd-name',
-          raw: 'cmd',
-          key: 'cmd',
-          type: 'command'
-        }
-      ]
-    });
-    expect(root).to.deep.equal(actual);
-
-    root = command().command('cmd', { id: null, name: null }).parse(['cmd']);
-    [actual] = createNodes({
-      type: 'command',
-      children: [
-        { id: null, name: null, raw: 'cmd', key: 'cmd', type: 'command' }
+        { id: '--input', name: '--input', raw: '--input', key: '--input' },
+        { id: 'run', name: 'run', raw: 'run', key: 'run', type: 'command' }
       ]
     });
     expect(root).to.deep.equal(actual);
   });
 
-  it("should fallback to 'key' for undefined options 'id' and 'name'", () => {
-    const root = command()
-      .command('cmd', { id: undefined, name: undefined })
-      .parse(['cmd']);
-    const [actual] = createNodes({
+  it("should use the provided 'id' and 'name' options", () => {
+    let root = command({ id: null, name: null }).parse([]);
+    let [actual] = createNodes({ id: null, name: null, type: 'command' });
+    expect(root).to.deep.equal(actual);
+
+    root = command({ id: 'root', name: 'root-name' })
+      .option('--input', { id: 'INPUT', name: 'input' })
+      .option('--output', { id: null, name: null })
+      .command('run', { id: 'RUN', name: 'run-cmd' })
+      .parse(['--input', '--output', 'run']);
+    [actual] = createNodes({
+      id: 'root',
+      name: 'root-name',
       type: 'command',
       children: [
-        { id: 'cmd', name: 'cmd', raw: 'cmd', key: 'cmd', type: 'command' }
+        { id: 'INPUT', name: 'input', raw: '--input', key: '--input' },
+        { id: null, name: null, raw: '--output', key: '--output' },
+        { id: 'RUN', name: 'run-cmd', raw: 'run', key: 'run', type: 'command' }
       ]
     });
     expect(root).to.deep.equal(actual);
@@ -253,13 +236,9 @@ describe('parse', () => {
   it('should handle aliases and their args', () => {
     const root = command()
       .option('--foo', { alias: '-f' })
-      .option('foo', { alias: 'f', args: '1' })
-      .option('--bar', {
-        alias: ['-ba', ['-b', '4']],
-        args: ['2', '3'],
-        assign: false
-      })
-      .parse(['-f=0', '1', 'f=2', '3', '-b=4', '-b', '5']);
+      .option('--bar', { alias: ['-ba', ['-b', '4']], args: ['2', '3'] })
+      .command('foo', { alias: 'f', args: '1' })
+      .parse(['-f=0', '1', '-b', '5', 'f', '2', '3', '-b=4']);
     const [actual] = createNodes({
       type: 'command',
       children: [
@@ -273,21 +252,32 @@ describe('parse', () => {
           args: ['0', '1']
         },
         {
-          id: 'foo',
-          name: 'foo',
-          raw: 'f=2',
-          key: 'foo',
-          alias: 'f',
-          value: '2',
-          args: ['1', '2', '3', '-b=4']
-        },
-        {
           id: '--bar',
           name: '--bar',
           raw: '-b',
           key: '--bar',
           alias: '-b',
           args: ['2', '3', '4', '5']
+        },
+        {
+          id: 'foo',
+          name: 'foo',
+          raw: 'f',
+          key: 'foo',
+          alias: 'f',
+          type: 'command',
+          args: ['1', '2', '3', '-b=4'],
+          children: [
+            {
+              id: 'foo',
+              name: 'foo',
+              raw: 'f',
+              key: 'foo',
+              alias: 'f',
+              type: 'value',
+              args: ['2', '3', '-b=4']
+            }
+          ]
         }
       ]
     });
@@ -380,5 +370,197 @@ describe('parse', () => {
     expect(root).to.deep.equal(actual);
   });
 
-  // TODO:
+  it("should handle 'max' range option", () => {
+    // NOTE: range errors are part of the error spec
+    const root = command()
+      .option('--input', { max: 2 })
+      .option('--output', { max: 1 })
+      .parse(
+        ([] as string[]).concat(
+          ['--input', 'src', 'test', 'tmp', 'node_modules'],
+          ['--output', 'dist', 'lib', 'build']
+        )
+      );
+    const [actual] = createNodes({
+      type: 'command',
+      args: ['tmp', 'node_modules', 'lib', 'build'],
+      children: [
+        {
+          id: '--input',
+          name: '--input',
+          raw: '--input',
+          key: '--input',
+          args: ['src', 'test']
+        },
+        { type: 'value', args: ['tmp', 'node_modules'] },
+        {
+          id: '--output',
+          name: '--output',
+          raw: '--output',
+          key: '--output',
+          args: ['dist']
+        },
+        { type: 'value', args: ['lib', 'build'] }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
+  it("should not 'read' when set to false", () => {
+    // NOTE: read errors are part of the error spec
+    const root = command()
+      .option('--help', { read: false })
+      .parse(['--help', 'value']);
+    const [actual] = createNodes({
+      type: 'command',
+      args: ['value'],
+      children: [
+        { id: '--help', name: '--help', raw: '--help', key: '--help' },
+        { type: 'value', args: ['value'] }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
+  it("should handle default 'assign' option", () => {
+    const cmd = command()
+      .option('--input', { alias: '-i' })
+      .command('run', { alias: 'r' });
+
+    let root = cmd.parse(['--input=0', 'run=1']);
+    let [actual] = createNodes({
+      type: 'command',
+      children: [
+        {
+          id: '--input',
+          name: '--input',
+          raw: '--input=0',
+          key: '--input',
+          value: '0',
+          args: ['0', 'run=1']
+        }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+
+    root = cmd.parse(['-ii=0', 'r=1']);
+    [actual] = createNodes({
+      type: 'command',
+      children: [
+        {
+          id: '--input',
+          name: '--input',
+          raw: '-ii=0',
+          key: '--input',
+          alias: '-i'
+        },
+        {
+          id: '--input',
+          name: '--input',
+          raw: '-ii=0',
+          key: '--input',
+          alias: '-i',
+          value: '0',
+          args: ['0', 'r=1']
+        }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
+  it('should handle assign option', () => {
+    const cmd = command()
+      .option('--input', { alias: '-i', assign: false })
+      .command('run', { alias: 'r', assign: true });
+
+    let root = cmd.parse(['--input=0', 'run=1']);
+    let [actual] = createNodes({
+      type: 'command',
+      args: ['--input=0'],
+      children: [
+        { type: 'value', args: ['--input=0'] },
+        {
+          id: 'run',
+          name: 'run',
+          raw: 'run=1',
+          key: 'run',
+          value: '1',
+          type: 'command',
+          args: ['1']
+        }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+
+    root = cmd.parse(['-ii=0', 'r=1']);
+    [actual] = createNodes({
+      type: 'command',
+      args: ['-ii=0'],
+      children: [
+        { type: 'value', args: ['-ii=0'] },
+        {
+          id: 'run',
+          name: 'run',
+          raw: 'r=1',
+          key: 'run',
+          alias: 'r',
+          value: '1',
+          type: 'command',
+          args: ['1']
+        }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
+  it("should handle 'leaf' option", () => {
+    // assume default leaf option is handled by other cases
+    let root = command({ leaf: true }).option('--input').parse(['--input']);
+    let [actual] = createNodes({
+      type: 'command',
+      args: ['--input'],
+      children: [{ type: 'value', args: ['--input'] }]
+    });
+    expect(root).to.deep.equal(actual);
+
+    root = command()
+      .option('--input', { leaf: false })
+      .command('run', { leaf: true })
+      .parse(['run', 'build', '--input', 'src']);
+    [actual] = createNodes({
+      type: 'command',
+      children: [
+        {
+          id: 'run',
+          name: 'run',
+          raw: 'run',
+          key: 'run',
+          type: 'command',
+          args: ['build']
+        },
+        {
+          id: '--input',
+          name: '--input',
+          raw: '--input',
+          key: '--input',
+          args: ['src'],
+          children: [
+            {
+              id: '--input',
+              name: '--input',
+              raw: '--input',
+              key: '--input',
+              type: 'value',
+              args: ['src']
+            }
+          ]
+        }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+  });
+
+  // TODO: init
+  // TODO: handler
+  // TODO: callback options
 });
