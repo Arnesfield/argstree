@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import command, { Options, ResolvedArg } from '../src';
-import { createSplit } from './common/create-split';
+import { createSplit } from './utils/create-split';
 
 describe('resolve', () => {
   it('should resolve the matching option or command', () => {

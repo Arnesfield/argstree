@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import command, { NodeType, option, SchemaMap } from '../src';
-import { createNodes } from './common/create-nodes';
+import { createNodes } from './utils/create-nodes';
 
 describe('parse', () => {
   it('should return the root node', () => {

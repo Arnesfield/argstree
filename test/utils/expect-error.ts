@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import command, { Node, ParseError, Schema, Options } from '../../src';
+import command, { Node, Options, ParseError, Schema } from '../../src';
 
 export function expectError<T>(opts: {
   code: string;

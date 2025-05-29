@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import command, { flatten } from '../src';
-import { createNodes } from './common/create-nodes';
+import { createNodes } from './utils/create-nodes';
 
 describe('flatten', () => {
   it('should be a function', () => {

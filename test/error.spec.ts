@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import command, { option, Options, ParseError } from '../src';
-import { createNodes } from './common/create-nodes';
-import { expectError } from './common/expect-error';
+import { createNodes } from './utils/create-nodes';
+import { expectError } from './utils/expect-error';
 
 describe('error', () => {
   it('should be a class that extends Error', () => {

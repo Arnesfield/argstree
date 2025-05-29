@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { split } from '../src';
-import { createSplit } from './common/create-split';
+import { createSplit } from './utils/create-split';
 
 function expectSplit(opts: {
   value: string;
