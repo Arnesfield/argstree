@@ -46,16 +46,16 @@ function describeSchemaFn(
 
     it('should have the correct schema map', () => {
       const opts = {
-        root: {} as Options,
-        foo: { alias: '-f' } as Options,
-        bar: { alias: '-b' } as Options,
+        root: {} satisfies Options,
+        foo: { alias: '-f' } satisfies Options,
+        bar: { alias: '-b' } satisfies Options,
         baz: {
           alias: '-bz',
           init(baz) {
             baz.option('--foo1');
             baz.option('--bar1');
           }
-        } as Options
+        } satisfies Options
       };
 
       const schema = schemaFn(opts.root)
