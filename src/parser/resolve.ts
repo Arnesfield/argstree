@@ -14,6 +14,10 @@ export interface ParsedArg
     Partial<Omit<Alias, 'key'>> {}
 
 export interface ResolveSplit extends Split {
+  /**
+   * List of resolved aliases.
+   * This property is not set if there are {@linkcode Split.remainder}.
+   */
   list?: NonEmptyArray<Alias>;
 }
 
@@ -178,7 +182,9 @@ export function resolve<T>(
 
   // split can be unset by the 2nd parent.split() call
   // which is ok since it would be weird to show remainders from raw
-  else if (split && split.remainder.length > 0) {
+  // only return split result if has remainders
+  // split.list not being set means that there are remainders
+  else if (split && !split.list) {
     return { arg, split };
   }
 
