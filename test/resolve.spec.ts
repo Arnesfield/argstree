@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import command, { Options, ResolvedArg } from '../src';
+import { createSplit } from './common/create-split';
 
 describe('resolve', () => {
   it('should resolve the matching option or command', () => {
@@ -125,6 +126,73 @@ describe('resolve', () => {
     } satisfies ResolvedArg);
   });
 
-  // TODO: id and name
-  // TODO: split
+  it("should not override 'id' and 'name' options", () => {
+    const opts = {
+      input: {
+        id: 'INPUT',
+        name: 'input',
+        alias: '-i',
+        args: 'a'
+      } satisfies Options,
+      output: {
+        id: null,
+        name: null,
+        alias: '-o',
+        args: ['0', '1']
+      } satisfies Options,
+      run: {
+        id: 'RUN',
+        name: 'run-cmd',
+        alias: 'r',
+        args: ['0']
+      } satisfies Options
+    };
+
+    const cmd = command()
+      .option('--input', opts.input)
+      .option('--output', opts.output)
+      .command('run', opts.run);
+
+    let resolved = cmd.resolve('-io=2');
+    expect(resolved).to.deep.equal({
+      items: [
+        {
+          key: '--input',
+          alias: '-i',
+          type: 'option',
+          options: { ...opts.input, args: ['a'] }
+        },
+        {
+          key: '--output',
+          alias: '-o',
+          type: 'option',
+          options: { ...opts.output, args: ['0', '1', '2'] }
+        }
+      ]
+    } satisfies ResolvedArg);
+
+    resolved = cmd.resolve('r');
+    expect(resolved).to.deep.equal({
+      items: [
+        {
+          key: 'run',
+          alias: 'r',
+          type: 'command',
+          options: { ...opts.run, args: ['0'] }
+        }
+      ]
+    } satisfies ResolvedArg);
+  });
+
+  it('should return the split result for unresolved alias', () => {
+    const resolved = command()
+      .option('--input', { alias: '-i' })
+      .option('--force', { alias: ['-f', ['--no-force', '0']] })
+      .command('help', { alias: 'h' })
+      .resolve('-efghi=0');
+
+    expect(resolved).to.deep.equal({
+      split: createSplit([':e', 'f', ':gh', 'i'])
+    } satisfies ResolvedArg);
+  });
 });
