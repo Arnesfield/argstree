@@ -63,7 +63,8 @@ export class Schema<T> implements ISchema<T> {
       const items = res.items.map((r): ResolvedItem<T> => {
         const { id = r.key, name = r.key } = r.schema.options;
         const options: O = { ...r.schema.options, id, name, args: r.args };
-        return { key: r.key, alias: r.alias, type: r.schema.type, options };
+        // prettier-ignore
+        return { key: r.key, alias: r.alias ?? null, type: r.schema.type, options };
       });
       return { items };
     } else if (res.split) {

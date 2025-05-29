@@ -16,7 +16,7 @@ describe('resolve', () => {
       items: [
         {
           key: '--input',
-          alias: undefined,
+          alias: null,
           type: 'option',
           options: { ...opts.input, id: '--input', name: '--input', args: [] }
         }
@@ -28,7 +28,7 @@ describe('resolve', () => {
       items: [
         {
           key: 'run',
-          alias: undefined,
+          alias: null,
           type: 'command',
           options: { ...opts.run, id: 'run', name: 'run', args: ['0'] }
         }
@@ -62,7 +62,7 @@ describe('resolve', () => {
       items: [
         {
           key: '--input',
-          alias: undefined,
+          alias: null,
           type: 'option',
           options: {
             ...opts.input,
@@ -79,7 +79,7 @@ describe('resolve', () => {
       items: [
         {
           key: 'run',
-          alias: undefined,
+          alias: null,
           type: 'command',
           options: { ...opts.run, id: 'run', name: 'run', args: ['3'] }
         }

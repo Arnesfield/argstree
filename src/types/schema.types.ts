@@ -34,7 +34,7 @@ export interface ResolvedItem<T = unknown> {
   /** The matched argument. */
   key: string;
   /** The alias used to parse argument if any. */
-  alias?: string;
+  alias: string | null;
   /** The schema type. */
   type: SchemaType;
   /** The resolved options. */
