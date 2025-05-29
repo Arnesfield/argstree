@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { Split, split } from '../src';
+import { split } from '../src';
+import { createSplit } from './common/create-split';
 
 function expectSplit(opts: {
   value: string;
@@ -7,16 +8,8 @@ function expectSplit(opts: {
   /** Prefix string with `:` for remainders. */
   items: string[];
 }) {
-  const expected: Split = { items: [], values: [], remainder: [] };
-  for (const item of opts.items) {
-    const remainder = item.startsWith(':');
-    const value = remainder ? item.slice(1) : item;
-    (remainder ? expected.remainder : expected.values).push(value);
-    expected.items.push({ value, remainder });
-  }
-
   const result = split(opts.value, opts.match);
-  expect(result).to.deep.equal(expected);
+  expect(result).to.deep.equal(createSplit(opts.items));
 }
 
 describe('split', () => {
