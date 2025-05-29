@@ -38,14 +38,17 @@ describe('resolve', () => {
   });
 
   it('should return undefined if the argument cannot be resolved', () => {
-    const cmd = command().command('run', {
-      init(run) {
-        run.option('--input');
-      }
-    });
-    const args = ['--input', '-i=0', 'run=1'];
+    const cmd = command()
+      .option('--all', { alias: '-a' })
+      .option('--output', { alias: '-o', assign: false })
+      .command('run', {
+        init(run) {
+          run.option('--input');
+        }
+      });
+    const args = ['--input', '-i=0', 'run=1', '--output=2', '-ao=3'];
     for (const arg of args) {
-      expect(cmd.resolve(arg)).to.be.undefined;
+      expect(cmd.resolve(arg), arg).to.be.undefined;
     }
   });
 
@@ -93,11 +96,10 @@ describe('resolve', () => {
       input: { alias: '-i', args: 'a' } satisfies Options,
       output: { alias: '-o', args: ['0', '1'] } satisfies Options
     };
-    const cmd = command()
+    const resolved = command()
       .option('--input', opts.input)
-      .option('--output', opts.output);
-
-    const resolved = cmd.resolve('-io=2');
+      .option('--output', opts.output)
+      .resolve('-io=2');
     expect(resolved).to.deep.equal({
       items: [
         {
@@ -190,7 +192,6 @@ describe('resolve', () => {
       .option('--force', { alias: ['-f', ['--no-force', '0']] })
       .command('help', { alias: 'h' })
       .resolve('-efghi=0');
-
     expect(resolved).to.deep.equal({
       split: createSplit([':e', 'f', ':gh', 'i'])
     } satisfies ResolvedArg);
