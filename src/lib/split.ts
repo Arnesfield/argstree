@@ -13,7 +13,7 @@ export interface Split {
   /** The split values. */
   values: string[];
   /** The remaining values that were not matched. */
-  remainder: string[];
+  remainders: string[];
 }
 
 /**
@@ -30,7 +30,7 @@ export function split(value: string, matches: string[]): Split {
     index?: number;
   }
 
-  const s: Split = { items: [], values: [], remainder: [] };
+  const s: Split = { items: [], values: [], remainders: [] };
   const stack: StackItem[] = [];
   value && stack.push({ value, index: 0 });
 
@@ -44,7 +44,7 @@ export function split(value: string, matches: string[]): Split {
       delete item.index;
       item.remainder = true;
       s.items.push(item as SplitItem);
-      s.remainder.push(item.value);
+      s.remainders.push(item.value);
     } else {
       // increment index to be used for new remaining split items
       const match = matches[item.index++];

@@ -26,7 +26,7 @@ describe('split', () => {
       .that.is.an('array')
       .with.length(0);
     expect(result)
-      .to.have.property('remainder')
+      .to.have.property('remainders')
       .that.is.an('array')
       .with.length(0);
   });

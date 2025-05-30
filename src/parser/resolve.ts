@@ -20,7 +20,7 @@ export type ResolveItem<T> = Omit<NodeOptions<T>, 'key' | 'args'> &
 interface ResolveSplit<T> extends Split {
   /**
    * List of resolved items.
-   * This property is only set if there are no {@linkcode Split.remainder}
+   * This property is only set if there are no {@linkcode Split.remainders}
    * and that the last option or command is assignable when a value assigned.
    */
   list?: NonEmptyArray<ResolveItem<T>>;
@@ -63,7 +63,7 @@ function splitArg<T>(opts: NormalizedOptions<T>, arg: string, value?: string) {
   ) return; // prettier-ignore
 
   // only set list if has no remainder
-  if (s.remainder.length === 0) {
+  if (s.remainders.length === 0) {
     // get args per alias and assume `-{name}` always exists
     // prettier-ignore
     const item = get(opts, opts.alias['-' + s.values[s.values.length - 1]], value);
@@ -163,7 +163,7 @@ export function resolve<T>(
   // only return split result if has remainders
   // split can be unset by the 2nd parent.split() call
   // which is ok since it would be weird to show remainders from raw
-  else if (split && split.remainder.length > 0) return { arg, split };
+  else if (split && split.remainders.length > 0) return { arg, split };
 
   // either treat as raw value or use parsed items
   return { arg, items };

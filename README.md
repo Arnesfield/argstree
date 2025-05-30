@@ -578,7 +578,7 @@ console.log(split('foobarbaz', ['ba', 'foo']));
     { value: 'z', remainder: true }
   ],
   values: [ 'foo', 'ba', 'ba' ],
-  remainder: [ 'r', 'z' ]
+  remainders: [ 'r', 'z' ]
 }
 ```
 

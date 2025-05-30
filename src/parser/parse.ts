@@ -111,7 +111,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     else if (res.split) {
       const msg =
         'alias' +
-        (res.split.remainder.length === 1 ? '' : 'es') +
+        (res.split.remainders.length === 1 ? '' : 'es') +
         ': -' +
         res.split.items
           .map(item => (item.remainder ? `(${item.value})` : item.value))
