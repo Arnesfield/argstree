@@ -58,6 +58,7 @@ function splitArg<T>(opts: NormalizedOptions<T>, arg: string, value?: string) {
   // as we use opts.keys for splitting which is derived from opts.alias
   let s: ResolveSplit<T> | undefined;
   if (
+    opts.keys.length === 0 ||
     !isOption(arg, 'short') ||
     (s = $split(arg.slice(1), opts.keys)).values.length === 0
   ) return; // prettier-ignore
