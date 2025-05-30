@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import command, { NodeType, option, SchemaMap } from '../src';
+import command, { Arg, Context, NodeType, option, SchemaMap } from '../src';
 import { createNodes } from './utils/create-nodes';
 import { Schema as SchemaClass } from '../src/schema/schema.class';
 
@@ -658,6 +658,53 @@ describe('parse', () => {
     cmd.parse(['--input', '--output', 'run', '--if-present']);
     actual.push('--if-present');
     expect(called).to.deep.equal(actual);
+  });
+
+  it("should run the 'handler' as fallback", () => {
+    let called = 0;
+    const cmd = command({
+      handler(arg, ctx) {
+        called++;
+
+        expect(arg).to.deep.equal({
+          raw: '--fallback=0',
+          key: '--fallback',
+          value: '0'
+        } satisfies Arg);
+
+        const [actualNode] = createNodes({
+          type: 'command',
+          children: [
+            {
+              id: '--input',
+              name: '--input',
+              raw: '--input=1',
+              key: '--input',
+              value: '1',
+              args: ['1']
+            }
+          ]
+        });
+
+        expect(ctx).to.deep.equal({
+          min: null,
+          max: null,
+          read: true,
+          schema: cmd,
+          node: actualNode
+        } satisfies Context);
+      }
+    })
+      .option('--input')
+      .command('run');
+
+    expect(called).to.equal(0);
+
+    cmd.parse(['--input=1']);
+    expect(called).to.equal(0);
+
+    cmd.parse(['--input=1', '--fallback=0', 'run', '--fallback']);
+    expect(called).to.equal(1);
   });
 
   // TODO: handler
