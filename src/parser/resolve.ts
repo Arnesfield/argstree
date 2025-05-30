@@ -13,21 +13,22 @@ export interface ParsedArg
   extends Pick<Alias, 'key'>,
     Partial<Omit<Alias, 'key'>> {}
 
-export interface ResolveSplit extends Split {
-  /**
-   * List of resolved aliases.
-   * This property is not set if there are {@linkcode Split.remainder}.
-   */
-  list?: NonEmptyArray<Alias>;
-}
-
 // same as NodeOptions but some props are required
 export type ResolveItem<T> = Omit<NodeOptions<T>, 'key' | 'args'> &
   Required<Pick<NodeOptions<T>, 'key' | 'args'>>;
 
+interface ResolveSplit<T> extends Split {
+  /**
+   * List of resolved items.
+   * This property is only set if there are no {@linkcode Split.remainder}
+   * and that the last option or command is assignable when a value assigned.
+   */
+  list?: NonEmptyArray<ResolveItem<T>>;
+}
+
 export interface ResolveResult<T> {
   arg: Arg;
-  split?: ResolveSplit;
+  split?: Split;
   items?: NonEmptyArray<ResolveItem<T>>;
 }
 
@@ -50,20 +51,23 @@ function get<T>(
   }
 }
 
-function getAlias<T>(
-  opts: NormalizedOptions<T>,
-  aliases: NonEmptyArray<Alias>,
-  value?: string
-) {
-  // assignable arg --option: initial 1, 2
-  // alias -a: --option 3, 4
-  // scenario: -a=5
+function splitArg<T>(opts: NormalizedOptions<T>, arg: string, value?: string) {
+  // only accept aliases and remove first `-` for alias
+  // considered as split only if alias args were found.
+  // note that split.values would always exist as keys in opts.alias
+  // as we use opts.keys for splitting which is derived from opts.alias
+  let s: ResolveSplit<T> | undefined;
+  if (
+    !isOption(arg, 'short') ||
+    (s = $split(arg.slice(1), opts.keys)).values.length === 0
+  ) return; // prettier-ignore
 
-  // convert aliases to options
-  // make sure the last option is assignable if value exists
+  // only set list if has no remainder
+  if (s.remainder.length === 0) {
+    // get args per alias and assume `-{name}` always exists
+    // prettier-ignore
+    const item = get(opts, opts.alias['-' + s.values[s.values.length - 1]], value);
 
-  const item = get(opts, aliases[aliases.length - 1], value);
-  if (item) {
     // reuse last parsed item
     // assume that aliases will always map to options since
     // it does not have to be assignable (only for the last alias arg)
@@ -71,28 +75,9 @@ function getAlias<T>(
 
     type I = NonEmptyArray<ResolveItem<T>>;
     // prettier-ignore
-    return aliases.map((alias, i) => i === aliases.length - 1 ? item : get(opts, alias)!) as I;
+    s.list = item && s.values.map((v, i, a) => i === a.length - 1 ? item : get(opts, opts.alias['-' + v])!) as I;
   }
-}
-
-function splitArg<T>(opts: NormalizedOptions<T>, arg: string) {
-  // only accept aliases and remove first `-` for alias
-  // considered as split only if alias args were found.
-  // note that split.values would always exist as keys in opts.alias
-  // as we use opts.keys for splitting which is derived from opts.alias
-  let s: ResolveSplit | undefined;
-  if (
-    isOption(arg, 'short') &&
-    (s = $split(arg.slice(1), opts.keys)).values.length > 0
-  ) {
-    // only set list if has no remainder
-    if (s.remainder.length === 0) {
-      // get args per alias and assume `-{name}` always exists
-      type A = NonEmptyArray<Alias>;
-      s.list = s.values.map(key => opts.alias['-' + key]) as A;
-    }
-    return s;
-  }
+  return s;
 }
 
 export function resolve<T>(
@@ -102,24 +87,25 @@ export function resolve<T>(
   // immediately treat as value if the current node cannot actually create children
   if (opts.skip) return;
 
-  let items, alias, split;
+  let items: ResolveItem<T> | NonEmptyArray<ResolveItem<T>> | undefined;
   const arg: Arg = { raw, key: raw };
 
-  if ((items = get(opts, arg))) {
-    return { arg, items: [items] };
-  }
+  // parse options from options.map only
+  if ((items = get(opts, arg))) return { arg, items: [items] };
+
+  let index: number,
+    hasValue: boolean,
+    alias: Alias | undefined,
+    split: Split | undefined;
 
   // assume arg.raw and raw are the same
-  const index = raw.lastIndexOf('=');
-  const hasValue = index > -1;
-  if (hasValue) {
-    arg.key = raw.slice(0, index);
-    arg.value = raw.slice(index + 1);
-  }
-
-  // parse options from options.args only
-  if (hasValue && (items = get(opts, arg, arg.value))) {
-    items = [items] as NonEmptyArray<ResolveItem<T>>;
+  // also take this opportunity to set arg.key and arg.value
+  if (
+    (hasValue = (index = raw.lastIndexOf('=')) > -1) &&
+    ((arg.key = raw.slice(0, index)),
+    (items = get(opts, arg, (arg.value = raw.slice(index + 1)))))
+  ) {
+    // items found, do nothing and return value
   }
 
   // at this point, if there are no parsed options, arg can be:
@@ -128,15 +114,17 @@ export function resolve<T>(
   // - options from handler
   // - a value (or, if in strict mode, an unknown option-like)
   // for this case, handle exact alias
-  else if ((alias = opts.alias[raw]) && (items = getAlias(opts, [alias]))) {
+  else if ((alias = opts.alias[raw]) && (items = get(opts, alias))) {
     // alias items found, do nothing and return value
   } else if (
     hasValue &&
     (alias = opts.alias[arg.key]) &&
-    (items = getAlias(opts, [alias], arg.value))
+    (items = get(opts, alias, arg.value))
   ) {
     // alias items found, do nothing and return value
   }
+
+  if (items) return { arg, items: [items] };
 
   // now, arg cannot be an exact alias.
   // try to split raw by aliases
@@ -160,33 +148,22 @@ export function resolve<T>(
   // then there is no reason to split raw as raw could contain an equal sign
   // if unsafe, split raw
   // if unsafe, split arg.key only if it does not match raw (hasValue)
-  else if (
-    !opts.safeKeys &&
-    (split = splitArg(opts, raw))?.list &&
-    (items = getAlias(opts, split.list))
-  ) {
-    // you would think it might be ideal to stop parent.split()
-    // when it finds at least 1 remainder, but we'll need to display
-    // the list of remainders for the error message anyway,
-    // so this is probably ok.
-    // also set alias was successful, do nothing and return value
+  if (!opts.safeKeys && (items = (split = splitArg(opts, raw))?.list)) {
+    // keep split result for error message
+    // split items found, do nothing and return value
   } else if (
     (opts.safeKeys || hasValue) &&
-    (split = splitArg(opts, arg.key))?.list &&
-    (items = getAlias(opts, split.list, arg.value))
+    (items = (split = splitArg(opts, arg.key, arg.value))?.list)
   ) {
-    // alias items found, do nothing and return value
+    // split items found, do nothing and return value
   }
 
   // NOTE: parse by handler outside of resolver
 
+  // only return split result if has remainders
   // split can be unset by the 2nd parent.split() call
   // which is ok since it would be weird to show remainders from raw
-  // only return split result if has remainders
-  // split.list not being set means that there are remainders
-  else if (split && !split.list) {
-    return { arg, split };
-  }
+  else if (split && split.remainder.length > 0) return { arg, split };
 
   // either treat as raw value or use parsed items
   return { arg, items };
