@@ -50,6 +50,11 @@ describe('resolve', () => {
     for (const arg of args) {
       expect(cmd.resolve(arg), arg).to.be.undefined;
     }
+
+    const resolved = command()
+      .option('--all', { alias: '-a=' })
+      .resolve('-a=2');
+    expect(resolved).to.be.undefined;
   });
 
   it('should resolve assigned values', () => {
@@ -194,6 +199,17 @@ describe('resolve', () => {
       .resolve('-efghi=0');
     expect(resolved).to.deep.equal({
       split: createSplit([':e', 'f', ':gh', 'i'])
+    } satisfies ResolvedArg);
+  });
+
+  it("should handle splitting aliases with '=' character", () => {
+    const resolved = command()
+      .option('--all', { alias: '-a=' })
+      .option('--force', { alias: ['-f=2', ['--no-force', '0']] })
+      .option('--input', { alias: '-i' })
+      .resolve('-ia=bf=2=value');
+    expect(resolved).to.deep.equal({
+      split: createSplit(['i', 'a=', ':b', 'f=2'])
     } satisfies ResolvedArg);
   });
 });
