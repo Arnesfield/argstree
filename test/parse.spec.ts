@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import command, { NodeType, option, SchemaMap } from '../src';
 import { createNodes } from './utils/create-nodes';
+import { Schema as SchemaClass } from '../src/schema/schema.class';
 
 describe('parse', () => {
   it('should return the root node', () => {
@@ -560,7 +561,105 @@ describe('parse', () => {
     expect(root).to.deep.equal(actual);
   });
 
-  // TODO: init
+  it("should run 'init' once when `schema.parse()` is called", () => {
+    const called: string[] = [];
+    const actual: string[] = [];
+    const cmd = command({
+      init(schema) {
+        called.push('root');
+        expect(schema).to.equal(cmd);
+      }
+    });
+    expect(called).to.deep.equal(actual);
+
+    cmd.parse([]);
+    actual.push('root');
+    expect(called).to.deep.equal(actual);
+
+    cmd.parse([]);
+    expect(called).to.deep.equal(actual);
+  });
+
+  it("should run 'init' once when `schema.schemas()` is called", () => {
+    const called: string[] = [];
+    const actual: string[] = [];
+    const cmd = command({
+      init(schema) {
+        called.push('root');
+        expect(schema).to.equal(cmd);
+      }
+    });
+    expect(called).to.deep.equal(actual);
+
+    cmd.schemas();
+    actual.push('root');
+    expect(called).to.deep.equal(actual);
+
+    cmd.schemas();
+    expect(called).to.deep.equal(actual);
+  });
+
+  it("should run 'init' once when schemas are added and only when they are parsed", () => {
+    const called: string[] = [];
+    const actual: string[] = [];
+    const cmd = command({
+      init(schema) {
+        called.push('root');
+        expect(schema).to.equal(cmd);
+      }
+    });
+    expect(called).to.deep.equal(actual);
+
+    cmd.option('--input', {
+      init(schema) {
+        called.push('--input');
+        expect(schema).to.be.an('object').that.is.an.instanceOf(SchemaClass);
+      }
+    });
+    actual.push('root');
+    expect(called).to.deep.equal(actual);
+
+    cmd.option('--output', {
+      init(schema) {
+        called.push('--output');
+        expect(schema).to.be.an('object').that.is.an.instanceOf(SchemaClass);
+      }
+    });
+    cmd.command('run', {
+      init(run) {
+        called.push('run');
+        expect(run).to.be.an('object').that.is.an.instanceOf(SchemaClass);
+
+        run.option('--if-present', {
+          init(schema) {
+            called.push('--if-present');
+            expect(schema)
+              .to.be.an('object')
+              .that.is.an.instanceOf(SchemaClass);
+          }
+        });
+      }
+    });
+
+    expect(called).to.deep.equal(actual);
+
+    cmd.parse(['--input']);
+    actual.push('--input');
+    expect(called).to.deep.equal(actual);
+
+    cmd.parse(['run', '--output']);
+    actual.push('run');
+    expect(called).to.deep.equal(actual);
+
+    cmd.parse(['--output', '--input']);
+    actual.push('--output');
+    expect(called).to.deep.equal(actual);
+
+    cmd.parse(['--input', '--output', 'run', '--if-present']);
+    actual.push('--if-present');
+    expect(called).to.deep.equal(actual);
+  });
+
   // TODO: handler
   // TODO: callback options
 });
