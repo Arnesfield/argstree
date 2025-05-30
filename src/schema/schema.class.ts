@@ -67,9 +67,7 @@ export class Schema<T> implements ISchema<T> {
         return { key: r.key, alias: r.alias ?? null, type: r.schema.type, options };
       });
       return { items };
-    } else if (res.split) {
-      return { split: res.split };
-    }
+    } else if (res.split) return { split: res.split };
   }
 
   parse(args: readonly string[]): Node<T> {

@@ -90,15 +90,9 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     const res = resolve(raw, parent.opts);
 
     // treat as value
-    if (!res) {
-      setValue(raw);
-    }
-
+    if (!res) setValue(raw);
     // save resolved options
-    else if (res.items) {
-      set(raw, res.items);
-    }
-
+    else if (res.items) set(raw, res.items);
     // parse options using handler before error
     else if ((hres = parent.handle(res.arg))) {
       for (const arg of hres.args) setValue(arg, true);
@@ -120,9 +114,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     }
 
     // treat as value
-    else {
-      setValue(raw);
-    }
+    else setValue(raw);
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
