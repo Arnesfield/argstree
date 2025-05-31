@@ -47,29 +47,29 @@
     "watch": "npm run bundle -- -w --no-watch.clearScreen"
   },
   "devDependencies": {
-    "@eslint/js": "^9.27.0",
+    "@eslint/js": "^9.28.0",
     "@rollup/plugin-eslint": "^9.0.5",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/chai": "^5.2.2",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^22.15.21",
+    "@types/node": "^22.15.29",
     "chai": "^5.2.0",
     "concurrently": "^9.1.2",
-    "eslint": "^9.27.0",
+    "eslint": "^9.28.0",
     "eslint-plugin-chai-friendly": "^1.0.1",
     "eslint-plugin-jsdoc": "^50.6.17",
-    "globals": "^16.1.0",
+    "globals": "^16.2.0",
     "mocha": "^11.1.0",
     "prettier": "^3.5.3",
     "rimraf": "^6.0.1",
-    "rollup": "^4.41.0",
+    "rollup": "^4.41.1",
     "rollup-plugin-cleanup": "^3.2.1",
     "rollup-plugin-dts": "^6.2.1",
     "rollup-plugin-esbuild": "^6.2.1",
-    "rollup-plugin-output-size": "^1.6.1",
+    "rollup-plugin-output-size": "^2.0.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.32.1"
+    "typescript-eslint": "^8.33.0"
   },
   "engines": {
     "node": ">=16"
