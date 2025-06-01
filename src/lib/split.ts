@@ -16,6 +16,11 @@ export interface Split {
   remainders: string[];
 }
 
+// remainder items have index but no remainder prop
+type StackItem =
+  | (SplitItem & { index?: never })
+  | (Pick<SplitItem, 'value'> & { index: number });
+
 /**
  * Splits the string based on the provided matches in order.
  * @param value The string to split.
@@ -23,39 +28,27 @@ export interface Split {
  * @returns The split result.
  */
 export function split(value: string, matches: string[]): Split {
-  // like SplitItem but with partial remainder and index
-  interface StackItem
-    extends Pick<SplitItem, 'value'>,
-      Partial<Pick<SplitItem, 'remainder'>> {
-    index?: number;
-  }
-
   const s: Split = { items: [], values: [], remainders: [] };
   const stack: StackItem[] = [];
   value && stack.push({ value, index: 0 });
 
-  let item;
-  while ((item = stack.pop())) {
+  for (let item; (item = stack.pop()); ) {
     if (item.index == null) {
-      s.items.push(item as SplitItem);
+      s.items.push(item);
       s.values.push(item.value);
     } else if (item.index > matches.length - 1) {
-      // reuse current item object (convert to SplitItem)
-      delete item.index;
-      item.remainder = true;
-      s.items.push(item as SplitItem);
+      s.items.push({ value: item.value, remainder: true });
       s.remainders.push(item.value);
     } else {
+      // reuse `value` for the match value
       // increment index to be used for new remaining split items
-      const match = matches[item.index++];
-      const strs = item.value.split(match);
-      type I = SplitItem;
+      const strs = item.value.split((value = matches[item.index++]));
 
       // push into stack to process
       for (let i = strs.length - 1; i >= 0; i--) {
         const str = strs[i];
         str && stack.push({ value: str, index: item.index });
-        i > 0 && stack.push({ value: match, remainder: false } satisfies I);
+        i > 0 && stack.push({ value, remainder: false });
       }
     }
   }
