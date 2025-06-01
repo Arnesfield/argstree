@@ -46,7 +46,7 @@ describe('resolve', () => {
           run.option('--input');
         }
       });
-    const args = ['--input', '-i=0', 'run=1', '--output=2', '-ao=3'];
+    const args = ['--input', '-i=0', 'run=1', '--output=2', '-ao=3', '-bao=3'];
     for (const arg of args) {
       expect(cmd.resolve(arg), arg).to.be.undefined;
     }
@@ -96,6 +96,69 @@ describe('resolve', () => {
     } satisfies ResolvedArg);
   });
 
+  it('should resolve key and value', () => {
+    const opts = {
+      input: { min: 1, max: 1 } satisfies Options,
+      output: { assign: false } satisfies Options,
+      run: { assign: true } satisfies Options
+    };
+    const cmd = command()
+      .option('--input=name', opts.input)
+      .option('--output=name', opts.output)
+      .command('run=name', opts.run);
+
+    let resolved = cmd.resolve('--input=name', 'value');
+    expect(resolved).to.deep.equal({
+      items: [
+        {
+          key: '--input=name',
+          alias: null,
+          type: 'option',
+          options: {
+            ...opts.input,
+            id: '--input=name',
+            name: '--input=name',
+            args: ['value']
+          }
+        }
+      ]
+    } satisfies ResolvedArg);
+
+    resolved = cmd.resolve('--output=name', null);
+    expect(resolved).to.deep.equal({
+      items: [
+        {
+          key: '--output=name',
+          alias: null,
+          type: 'option',
+          options: {
+            ...opts.output,
+            id: '--output=name',
+            name: '--output=name',
+            args: []
+          }
+        }
+      ]
+    } satisfies ResolvedArg);
+
+    resolved = cmd.resolve('run=name', 'value');
+    expect(resolved).to.deep.equal({
+      items: [
+        {
+          key: 'run=name',
+          alias: null,
+          type: 'command',
+          options: {
+            ...opts.run,
+            id: 'run=name',
+            name: 'run=name',
+            args: ['value']
+          }
+        }
+      ]
+    } satisfies ResolvedArg);
+  });
+
   it('should resolve aliases', () => {
     const opts = {
       input: { alias: '-i', args: 'a' } satisfies Options,
@@ -128,6 +191,88 @@ describe('resolve', () => {
             name: '--output',
             args: ['0', '1', '2']
           }
+        }
+      ]
+    } satisfies ResolvedArg);
+  });
+
+  it('should resolve single alias', () => {
+    const opts = {
+      all: { alias: '-a=', assign: false } satisfies Options,
+      input: { alias: ['-i', '-i=0'] } satisfies Options,
+      force: { alias: '-f' } satisfies Options,
+      run: { args: ['0'] } satisfies Options
+    };
+    const cmd = command()
+      .option('--all', opts.all)
+      .option('--input', opts.input)
+      .option('--input=0')
+      .option('--force', opts.force)
+      .command('run', opts.run);
+
+    let resolved = cmd.resolve('-i=0');
+    expect(resolved).to.deep.equal({
+      items: [
+        {
+          key: '--input',
+          alias: '-i=0',
+          type: 'option',
+          options: { ...opts.input, id: '--input', name: '--input', args: [] }
+        }
+      ]
+    } satisfies ResolvedArg);
+
+    resolved = cmd.resolve('-f=1');
+    expect(resolved).to.deep.equal({
+      items: [
+        {
+          key: '--force',
+          alias: '-f',
+          type: 'option',
+          options: {
+            ...opts.force,
+            id: '--force',
+            name: '--force',
+            args: ['1']
+          }
+        }
+      ]
+    } satisfies ResolvedArg);
+
+    // should return undefined as --all is not assignable
+    resolved = cmd.resolve('-a=', 'value');
+    expect(resolved).to.be.undefined;
+  });
+
+  it('should resolve aliases using key and value', () => {
+    const cmd = command()
+      .option('--all', { alias: '-a=', assign: false })
+      .option('--force', { alias: ['-f=2'] })
+      .option('--input', { alias: '-i' });
+
+    let resolved = cmd.resolve('-ia=bf=2', 'value');
+    expect(resolved).to.deep.equal({
+      split: createSplit(['i', 'a=', ':b', 'f=2'])
+    } satisfies ResolvedArg);
+
+    // should return undefined as --all is not assignable
+    resolved = cmd.resolve('-ia=f=2a=', 'value');
+    expect(resolved).to.be.undefined;
+  });
+
+  it('should resolve the key over the alias if they are equal', () => {
+    const options = { min: 1 } satisfies Options;
+    const resolved = command()
+      .option('-i', options)
+      .option('--input', { alias: '-i' })
+      .resolve('-i');
+    expect(resolved).to.deep.equal({
+      items: [
+        {
+          key: '-i',
+          alias: null,
+          type: 'option',
+          options: { ...options, id: '-i', name: '-i', args: [] }
         }
       ]
     } satisfies ResolvedArg);
@@ -192,24 +337,32 @@ describe('resolve', () => {
   });
 
   it('should return the split result for unresolved alias', () => {
-    const resolved = command()
+    const cmd = command()
       .option('--input', { alias: '-i' })
-      .option('--force', { alias: ['-f', ['--no-force', '0']] })
-      .command('help', { alias: 'h' })
-      .resolve('-efghi=0');
+      .option('--force', { alias: ['-f', ['--no-force', '0']], assign: false })
+      .command('help', { alias: 'h' });
+
+    let resolved = cmd.resolve('-efghi=0');
     expect(resolved).to.deep.equal({
       split: createSplit([':e', 'f', ':gh', 'i'])
     } satisfies ResolvedArg);
+
+    resolved = cmd.resolve('-ifb=0');
+    expect(resolved).to.deep.equal({
+      split: createSplit(['i', 'f', ':b'])
+    } satisfies ResolvedArg);
   });
 
-  it("should handle splitting aliases with '=' character", () => {
-    const resolved = command()
-      .option('--all', { alias: '-a=' })
-      .option('--force', { alias: ['-f=2', ['--no-force', '0']] })
-      .option('--input', { alias: '-i' })
-      .resolve('-ia=bf=2=value');
-    expect(resolved).to.deep.equal({
-      split: createSplit(['i', 'a=', ':b', 'f=2'])
-    } satisfies ResolvedArg);
+  it('should not return the split result if the last matched item is not assignable', () => {
+    const cmd = command()
+      .option('--all', { alias: '-a=', assign: false })
+      .option('--input', { alias: '-i', assign: false })
+      .option('--output', { alias: '-o', assign: false });
+
+    let resolved = cmd.resolve('-xoi=1');
+    expect(resolved).to.be.undefined;
+
+    resolved = cmd.resolve('-xoyia=', 'value');
+    expect(resolved).to.be.undefined;
   });
 });
