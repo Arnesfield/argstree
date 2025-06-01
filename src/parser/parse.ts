@@ -87,7 +87,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
   for (const raw of args) {
     let hres: HandlerResult<T> | undefined;
-    const res = resolve(raw, parent.opts);
+    const res = resolve(parent.opts, raw);
 
     // treat as value
     if (!res) setValue(raw);

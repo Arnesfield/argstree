@@ -48,14 +48,14 @@ export class Schema<T> implements ISchema<T> {
     return this.map;
   }
 
-  resolve(arg: string): ResolvedArg<T> | undefined {
+  resolve(key: string, value?: string | null): ResolvedArg<T> | undefined {
     // NOTE: normalize() can get called twice if resolve() is called to initialize
     // the schema and inside options.init() has resolve() calls as well
     // this would mean this.opts is not yet set for the 2nd resolve() call.
     // to prevent this, make sure to initialize the schema first before normalize()
     this.schemas();
 
-    const res = resolve(arg, (this.opts ||= normalize(this)));
+    const res = resolve((this.opts ||= normalize(this)), key, value);
     if (!res) {
       // do nothing
     } else if (res.items) {

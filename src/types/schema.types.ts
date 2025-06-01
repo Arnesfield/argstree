@@ -86,13 +86,16 @@ export interface Schema<T = unknown> {
    */
   schemas(): SchemaMap<T>;
   /**
-   * Resolves the argument and returns the configuration for the matched
-   * options and commands. If the argument cannot be resolved, this returns either
-   * `undefined` or the {@linkcode Split} result if the argument is a short option.
-   * @param arg The argument to resolve.
+   * Gets the configuration for the matched options and commands.
+   * The {@linkcode key} is checked to have a value (e.g. `--option=value`)
+   * unless {@linkcode value} is provided and not `undefined`.
+   * If the argument cannot be resolved, this returns either `undefined`
+   * or the {@linkcode Split} result if the argument is a short option.
+   * @param key The argument or parsed key.
+   * @param value The parsed value if any.
    * @returns The resolved argument.
    */
-  resolve(arg: string): ResolvedArg<T> | undefined;
+  resolve(key: string, value?: string | null): ResolvedArg<T> | undefined;
   /**
    * Parses arguments into a tree structure.
    * @param args The arguments to parse.

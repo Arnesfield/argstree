@@ -11,7 +11,8 @@ import { Alias, NormalizedOptions } from './normalize';
 // make props optional except 'key'
 export interface ParsedArg
   extends Pick<Alias, 'key'>,
-    Partial<Omit<Alias, 'key'>> {}
+    Partial<Omit<Alias, 'key'>>,
+    Pick<Arg, 'value'> {}
 
 // same as NodeOptions but some props are required
 export type ResolveItem<T> = Omit<NodeOptions<T>, 'key' | 'args'> &
@@ -30,7 +31,7 @@ export type ResolveResult<T> =
 function get<T>(
   opts: NormalizedOptions<T>,
   arg: ParsedArg,
-  value?: string
+  value = arg.value
 ): ResolveItem<T> | undefined {
   const schema = opts.map[arg.key];
   const hasValue = value != null;
@@ -47,30 +48,33 @@ function get<T>(
 }
 
 export function resolve<T>(
+  opts: NormalizedOptions<T>,
   raw: string,
-  opts: NormalizedOptions<T>
+  value?: string | null
 ): ResolveResult<T> | undefined {
   // immediately treat as value if the current node cannot actually create children
   if (opts.skip) return;
 
   let items: ResolveItem<T> | NonEmptyArray<ResolveItem<T>> | undefined;
-  const arg: Arg = { raw, key: raw };
+  const arg: Arg = { raw, key: raw, value: value ?? undefined };
 
   // parse options from options.map only
   if ((items = get(opts, arg))) return { items: [items] };
 
   let index: number,
-    hasValue: boolean,
+    diff: boolean | undefined, // arg.raw !== arg.key
     alias: Alias | undefined,
     s: Split | undefined;
 
-  // assume arg.raw and raw are the same
-  // also take this opportunity to set arg.key and arg.value
-  if (
-    (hasValue = (index = raw.indexOf('=')) > -1) &&
-    ((arg.key = raw.slice(0, index)),
-    (items = get(opts, arg, (arg.value = raw.slice(index + 1)))))
-  ) {
+  // parse arg.key and arg.value if value prop is not set
+  if (value === undefined && (diff = (index = raw.indexOf('=')) > -1)) {
+    arg.key = raw.slice(0, index);
+    arg.value = raw.slice(index + 1);
+  }
+
+  // since arg.key is changed, diff is true
+  // also assume arg.raw and raw are the same
+  if (diff && (items = get(opts, arg))) {
     // items found, do nothing and return value
   }
 
@@ -80,10 +84,11 @@ export function resolve<T>(
   // - options from handler
   // - a value (or, if in strict mode, an unknown option-like)
   // for this case, handle exact alias
-  else if ((alias = opts.alias[raw]) && (items = get(opts, alias))) {
+  // check raw first, then arg.key if they're different
+  else if ((alias = opts.alias[raw]) && (items = get(opts, alias, arg.value))) {
     // alias items found, do nothing and return value
   } else if (
-    hasValue &&
+    diff &&
     (alias = opts.alias[arg.key]) &&
     (items = get(opts, alias, arg.value))
   ) {
