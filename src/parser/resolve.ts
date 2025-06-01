@@ -1,5 +1,5 @@
 import { isOption } from '../lib/is-option';
-import { split, Split } from '../lib/split';
+import { split, Split, SplitItem } from '../lib/split';
 import { Arg } from '../types/arg.types';
 import { NonEmptyArray } from '../types/util.types';
 import { array } from '../utils/array';
@@ -69,8 +69,7 @@ export function resolve<T>(
 
   let index: number, // index of `=` in raw
     diff: boolean | undefined, // arg.raw !== arg.key
-    alias: Alias | undefined,
-    s: Split | undefined;
+    alias: Alias | undefined;
 
   // set arg.key and arg.value if `val` param is not provided
   if (val === undefined && (diff = (index = raw.indexOf('=')) > -1)) {
@@ -119,42 +118,43 @@ export function resolve<T>(
   // - raw no equal sign, same key (-abc, -abc, null)
   // - raw equal sign, different key (-abc=1, -abc, 1)
 
+  type I = NonEmptyArray<ResolveItem<T>>;
+  let s: Split | undefined, last: SplitItem, item: ResolveItem<T> | undefined;
+
   if (
-    opts.keys.length > 0 &&
-    isOption(arg.key, 'short') &&
-    (s = split(arg.key.slice(1), opts.keys)).values.length > 0
+    !(
+      opts.keys.length > 0 &&
+      isOption(arg.key, 'short') &&
+      (s = split(arg.key.slice(1), opts.keys)).values.length > 0
+    )
   ) {
-    // NOTE: parse by handler outside of resolver
-
-    // assume `-{value}` always exists as long as split item is not a remainder
-    // get last split item regardless if there are remainders or not
-    // if the last split item is a remainder, ignore split
-    let item: ResolveItem<T> | undefined;
-    const last = s.items[s.items.length - 1];
-
-    if (
-      !last.remainder &&
-      !(item = get(opts, opts.alias['-' + last.value], arg.value))
-    ) {
-      // if no value item, ignore split
-    }
-
-    // return split result only if there are remainders
-    // and if the last parsed item exists,
-    // ensuring that the last parsed item is assignable if a value exists
-    else if (s.remainders.length > 0) return { arg, split: s };
-    // if no remainders, get args per alias
-    else {
-      // reuse last parsed item
-      // assume that aliases will always map to options since
-      // it does not have to be assignable (only for the last alias arg)
-      // also, no more handler fallback for aliases!
-
-      type I = NonEmptyArray<ResolveItem<T>>;
-      // prettier-ignore
-      items = s.values.map((v, i, a) => i < a.length - 1 ? get(opts, opts.alias['-' + v])! : item) as I;
-    }
+    // if no split values, do nothing
   }
+
+  // NOTE: parse by handler outside of resolver
+
+  // assume `-{value}` always exists as long as split item is not a remainder
+  // get last split item regardless if there are remainders or not
+  // and if it's not a remainder but the options cannot be parsed,
+  // assume it's not assignable and we should not return the split result
+  else if (
+    !(last = s.items[s.items.length - 1]).remainder &&
+    !(item = get(opts, opts.alias['-' + last.value], arg.value))
+  ) {
+    // ignore split
+  }
+
+  // return split result only if there are remainders
+  // and if the last parsed item exists,
+  // ensuring that the last parsed item is assignable if a value exists
+  else if (s.remainders.length > 0) return { arg, split: s };
+  // if no remainders, get args per alias
+  // reuse last parsed item
+  // assume that aliases will always map to options since
+  // it does not have to be assignable (only for the last alias arg)
+  // also, no more handler fallback for aliases!
+  // prettier-ignore
+  else items = s.values.map((v, i, a) => i < a.length - 1 ? get(opts, opts.alias['-' + v])! : item) as I;
 
   // either treat as raw value or use parsed items
   return { arg, items };
