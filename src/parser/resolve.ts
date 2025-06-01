@@ -31,7 +31,7 @@ export type ResolveResult<T> =
 function get<T>(
   opts: NormalizedOptions<T>,
   arg: ParsedArg,
-  value = arg.value
+  value?: string
 ): ResolveItem<T> | undefined {
   const schema = opts.map[arg.key];
   const hasValue = value != null;
@@ -49,32 +49,39 @@ function get<T>(
 
 export function resolve<T>(
   opts: NormalizedOptions<T>,
-  raw: string,
-  value?: string | null
+  raw: string, // raw key
+  val?: string | null // raw value
 ): ResolveResult<T> | undefined {
   // immediately treat as value if the current node cannot actually create children
   if (opts.skip) return;
 
-  let items: ResolveItem<T> | NonEmptyArray<ResolveItem<T>> | undefined;
-  const arg: Arg = { raw, key: raw, value: value ?? undefined };
+  // start of using raw as arg.key
+  // also assume arg.raw and raw are the same
 
-  // parse options from options.map only
-  if ((items = get(opts, arg))) return { items: [items] };
+  /** Raw value. */
+  const value = val ?? undefined;
+  const arg: Arg = { raw, key: raw, value };
 
-  let index: number,
+  // parse options from options.map using raw as key
+  type Items = ResolveItem<T> | NonEmptyArray<ResolveItem<T>> | undefined;
+  let items: Items = get(opts, arg, value);
+  if (items) return { items: [items] };
+
+  let index: number, // index of `=` in raw
     diff: boolean | undefined, // arg.raw !== arg.key
     alias: Alias | undefined,
     s: Split | undefined;
 
-  // parse arg.key and arg.value if value prop is not set
-  if (value === undefined && (diff = (index = raw.indexOf('=')) > -1)) {
+  // set arg.key and arg.value if `val` param is not provided
+  if (val === undefined && (diff = (index = raw.indexOf('=')) > -1)) {
     arg.key = raw.slice(0, index);
-    arg.value = raw.slice(index + 1);
+
+    // at this point, arg.key is now different from raw (diff)
+    // try to parse using new values if arg.key is different
+    items = get(opts, arg, (arg.value = raw.slice(index + 1)));
   }
 
-  // since arg.key is changed, diff is true
-  // also assume arg.raw and raw are the same
-  if (diff && (items = get(opts, arg))) {
+  if (items) {
     // items found, do nothing and return value
   }
 
@@ -85,7 +92,7 @@ export function resolve<T>(
   // - a value (or, if in strict mode, an unknown option-like)
   // for this case, handle exact alias
   // check raw first, then arg.key if they're different
-  else if ((alias = opts.alias[raw]) && (items = get(opts, alias, arg.value))) {
+  else if ((alias = opts.alias[raw]) && (items = get(opts, alias, value))) {
     // alias items found, do nothing and return value
   } else if (
     diff &&
@@ -117,23 +124,36 @@ export function resolve<T>(
     isOption(arg.key, 'short') &&
     (s = split(arg.key.slice(1), opts.keys)).values.length > 0
   ) {
-    // return split result if has remainders
-    if (s.remainders.length > 0) return { arg, split: s };
-
     // NOTE: parse by handler outside of resolver
 
-    // get args per alias and assume `-{key}` always exists
-    // prettier-ignore
-    const item = get(opts, opts.alias['-' + s.values[s.values.length - 1]], arg.value);
+    // assume `-{value}` always exists as long as split item is not a remainder
+    // get last split item regardless if there are remainders or not
+    // if the last split item is a remainder, ignore split
+    let item: ResolveItem<T> | undefined;
+    const last = s.items[s.items.length - 1];
 
-    // reuse last parsed item
-    // assume that aliases will always map to options since
-    // it does not have to be assignable (only for the last alias arg)
-    // also, no more handler fallback for aliases!
+    if (
+      !last.remainder &&
+      !(item = get(opts, opts.alias['-' + last.value], arg.value))
+    ) {
+      // if no value item, ignore split
+    }
 
-    type I = NonEmptyArray<ResolveItem<T>>;
-    // prettier-ignore
-    items = item && s.values.map((v, i, a) => i === a.length - 1 ? item : get(opts, opts.alias['-' + v])!) as I;
+    // return split result only if there are remainders
+    // and if the last parsed item exists,
+    // ensuring that the last parsed item is assignable if a value exists
+    else if (s.remainders.length > 0) return { arg, split: s };
+    // if no remainders, get args per alias
+    else {
+      // reuse last parsed item
+      // assume that aliases will always map to options since
+      // it does not have to be assignable (only for the last alias arg)
+      // also, no more handler fallback for aliases!
+
+      type I = NonEmptyArray<ResolveItem<T>>;
+      // prettier-ignore
+      items = s.values.map((v, i, a) => i < a.length - 1 ? get(opts, opts.alias['-' + v])! : item) as I;
+    }
   }
 
   // either treat as raw value or use parsed items
