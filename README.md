@@ -376,13 +376,13 @@ Called when the node receives an argument.
 
 Called when the node receives an option or command child node.
 
-#### options.onData()
-
-Called after the node has received all arguments and direct child nodes that it can have.
-
 #### options.onDepth()
 
 Called when all nodes of the same depth have been created.
+
+#### options.onData()
+
+Called after the node has received all arguments and direct child nodes that it can have.
 
 #### options.onBeforeValidate()
 

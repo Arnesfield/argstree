@@ -131,8 +131,8 @@ export class Node<T> {
 
   /** Depth parsed. */
   done(): void {
-    this.cb('onData');
     for (const n of this.children) n.cb('onDepth');
+    this.cb('onData');
   }
 
   check(): void {

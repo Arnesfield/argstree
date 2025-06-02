@@ -199,17 +199,17 @@ export interface Options<T = unknown> {
    */
   onChild?(ctx: Context<T>): ParseOptions | void;
   /**
-   * Called after the node has received all arguments and direct child nodes that it can have.
-   * @param ctx The callback context.
-   * @returns Options to override for the node.
-   */
-  onData?(ctx: Context<T>): ParseOptions | void;
-  /**
    * Called when all nodes of the same depth have been created.
    * @param ctx The callback context.
    * @returns Options to override for the node.
    */
   onDepth?(ctx: Context<T>): ParseOptions | void;
+  /**
+   * Called after the node has received all arguments and direct child nodes that it can have.
+   * @param ctx The callback context.
+   * @returns Options to override for the node.
+   */
+  onData?(ctx: Context<T>): ParseOptions | void;
   /**
    * Called once all nodes have been parsed and before any validation checks.
    * @param ctx The callback context.
