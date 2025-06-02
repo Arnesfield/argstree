@@ -153,27 +153,27 @@ export class Node<T> {
 
     if (msg) {
       const err = `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`;
-      this.error('e', 'E', err, ParseError.RANGE_ERROR);
+      this.error(err, ParseError.RANGE_ERROR, 'e', 'E');
     }
 
     this.cb('onValidate');
   }
 
   /**
-   * Throws an error.
-   * @param p1 Prefix before {@linkcode msg} if a display name is available.
-   * @param p2 Prefix before {@linkcode msg} if a display name is not available.
+   * Throws a {@linkcode ParseError}.
    * @param msg The error message after the prefix.
    * @param code The error code.
+   * @param p1 Prefix before {@linkcode msg} if a display name is available.
+   * @param p2 Prefix before {@linkcode msg} if a display name is not available.
    */
   error(
-    p1: string,
-    p2: string,
     msg: string,
-    code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
+    code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
+    p1 = 'does not recognize the ',
+    p2 = 'Unrecognized '
   ): never {
     const name = display(this.node);
-    msg = (name ? name + p1 : p2) + msg;
-    throw new ParseError(code, msg, this.schema, this.node);
+    // prettier-ignore
+    throw new ParseError(code, (name ? name + p1 : p2) + msg, this.schema, this.node);
   }
 }

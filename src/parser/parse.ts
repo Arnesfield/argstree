@@ -29,10 +29,6 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   let parent: Node<T> = root,
     child: Node<T> | null | undefined;
 
-  function unrecognized(msg: string, code?: string): never {
-    parent.error('does not recognize the ', 'Unrecognized ', msg, code);
-  }
-
   function set(raw: string, items: NonEmptyArray<NodeOptions<T>>) {
     // consider items: [option1, command1, option2, command2, option3]
     // the previous implementation would only get
@@ -72,11 +68,11 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
         : parent.ctx.read
           ? parent
           : parent.opts.fertile
-            ? unrecognized(`option or command: ${raw}`)
-            : parent.error('e', 'E', `xpected no arguments, but got: ${raw}`);
+            ? parent.error(`option or command: ${raw}`)
+            : parent.error(`xpected no arguments, but got: ${raw}`, undefined, 'e', 'E'); // prettier-ignore
 
     // strict mode: throw error if arg is an option-like
-    !noStrict && curr.strict && isOption(raw) && unrecognized(`option: ${raw}`);
+    !noStrict && curr.strict && isOption(raw) && parent.error(`option: ${raw}`);
     curr.node.args.push(raw);
 
     // if saving to parent, save args to the value node
@@ -110,7 +106,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
         res.split.items
           .map(item => (item.remainder ? `(${item.value})` : item.value))
           .join('');
-      unrecognized(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
+      parent.error(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
     }
 
     // treat as value
