@@ -349,7 +349,7 @@ describe('error', () => {
           name: 'foo',
           strict: true,
           init(schema) {
-            schema.option('--foo');
+            schema.option('--foo', { max: 1 });
           }
         }
       });
@@ -370,6 +370,23 @@ describe('error', () => {
         }
       });
 
+      // option with no child nodes
+      match = option({ strict: true });
+      match.schemas();
+      expectError({
+        code,
+        args: ['-f', '--foo', '--bar', '--baz'],
+        message: "Option '--foo' does not recognize the option: --bar",
+        match,
+        options: {
+          strict: 'descendants',
+          init(schema) {
+            schema.option('--foo', match.options);
+          }
+        }
+      });
+
+      // option with child nodes
       match = option({ leaf: false });
       match.schemas();
       expectError({

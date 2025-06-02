@@ -72,7 +72,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
             : parent.error(`xpected no arguments, but got: ${raw}`, undefined, 'e', 'E'); // prettier-ignore
 
     // strict mode: throw error if arg is an option-like
-    !noStrict && curr.strict && isOption(raw) && parent.error(`option: ${raw}`);
+    !noStrict && curr.strict && isOption(raw) && curr.error(`option: ${raw}`);
     curr.node.args.push(raw);
 
     // if saving to parent, save args to the value node
