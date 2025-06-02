@@ -29,6 +29,20 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   let parent: Node<T> = root,
     child: Node<T> | null | undefined;
 
+  function cdone() {
+    // NOTE: assume child exists whenever this function is called
+    // mark child as parsed and unset it
+    if (
+      !(
+        child!.ctx.read &&
+        (child!.ctx.max == null || child!.ctx.max > child!.node.args.length)
+      )
+    ) {
+      child!.done();
+      child = null;
+    }
+  }
+
   function set(raw: string, items: NonEmptyArray<NodeOptions<T>>) {
     // consider items: [option1, command1, option2, command2, option3]
     // the previous implementation would only get
@@ -55,30 +69,39 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
       parent = child!;
       child = null;
     }
+
+    // if child cannot accept args, mark it as parsed
+    else cdone();
   }
 
   function setValue(raw: string, noStrict?: boolean) {
-    // check if child can read one more argument
-    // fallback to parent if child cannot accept any more args
+    // normally, you'd check if the child node can read one more argument
+    // assume that it already can since there is a child.read() check
+    // in the set() call where the child node is set
+    // otherwise, fallback to parent if child cannot accept any more args
     // if parent cannot read args, assume unrecognized argument
+
+    // prettier-ignore
     const curr =
-      child?.ctx.read &&
-      (child.ctx.max == null || child.ctx.max > child.node.args.length)
-        ? child
-        : parent.ctx.read
-          ? parent
-          : parent.opts.fertile
-            ? parent.error(`option or command: ${raw}`)
-            : parent.error(`xpected no arguments, but got: ${raw}`, undefined, 'e', 'E'); // prettier-ignore
+      child ||
+      (parent.ctx.read
+        ? parent
+        : parent.opts.fertile
+          ? parent.error(`option or command: ${raw}`)
+          : parent.error(`xpected no arguments, but got: ${raw}`, undefined, 'e', 'E'));
 
     // strict mode: throw error if arg is an option-like
     !noStrict && curr.strict && isOption(raw) && curr.error(`option: ${raw}`);
     curr.node.args.push(raw);
 
-    // if saving to parent, save args to the value node
+    // if saving to parent, save arg to the value node
     curr === parent && curr.value(raw);
 
     curr.cb('onArg');
+
+    // if argument was saved to the child node,
+    // mark it as parsed if it cannot accept anymore arguments
+    curr === child && cdone();
   }
 
   for (const raw of args) {
