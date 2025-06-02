@@ -32,61 +32,84 @@ function createOptions(): [Options, Call[]] {
 }
 
 describe('callback', () => {
-  it('should handle nodes that cannot accept args', () => {
+  it('should handle events for nodes parsed multiple times', () => {
     const [options, calls] = createOptions();
     command(options)
-      .option('--flag1', { ...options, read: false })
-      .option('--flag2', { ...options, max: 0 })
-      .parse(['--flag1', '1', '--flag2', '2']);
+      .option('--input', options)
+      .parse(['--input', '0', '--input', '1', '2']);
     expect(calls).to.deep.equal([
       ['onCreate', null],
       ['onDepth', null],
-      ['onCreate', '--flag1'],
+      ['onCreate', '--input'],
       ['onChild', null],
-      ['onData', '--flag1'],
-      ['onArg', null],
-      ['onCreate', '--flag2'],
+      ['onArg', '--input'],
+      ['onData', '--input'],
+      ['onCreate', '--input'],
       ['onChild', null],
-      ['onData', '--flag2'],
-      ['onArg', null],
-      ['onDepth', '--flag1', '--flag2'],
+      ['onArg', '--input', '--input'],
+      ['onData', '--input'],
+      ['onDepth', '--input', '--input'],
       ['onData', null],
-      ['onBeforeValidate', null, '--flag1', '--flag2'],
-      ['onValidate', null, '--flag1', '--flag2']
+      ['onBeforeValidate', null, '--input', '--input'],
+      ['onValidate', null, '--input', '--input']
+    ]);
+  });
+
+  it('should handle nodes that cannot accept args', () => {
+    const [options, calls] = createOptions();
+    command(options)
+      .option('--input', { ...options, read: false })
+      .option('--output', { ...options, max: 0 })
+      .parse(['--input', '1', '--output', '2']);
+    expect(calls).to.deep.equal([
+      ['onCreate', null],
+      ['onDepth', null],
+      ['onCreate', '--input'],
+      ['onChild', null],
+      ['onData', '--input'],
+      ['onArg', null],
+      ['onCreate', '--output'],
+      ['onChild', null],
+      ['onData', '--output'],
+      ['onArg', null],
+      ['onDepth', '--input', '--output'],
+      ['onData', null],
+      ['onBeforeValidate', null, '--input', '--output'],
+      ['onValidate', null, '--input', '--output']
     ]);
   });
 
   it('should handle child nodes', () => {
     const [options, calls] = createOptions();
     command(options)
-      .option('--flag', options)
-      .command('cmd', {
+      .option('--input', options)
+      .command('run', {
         ...options,
-        init(cmd) {
-          cmd.option('--subflag', options);
-          cmd.command('subcmd', options);
+        init(run) {
+          run.option('--output', options);
+          run.command('subcmd', options);
         }
       })
-      .parse(['--flag', 'cmd', '--subflag', 'subcmd']);
+      .parse(['--input', 'run', '--output', 'subcmd']);
     expect(calls).to.deep.equal([
       ['onCreate', null],
       ['onDepth', null],
-      ['onCreate', '--flag'],
+      ['onCreate', '--input'],
       ['onChild', null],
-      ['onData', '--flag'],
-      ['onCreate', 'cmd'],
+      ['onData', '--input'],
+      ['onCreate', 'run'],
       ['onChild', null],
-      ['onDepth', '--flag', 'cmd'],
+      ['onDepth', '--input', 'run'],
       ['onData', null],
-      ['onCreate', '--subflag'],
-      ['onChild', 'cmd'],
-      ['onData', '--subflag'],
+      ['onCreate', '--output'],
+      ['onChild', 'run'],
+      ['onData', '--output'],
       ['onCreate', 'subcmd'],
-      ['onChild', 'cmd'],
-      ['onDepth', '--subflag', 'subcmd'],
-      ['onData', 'cmd', 'subcmd'],
-      ['onBeforeValidate', null, '--flag', 'cmd', '--subflag', 'subcmd'],
-      ['onValidate', null, '--flag', 'cmd', '--subflag', 'subcmd']
+      ['onChild', 'run'],
+      ['onDepth', '--output', 'subcmd'],
+      ['onData', 'run', 'subcmd'],
+      ['onBeforeValidate', null, '--input', 'run', '--output', 'subcmd'],
+      ['onValidate', null, '--input', 'run', '--output', 'subcmd']
     ]);
   });
 });
