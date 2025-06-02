@@ -2,15 +2,9 @@ import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 
-/**
- * The parse error.
- * @template T The metadata type.
- */
+/** The parse error. */
 export class ParseError<T> extends Error {
-  /**
-   * The {@linkcode Options} object provided is invalid
-   * (e.g. incorrect range options or duplicate aliases).
-   */
+  /** The {@linkcode Options} provided has incorrect range options or duplicate aliases. */
   static readonly OPTIONS_ERROR = 'OPTIONS';
   /** The option or command did not satisfy the required number of arguments. */
   static readonly RANGE_ERROR = 'RANGE';

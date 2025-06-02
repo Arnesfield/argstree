@@ -4,7 +4,6 @@ import { Schema as SchemaClass } from './schema.class';
 
 /**
  * Creates an option schema.
- * @template T The metadata type.
  * @param options The schema options.
  * @returns The schema object.
  */
@@ -14,7 +13,6 @@ export function option<T>(options?: Options<T>): Schema<T> {
 
 /**
  * Creates a command schema.
- * @template T The metadata type.
  * @param options The schema options.
  * @returns The schema object.
  */

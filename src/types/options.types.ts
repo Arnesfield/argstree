@@ -13,10 +13,7 @@ export interface ParseOptions {
   read?: boolean;
 }
 
-/**
- * The callback context.
- * @template T The metadata type.
- */
+/** The callback context. */
 export interface Context<T = unknown> {
   /** The current {@linkcode Options.min} option for the node. */
   readonly min: number | null;
@@ -30,10 +27,7 @@ export interface Context<T = unknown> {
   readonly schema: Schema<T>;
 }
 
-/**
- * The schema options.
- * @template T The metadata type.
- */
+/** The schema options. */
 export interface Options<T = unknown> {
   /**
    * The option or command ID that is set to {@linkcode Node.id}.

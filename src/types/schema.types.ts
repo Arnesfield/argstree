@@ -6,18 +6,12 @@ import { Options } from './options.types';
 /** The schema type. */
 export type SchemaType = 'option' | 'command';
 
-/**
- * The schema map.
- * @template T The metadata type.
- */
+/** The schema map. */
 export interface SchemaMap<T = unknown> {
   [arg: string]: Schema<T>;
 }
 
-/**
- * The resolved options.
- * @template T The metadata type.
- */
+/** The resolved options. */
 export interface ResolvedOptions<T = unknown> extends Options<T> {
   // require id and name
   id: string | null;
@@ -26,10 +20,7 @@ export interface ResolvedOptions<T = unknown> extends Options<T> {
   args: string[];
 }
 
-/**
- * The resolved item.
- * @template T The metadata type.
- */
+/** The resolved item. */
 export interface ResolvedItem<T = unknown> {
   /** The matched argument. */
   key: string;
@@ -41,10 +32,7 @@ export interface ResolvedItem<T = unknown> {
   options: ResolvedOptions<T>;
 }
 
-/**
- * The resolved argument.
- * @template T The metadata type.
- */
+/** The resolved argument. */
 export type ResolvedArg<T = unknown> =
   | {
       /** The split result with remaining values. */
@@ -57,10 +45,7 @@ export type ResolvedArg<T = unknown> =
       items: ResolvedItem<T>[];
     };
 
-/**
- * The schema object.
- * @template T The metadata type.
- */
+/** The schema object. */
 export interface Schema<T = unknown> {
   /** The schema type. */
   readonly type: SchemaType;
