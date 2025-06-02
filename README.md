@@ -64,9 +64,9 @@ Adds a command. The argument is overwritten if it already exists.
 
 #### schema.resolve()
 
-Type: `(arg: string) => ResolvedArg | undefined`
+Type: `(key: string, value?: string | null) => ResolvedArg | undefined`
 
-Resolves the argument and returns the [configuration](src/types/schema.types.ts) for the matched options and commands. If the argument cannot be resolved, this returns either `undefined` or the [`Split`](#split) result if the argument is a short option.
+Gets the [configuration](src/types/schema.types.ts) for the matched options and commands. The `key` is checked to have a value (e.g. `--option=value`) unless `value` is provided and not `undefined`. If the argument cannot be resolved, this returns either `undefined` or the [`Split`](#split) result if the argument is a short option.
 
 #### schema.parse()
 
@@ -399,7 +399,6 @@ const cmd = command();
 
 // immediately logs the help text and exit the process once parsed
 cmd.option('--help', {
-  assign: false,
   onCreate() {
     console.log(`Usage: cmd --log-level <${logLevels.join(' | ')}>`);
     process.exit();
@@ -408,7 +407,7 @@ cmd.option('--help', {
 
 // show version only after other nodes have been created (to prioritize '--help')
 cmd.option('--version', {
-  assign: false,
+  read: false,
   onDepth() {
     console.log('v2.0.0');
     process.exit();
@@ -462,7 +461,6 @@ interface Metadata {
 }
 
 const cmd = command<Metadata>({
-  read: false,
   handler(arg) {
     // format: --{id}:{key}={value}
     const match = arg.key.match(/^--(.+?):(.+)$/);
@@ -471,7 +469,6 @@ const cmd = command<Metadata>({
     const [, id, key] = match;
     return option({
       id,
-      read: false,
       args: arg.value,
       onCreate(ctx) {
         ctx.node.meta = { key };
