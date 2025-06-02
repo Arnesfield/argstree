@@ -74,7 +74,7 @@ export class Node<T> {
     const { min = c.min, max = c.max } = opts;
     if (opts.read != null) c.read = opts.read;
 
-    [c.min, c.max] = range(min, max, this.schema, this.node);
+    [c.min, c.max] = range(min, max, this.node, this.schema);
   }
 
   // NOTE: return empty arrays to ignore values
@@ -174,6 +174,6 @@ export class Node<T> {
   ): never {
     const name = display(this.node);
     // prettier-ignore
-    throw new ParseError(code, (name ? name + p1 : p2) + msg, this.schema, this.node);
+    throw new ParseError(code, (name ? name + p1 : p2) + msg, this.node, this.schema);
   }
 }

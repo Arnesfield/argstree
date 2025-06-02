@@ -24,7 +24,7 @@ describe('error', () => {
     const id = '--option';
     const [node] = createNodes({ id, name: id, raw: id, key: id, depth: 1 });
     const schema = command();
-    const error = new ParseError(ParseError.OPTIONS_ERROR, 'foo', schema, node);
+    const error = new ParseError(ParseError.OPTIONS_ERROR, 'foo', node, schema);
 
     expect(error).to.be.instanceOf(Error).and.instanceOf(ParseError);
     expect(error).to.have.property('name').that.equals('ParseError');

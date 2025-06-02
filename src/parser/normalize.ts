@@ -46,7 +46,7 @@ export function normalize<T>(
   const o = schema.options;
 
   // get and validate range
-  const [min, max] = range(o.min, o.max, schema, node);
+  const [min, max] = range(o.min, o.max, node, schema);
 
   // save splittable aliases to keys array
   const keys: string[] = [];
@@ -70,7 +70,7 @@ export function normalize<T>(
         const name = display(node);
         const msg =
           (name ? name + 'c' : 'C') + `annot use an existing alias: ${a}`;
-        throw new ParseError(ParseError.OPTIONS_ERROR, msg, s, node);
+        throw new ParseError(ParseError.OPTIONS_ERROR, msg, node, s);
       }
 
       alias[a] = { key, alias: a, args: arr.slice(1) };

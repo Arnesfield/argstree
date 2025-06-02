@@ -23,14 +23,14 @@ export class ParseError<T> extends Error {
    * - {@linkcode ParseError.UNRECOGNIZED_ALIAS_ERROR}
    * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
    * @param message The error message.
-   * @param schema The schema object.
    * @param node The node object.
+   * @param schema The schema object.
    */
   constructor(
     public code: string,
     message: string,
-    public schema: Schema<T>,
-    public node: Node<T>
+    public node: Node<T>,
+    public schema: Schema<T>
   ) {
     super(message);
   }

@@ -11,8 +11,8 @@ function number(n: number | null | undefined): number | null {
 export function range<T>(
   min: number | null | undefined,
   max: number | null | undefined,
-  schema: Schema<T>,
-  node: NodeData<T>
+  node: NodeData<T>,
+  schema: Schema<T>
 ): [number | null, number | null] {
   // get and validate range
   min = number(min);
@@ -22,7 +22,7 @@ export function range<T>(
     const name = node && display(node);
     const msg =
       (name ? name + 'has i' : 'I') + `nvalid min and max range: ${min}-${max}`;
-    throw new ParseError(ParseError.OPTIONS_ERROR, msg, schema, node);
+    throw new ParseError(ParseError.OPTIONS_ERROR, msg, node, schema);
   }
 
   return [min, max];
