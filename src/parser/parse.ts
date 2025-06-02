@@ -123,11 +123,9 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // throw error if split remainders are present
     else if (res.split) {
       const msg =
-        'alias' +
-        (res.split.remainders.length === 1 ? '' : 'es') +
-        ': -' +
+        `alias${res.split.remainders.length === 1 ? '' : 'es'}: -` +
         res.split.items
-          .map(item => (item.remainder ? `(${item.value})` : item.value))
+          .map(i => (i.remainder ? `(${i.value})` : i.value))
           .join('');
       parent.error(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
     }
