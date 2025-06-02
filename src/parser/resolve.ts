@@ -150,11 +150,12 @@ export function resolve<T>(
   else if (s.remainders.length > 0) return { arg, split: s };
   // if no remainders, get args per alias
   // reuse last parsed item
-  // assume that aliases will always map to options since
-  // it does not have to be assignable (only for the last alias arg)
+  // - assume `item` exists at this point since the last split item is not a remainder
+  // - assume that aliases will always map to options
+  // since it does not have to be assignable (only for the last alias arg)
   // also, no more handler fallback for aliases!
   // prettier-ignore
-  else items = s.values.map((v, i, a) => i < a.length - 1 ? get(opts, opts.alias['-' + v])! : item) as I;
+  else items = s.values.map((v, i, a) => i === a.length - 1 ? item! : get(opts, opts.alias['-' + v])!) as I;
 
   // either treat as raw value or use parsed items
   return { arg, items };
