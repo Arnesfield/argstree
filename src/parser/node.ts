@@ -85,25 +85,23 @@ export class Node<T> {
     // fallback to default behavior for null, undefined, true
     if (schemas == null || schemas === true) return;
 
-    const result: HandlerResult<T> = { args: [], opts: [] };
+    const res: HandlerResult<T> = { args: [], opts: [] };
     // ignore when false by returning empty result
-    if (schemas === false) return result;
+    if (schemas === false) return res;
 
     schemas = Array.isArray(schemas) ? schemas : [schemas];
     // fallback to default behavior for empty arrays
     if (schemas.length === 0) return;
 
     for (const schema of schemas) {
-      if (typeof schema === 'string') {
-        result.args.push(schema);
-      } else {
-        // use arg.key as key here despite not using arg.value
-        // assume that the consumer handles arg.value manually
-        result.opts.push({ key: arg.key, schema });
-      }
+      // for strings, save to args
+      if (typeof schema === 'string') res.args.push(schema);
+      // use arg.key as key here despite not using arg.value
+      // assume that the consumer handles arg.value manually
+      else res.opts.push({ key: arg.key, schema });
     }
 
-    return result;
+    return res;
   }
 
   // save arg to the last value child node
