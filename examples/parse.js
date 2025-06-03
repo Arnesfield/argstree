@@ -5,7 +5,7 @@ import command, { isOption, option } from '../lib/index.js';
 function help() {
   console.log(
     'Usage: node examples/parse.js ' +
-      'hello --num 3.14 world --no-bool -abc 15 --x.y.z 92 -- -a -b 65'
+      'hello --num 3.14 --no-bool cmd:run world -abc=15 --x.y.z 92 -- -a -b 65'
   );
   process.exit();
 }
@@ -18,58 +18,70 @@ try {
   process.exitCode = 1;
 }
 
-/** @param {string[]} argv */
-function run(argv) {
+/** @param {string[]} args */
+function run(args) {
   /**
    * The node metadata.
    * @typedef Metadata
-   * @property {boolean} [dot] Allow dot notation for node.
+   * @property {boolean} [dot] Allow dot notation for the node.
    */
 
-  const negatePrefix = 'no-';
+  const prefix = { cmd: 'cmd:', no: 'no-' };
+
+  /** @type {import('../lib/index.js').Options<Metadata>['init']} */
+  const init = schema => {
+    schema
+      .option('--help', { alias: '-h', assign: false, onCreate: help })
+      .command('--', { strict: false });
+  };
+
+  /** @type {import('../lib/index.js').Options<Metadata>['handler']} */
+  const handler = arg => {
+    if (
+      arg.value == null &&
+      arg.key.startsWith(prefix.cmd) &&
+      arg.key !== `${prefix.cmd}--` // ignore 'cmd:--' that could be treated as '--'
+    ) {
+      // create command with recursive handler
+      const id = arg.key.slice(prefix.cmd.length);
+      return command({ id, name: id, init, handler });
+    } else if (isOption(arg.key, 'short')) {
+      // treat negative numbers as values
+      if (!isNaN(Number(arg.key))) {
+        return arg.key;
+      }
+
+      // each character becomes its own option
+      return arg.key
+        .slice(1)
+        .split('')
+        .map((id, index, array) => {
+          // apply the value for the last option
+          const args = index === array.length - 1 ? arg.value : undefined;
+          return option({ id, name: id, max: 1, args });
+        });
+    } else if (isOption(arg.key, 'long')) {
+      // for option ids, remove first 2 hyphens
+      const id = arg.key.slice(2);
+      // for options starting with --no-*, stop reading args
+      const read = !id.startsWith(prefix.no);
+      return option({
+        id,
+        max: 1,
+        args: arg.value,
+        read,
+        onCreate(ctx) {
+          // only allow dot notation for long options so that short options
+          // are not split (e.g. `-x.y` will not be treated like `--x.y`)
+          ctx.node.meta = { dot: true };
+        }
+      });
+    }
+  };
 
   /** @type {import('../lib/index.js').Schema<Metadata>} */
-  const cmd = command({
-    handler(arg) {
-      if (isOption(arg.key, 'short')) {
-        // treat negative numbers as values
-        if (!isNaN(Number(arg.key))) {
-          return arg.key;
-        }
-
-        // each character becomes its own option
-        return arg.key
-          .slice(1)
-          .split('')
-          .map((id, index, array) => {
-            // apply the value for the last option
-            const args = index === array.length - 1 ? arg.value : undefined;
-            return option({ id, name: id, max: 1, args });
-          });
-      } else if (isOption(arg.key, 'long')) {
-        // for option ids, remove first 2 hyphens
-        const id = arg.key.slice(2);
-        // for options starting with --no-*, stop reading args
-        const read = !id.startsWith(negatePrefix);
-        return option({
-          id,
-          max: 1,
-          args: arg.value,
-          read,
-          onCreate(ctx) {
-            // only allow dot notation for long options so that short options
-            // are not split (e.g. `-x.y` will not be treated like `--x.y`)
-            ctx.node.meta = { dot: true };
-          }
-        });
-      }
-    }
-  });
-
-  const root = cmd
-    .option('--help', { alias: '-h', assign: false, onCreate: help })
-    .command('--', { strict: false })
-    .parse(argv);
+  const cmd = command({ init, handler });
+  const root = cmd.parse(args);
 
   /** @type {Record<string, unknown> & { __proto__: null, _: unknown[] }} */
   const result = { __proto__: null, _: [] };
@@ -94,15 +106,22 @@ function run(argv) {
     }
   }
 
-  for (const node of root.children) {
-    const id = node.id || '_';
+  let parent = result;
+
+  // skip root node when iterating through nodes
+  const nodes = root.children.slice();
+  for (const node of nodes) {
+    nodes.push(...node.children);
+
+    // value nodes are saved to `_`
+    const id = node.type === 'value' || node.id == null ? '_' : node.id;
     const props = node.meta?.dot ? id.split('.') : [id];
-    const last = props.pop();
-    if (last == null) continue;
+    // assume fallback to empty string is unreachable
+    const last = props.pop() || '';
 
     // get nested object
     /** @type {Record<string, unknown>} */
-    let obj = result;
+    let obj = parent;
     for (const prop of props) {
       if (obj[prop] === undefined) {
         obj = obj[prop] = Object.create(null);
@@ -115,15 +134,21 @@ function run(argv) {
       }
     }
 
-    // set value
-    const { args } = node;
     // check props.length to ensure that only the root `--` is unformatted
     if (props.length === 0 && last === '--') {
-      // handle unformatted args
-      set(obj, last, args);
-    } else if (args.length > 0) {
+      // always save unformatted args to the root object and stop parsing
+      set(result, last, node.args);
+      break;
+    }
+
+    // for command nodes, create another root object
+    if (node.type === 'command') {
+      // if value already exists, convert to array
+      parent = { __proto__: null, _: [] };
+      obj[last] = last in obj ? [obj[last], parent] : parent;
+    } else if (node.args.length > 0) {
       // handle numbers and strings
-      const values = args.map(arg => {
+      const values = node.args.map(arg => {
         // check and parse if number
         let n;
         return arg.trim() && !isNaN((n = Number(arg))) ? n : arg;
@@ -131,8 +156,8 @@ function run(argv) {
       set(obj, last, values.length === 1 ? values[0] : values);
     } else {
       // handle booleans (args.length === 0)
-      const negate = last.startsWith(negatePrefix);
-      const key = negate ? last.slice(negatePrefix.length) : last;
+      const negate = last.startsWith(prefix.no);
+      const key = negate ? last.slice(prefix.no.length) : last;
       set(obj, key, !negate);
     }
   }
@@ -143,11 +168,15 @@ function run(argv) {
    * @param {unknown} value The object to reset the prototype of.
    */
   function resetPrototype(value) {
-    if (Array.isArray(value)) {
-      value.forEach(resetPrototype);
-    } else if (typeof value === 'object' && value !== null) {
-      Object.setPrototypeOf(value, Object.prototype);
-      Object.values(value).forEach(resetPrototype);
+    // mutate the value object
+    const stack = [value];
+    for (let item; (item = stack.pop()); ) {
+      if (Array.isArray(item)) {
+        stack.push(...item);
+      } else if (typeof item === 'object' && item !== null) {
+        Object.setPrototypeOf(item, Object.prototype);
+        stack.push(...Object.values(item));
+      }
     }
   }
   // mutate result object
