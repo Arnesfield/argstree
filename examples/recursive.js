@@ -23,14 +23,14 @@ function run(args) {
   // use 'init' and 'handler' for root command and subcommands
   const prefix = 'cmd:';
 
-  /** @type {import('../lib/index.js').SchemaOptions['init']} */
+  /** @type {import('../lib/index.js').Options['init']} */
   const init = schema => {
     schema
       .option('--help', { alias: '-h', assign: false, onCreate: help })
       .command('--', { strict: false });
   };
 
-  /** @type {import('../lib/index.js').SchemaOptions['handler']} */
+  /** @type {import('../lib/index.js').Options['handler']} */
   const handler = arg => {
     if (isOption(arg.key)) {
       // stop reading arguments for this option if a value is assigned
