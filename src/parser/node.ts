@@ -116,14 +116,10 @@ export class Node<T> {
       // value node is almost the same as its parent but with different props
 
       // keep value property since it acts as an identifier (key-value pair)
-      // prettier-ignore
-      node = { ...p, type: 'value', depth: p.depth + 1, args: [arg], parent: p, children: [] };
-
-      // remove meta since from the consumer's point of view,
+      // also ignore node.meta since from the consumer's point of view,
       // the meta property was only ever set to the main node
-      delete node.meta;
-
-      c.push(node);
+      // prettier-ignore
+      c.push({ id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args: [arg], parent: p, children: [] });
     }
   }
 
