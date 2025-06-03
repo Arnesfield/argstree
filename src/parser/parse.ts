@@ -105,7 +105,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   }
 
   for (const raw of args) {
-    let hres: HandlerResult<T> | undefined;
+    let h: HandlerResult<T> | undefined;
     const res = resolve(parent.opts, raw);
 
     // treat as value
@@ -113,11 +113,11 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // save resolved options
     else if (res.items) set(raw, res.items);
     // parse options using handler before error
-    else if ((hres = parent.handle(res.arg))) {
-      for (const arg of hres.args) setValue(arg, true);
+    else if ((h = parent.handle(res.arg))) {
+      for (const arg of h.args) setValue(arg, true);
 
       type O = NonEmptyArray<NodeOptions<T>>;
-      hres.opts.length > 0 && set(raw, hres.opts as O);
+      h.opts.length > 0 && set(raw, h.opts as O);
     }
 
     // throw error if split remainders are present
