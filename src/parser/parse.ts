@@ -31,7 +31,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   let parent: Node<T> = root,
     child: Node<T> | null | undefined;
 
-  function cdone() {
+  function cOk() {
     // NOTE: assume child exists whenever this function is called
     // mark child as parsed and unset it
     if (
@@ -40,7 +40,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
         (child!.ctx.max == null || child!.ctx.max > child!.node.args.length)
       )
     ) {
-      child!.done();
+      child!.ok();
       child = null;
     }
   }
@@ -57,7 +57,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     for (const item of items) {
       // mark existing child as parsed then make new child
-      child?.done();
+      child?.ok();
 
       // create child node from options
       nodes.push((child = node(item, raw, parent)));
@@ -67,13 +67,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // use child as next parent if it's not a leaf node
     if (!child!.opts.leaf) {
       // since we're removing reference to parent, mark it as parsed
-      parent.done();
+      parent.ok();
       parent = child!;
       child = null;
     }
 
     // if child cannot accept args, mark it as parsed
-    else cdone();
+    else cOk();
   }
 
   function setValue(raw: string, strict?: boolean) {
@@ -103,7 +103,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     // if argument was saved to the child node,
     // mark it as parsed if it cannot accept anymore arguments
-    curr === child && cdone();
+    curr === child && cOk();
   }
 
   for (const raw of args) {
@@ -143,14 +143,14 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
-  child?.done();
-  parent.done();
+  child?.ok();
+  parent.ok();
 
   // run onBeforeValidate for all nodes per depth level incrementally
   for (const n of nodes) n.cb('onBeforeValidate');
 
   // validate and run onValidate for all nodes
-  for (const n of nodes) n.check();
+  for (const n of nodes) n.done();
 
   return root.node;
 }

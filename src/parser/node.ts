@@ -110,12 +110,12 @@ export class Node<T> {
   }
 
   /** Depth parsed. */
-  done(): void {
+  ok(): void {
     for (const n of this.children) n.cb('onDepth');
     this.cb('onData');
   }
 
-  check(): void {
+  done(): void {
     const { min, max } = this.ctx;
 
     // validate node
