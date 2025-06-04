@@ -6,7 +6,7 @@ import { Schema } from '../types/schema.types';
 import { Mutable } from '../types/util.types';
 import { display } from '../utils/display';
 import { range } from '../utils/range';
-import { NodeData, NodeOptions } from './cnode';
+import { NodeData } from './cnode';
 import { NormalizedOptions } from './normalize';
 
 // NOTE: internal
@@ -14,11 +14,6 @@ import { NormalizedOptions } from './normalize';
 export type NodeEvent<T> = keyof {
   [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
 };
-
-export interface HandlerResult<T> {
-  args: string[];
-  opts: NodeOptions<T>[];
-}
 
 // NOTE: node instances will only have data types 'option' and 'command'
 // directly save value nodes into `this.node.children` instead
@@ -78,30 +73,19 @@ export class Node<T> {
   }
 
   // NOTE: return empty arrays to ignore values
-  // return falsy to fallback to default behavior
-  handle(arg: Arg): HandlerResult<T> | undefined {
+  // return undefined to fallback to default behavior
+  parse(arg: Arg): (Schema<T> | string)[] | undefined {
     // preserve `this` for callbacks
-    let schemas = this.schema.options.handler?.(arg, this.ctx);
+    let p = this.schema.options.parser?.(arg, this.ctx);
+
     // fallback to default behavior for null, undefined, true
-    if (schemas == null || schemas === true) return;
+    if (p == null || p === true) return;
 
-    const res: HandlerResult<T> = { args: [], opts: [] };
     // ignore when false by returning empty result
-    if (schemas === false) return res;
+    if (p === false) return [];
 
-    schemas = Array.isArray(schemas) ? schemas : [schemas];
     // fallback to default behavior for empty arrays
-    if (schemas.length === 0) return;
-
-    for (const schema of schemas) {
-      // for strings, save to args
-      if (typeof schema === 'string') res.args.push(schema);
-      // use arg.key as key here despite not using arg.value
-      // assume that the consumer handles arg.value manually
-      else res.opts.push({ key: arg.key, schema });
-    }
-
-    return res;
+    if ((p = Array.isArray(p) ? p : [p]).length > 0) return p;
   }
 
   // save arg to the last value child node

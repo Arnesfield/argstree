@@ -106,7 +106,7 @@ export interface Options<T = unknown> {
    * - `self` - Enable strict mode for self but disable it for descendants.
    * - `descendants` - Disable strict mode for self but enable it for descendants.
    *
-   * Note that string values returned by the {@linkcode handler} callback
+   * Note that string values returned by the {@linkcode parser} callback
    * are excluded from the strict mode checks.
    * @default false
    */
@@ -158,7 +158,7 @@ export interface Options<T = unknown> {
    *
    * const cmd = command({
    *   strict: true,
-   *   handler(arg) {
+   *   parser(arg) {
    *     // allow negative numbers in strict mode
    *     if (isOption(arg.key, 'short') && !isNaN(Number(arg.key))) {
    *       return arg.key;
@@ -170,7 +170,7 @@ export interface Options<T = unknown> {
    *   }
    * });
    */
-  handler?(
+  parser?(
     arg: Arg,
     ctx: Context<T>
   ): Schema<T> | string | (Schema<T> | string)[] | boolean | void;

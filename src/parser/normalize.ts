@@ -81,7 +81,7 @@ export function normalize<T>(
   }
 
   // check args length first since it is the most likely to always be true
-  const fertile = items.length > 0 || !!o.handler;
+  const fertile = items.length > 0 || !!o.parser;
   const { leaf = !fertile && schema.type === 'option' } = o;
 
   // sort by length desc for splitting later on

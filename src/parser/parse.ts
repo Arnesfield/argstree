@@ -4,7 +4,7 @@ import { Node as INode } from '../types/node.types';
 import { Schema } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
 import { cnode, NodeOptions } from './cnode';
-import { HandlerResult, Node } from './node';
+import { Node } from './node';
 import { normalize, NormalizedOptions } from './normalize';
 import { resolve } from './resolve';
 
@@ -105,7 +105,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   }
 
   for (const raw of args) {
-    let h: HandlerResult<T> | undefined;
+    let p: (Schema<T> | string)[] | undefined;
     const arg = resolve(parent.opts, raw);
 
     // treat as value
@@ -113,11 +113,16 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // save resolved options
     else if (arg.items) set(raw, arg.items);
     // parse options using handler before error
-    else if ((h = parent.handle(arg))) {
-      for (const v of h.args) setValue(v, true);
+    else if ((p = parent.parse(arg))) {
+      const opts: NodeOptions<T>[] = [];
 
-      type O = NonEmptyArray<NodeOptions<T>>;
-      h.opts.length > 0 && set(raw, h.opts as O);
+      for (const v of p) {
+        typeof v === 'string'
+          ? setValue(v, true)
+          : opts.push({ key: arg.key, schema: v });
+      }
+
+      opts.length > 0 && set(raw, opts as NonEmptyArray<NodeOptions<T>>);
     }
 
     // throw error if split remainders are present

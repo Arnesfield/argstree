@@ -663,7 +663,7 @@ describe('parse', () => {
   it("should run the 'handler' as fallback", () => {
     let called = 0;
     const cmd = command({
-      handler(arg, ctx) {
+      parser(arg, ctx) {
         called++;
 
         expect(arg).to.deep.equal({
