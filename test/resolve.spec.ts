@@ -14,6 +14,8 @@ describe('resolve', () => {
 
     let resolved = cmd.resolve('--input');
     expect(resolved).to.deep.equal({
+      raw: '--input',
+      key: '--input',
       items: [
         {
           key: '--input',
@@ -26,6 +28,8 @@ describe('resolve', () => {
 
     resolved = cmd.resolve('run');
     expect(resolved).to.deep.equal({
+      raw: 'run',
+      key: 'run',
       items: [
         {
           key: 'run',
@@ -68,6 +72,9 @@ describe('resolve', () => {
 
     let resolved = cmd.resolve('--input=1');
     expect(resolved).to.deep.equal({
+      raw: '--input=1',
+      key: '--input',
+      value: '1',
       items: [
         {
           key: '--input',
@@ -85,6 +92,9 @@ describe('resolve', () => {
 
     resolved = cmd.resolve('run=3');
     expect(resolved).to.deep.equal({
+      raw: 'run=3',
+      key: 'run',
+      value: '3',
       items: [
         {
           key: 'run',
@@ -109,6 +119,9 @@ describe('resolve', () => {
 
     let resolved = cmd.resolve('--input=name', 'value');
     expect(resolved).to.deep.equal({
+      raw: '--input=name',
+      key: '--input=name',
+      value: 'value',
       items: [
         {
           key: '--input=name',
@@ -126,6 +139,8 @@ describe('resolve', () => {
 
     resolved = cmd.resolve('--output=name', null);
     expect(resolved).to.deep.equal({
+      raw: '--output=name',
+      key: '--output=name',
       items: [
         {
           key: '--output=name',
@@ -143,6 +158,9 @@ describe('resolve', () => {
 
     resolved = cmd.resolve('run=name', 'value');
     expect(resolved).to.deep.equal({
+      raw: 'run=name',
+      key: 'run=name',
+      value: 'value',
       items: [
         {
           key: 'run=name',
@@ -169,6 +187,9 @@ describe('resolve', () => {
       .option('--output', opts.output)
       .resolve('-io=2');
     expect(resolved).to.deep.equal({
+      raw: '-io=2',
+      key: '-io',
+      value: '2',
       items: [
         {
           key: '--input',
@@ -212,6 +233,9 @@ describe('resolve', () => {
 
     let resolved = cmd.resolve('-i=0');
     expect(resolved).to.deep.equal({
+      raw: '-i=0',
+      key: '-i',
+      value: '0',
       items: [
         {
           key: '--input',
@@ -224,6 +248,9 @@ describe('resolve', () => {
 
     resolved = cmd.resolve('-f=1');
     expect(resolved).to.deep.equal({
+      raw: '-f=1',
+      key: '-f',
+      value: '1',
       items: [
         {
           key: '--force',
@@ -252,6 +279,9 @@ describe('resolve', () => {
 
     let resolved = cmd.resolve('-ia=bf=2', 'value');
     expect(resolved).to.deep.equal({
+      raw: '-ia=bf=2',
+      key: '-ia=bf=2',
+      value: 'value',
       split: createSplit(['i', 'a=', ':b', 'f=2'])
     } satisfies ResolvedArg);
 
@@ -267,6 +297,8 @@ describe('resolve', () => {
       .option('--input', { alias: '-i' })
       .resolve('-i');
     expect(resolved).to.deep.equal({
+      raw: '-i',
+      key: '-i',
       items: [
         {
           key: '-i',
@@ -307,6 +339,9 @@ describe('resolve', () => {
 
     let resolved = cmd.resolve('-io=2');
     expect(resolved).to.deep.equal({
+      raw: '-io=2',
+      key: '-io',
+      value: '2',
       items: [
         {
           key: '--input',
@@ -325,6 +360,8 @@ describe('resolve', () => {
 
     resolved = cmd.resolve('r');
     expect(resolved).to.deep.equal({
+      raw: 'r',
+      key: 'r',
       items: [
         {
           key: 'run',
@@ -344,11 +381,17 @@ describe('resolve', () => {
 
     let resolved = cmd.resolve('-efghi=0');
     expect(resolved).to.deep.equal({
+      raw: '-efghi=0',
+      key: '-efghi',
+      value: '0',
       split: createSplit([':e', 'f', ':gh', 'i'])
     } satisfies ResolvedArg);
 
     resolved = cmd.resolve('-ifb=0');
     expect(resolved).to.deep.equal({
+      raw: '-ifb=0',
+      key: '-ifb',
+      value: '0',
       split: createSplit(['i', 'f', ':b'])
     } satisfies ResolvedArg);
   });

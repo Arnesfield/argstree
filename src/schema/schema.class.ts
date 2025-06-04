@@ -55,19 +55,23 @@ export class Schema<T> implements ISchema<T> {
     // to prevent this, make sure to initialize the schema first before normalize()
     this.schemas();
 
-    const res = resolve((this.opts ||= normalize(this)), key, value);
-    if (!res) {
+    const arg = resolve((this.opts ||= normalize(this)), key, value);
+    if (!arg) {
       // do nothing
-    } else if (res.items) {
+    } else if (arg.items) {
+      type A = ResolvedArg<T>;
       type O = ResolvedOptions<T>;
-      const items = res.items.map((r): ResolvedItem<T> => {
+
+      // reuse arg object
+      (arg as unknown as A).items = arg.items.map((r): ResolvedItem<T> => {
         const { id = r.key, name = r.key } = r.schema.options;
         const options: O = { ...r.schema.options, id, name, args: r.args };
         // prettier-ignore
         return { key: r.key, alias: r.alias ?? null, type: r.schema.type, options };
       });
-      return { items };
-    } else if (res.split) return { split: res.split };
+
+      return arg as unknown as A;
+    } else if (arg.split) return arg;
   }
 
   parse(args: readonly string[]): Node<T> {

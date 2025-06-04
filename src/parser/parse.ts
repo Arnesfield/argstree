@@ -106,25 +106,25 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
   for (const raw of args) {
     let h: HandlerResult<T> | undefined;
-    const res = resolve(parent.opts, raw);
+    const arg = resolve(parent.opts, raw);
 
     // treat as value
-    if (!res) setValue(raw);
+    if (!arg) setValue(raw);
     // save resolved options
-    else if (res.items) set(raw, res.items);
+    else if (arg.items) set(raw, arg.items);
     // parse options using handler before error
-    else if ((h = parent.handle(res.arg))) {
-      for (const arg of h.args) setValue(arg, true);
+    else if ((h = parent.handle(arg))) {
+      for (const v of h.args) setValue(v, true);
 
       type O = NonEmptyArray<NodeOptions<T>>;
       h.opts.length > 0 && set(raw, h.opts as O);
     }
 
     // throw error if split remainders are present
-    else if (res.split) {
+    else if (arg.split) {
       const msg =
-        `alias${res.split.remainders.length === 1 ? '' : 'es'}: -` +
-        res.split.items
+        `alias${arg.split.remainders.length === 1 ? '' : 'es'}: -` +
+        arg.split.items
           .map(i => (i.remainder ? `(${i.value})` : i.value))
           .join('');
       parent.error(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);

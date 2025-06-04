@@ -1,5 +1,6 @@
 import { ParseError } from '../lib/error';
 import { Split } from '../lib/split';
+import { Arg } from './arg.types';
 import { Node } from './node.types';
 import { Options } from './options.types';
 
@@ -33,17 +34,15 @@ export interface ResolvedItem<T = unknown> {
 }
 
 /** The resolved argument. */
-export type ResolvedArg<T = unknown> =
-  | {
-      /** The split result with remaining values. */
-      split: Split;
-      items?: never;
-    }
-  | {
-      split?: never;
-      /** The resolved items. */
-      items: ResolvedItem<T>[];
-    };
+export type ResolvedArg<T = unknown> = Arg &
+  (
+    | { split: Split; items?: never }
+    | {
+        split?: never;
+        /** The resolved items. */
+        items: ResolvedItem<T>[];
+      }
+  );
 
 /** The schema object. */
 export interface Schema<T = unknown> {
