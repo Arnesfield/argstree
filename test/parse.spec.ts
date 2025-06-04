@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import command, { Arg, Context, NodeType, option, SchemaMap } from '../src';
-import { createNodes } from './utils/create-nodes';
 import { Schema as SchemaClass } from '../src/schema/schema.class';
+import { createNodes } from './utils/create-nodes';
 
 describe('parse', () => {
   it('should return the root node', () => {
@@ -709,4 +709,5 @@ describe('parse', () => {
 
   // TODO: handler
   // TODO: callback options
+  // TODO: handle parse options
 });
