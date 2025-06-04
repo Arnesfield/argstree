@@ -360,9 +360,9 @@ for (const node of root.children) {
 
 ### Callback Options
 
-Type: `(ctx: Context) => ParseOptions | void`
+Type: `(ctx: Context) => void`
 
-Callback options are fired at specific events during parsing and can also override some options for the node by returning a [`ParseOptions`](src/types/options.types.ts) object.
+Callback options are fired at specific events during parsing. Some options for the node can be overridden by modifying the properties of the [`Context`](src/types/options.types.ts) object.
 
 #### options.onCreate()
 

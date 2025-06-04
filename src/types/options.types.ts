@@ -4,24 +4,14 @@ import { Node } from './node.types';
 import { Schema } from './schema.types';
 import { XOR } from './util.types';
 
-/** Options that can be changed during parsing for the node. */
-export interface ParseOptions {
-  /** Overrides or clears the {@linkcode Options.min} option for the node. */
-  min?: number | null;
-  /** Overrides or clears the {@linkcode Options.max} option for the node. */
-  max?: number | null;
-  /** Overrides the {@linkcode Options.read} option for the node. */
-  read?: boolean;
-}
-
 /** The callback context. */
 export interface Context<T = unknown> {
   /** The current {@linkcode Options.min} option for the node. */
-  readonly min: number | null;
+  min: number | null;
   /** The current {@linkcode Options.max} option for the node. */
-  readonly max: number | null;
+  max: number | null;
   /** The current {@linkcode Options.read} option for the node. */
-  readonly read: boolean;
+  read: boolean;
   /** The node object. */
   readonly node: Node<T>;
   /** The schema object. */
@@ -184,43 +174,36 @@ export interface Options<T = unknown> {
   /**
    * Called when the node is created with its initial arguments.
    * @param ctx The callback context.
-   * @returns Options to override for the node.
    */
-  onCreate?(ctx: Context<T>): ParseOptions | void;
+  onCreate?(ctx: Context<T>): void;
   /**
    * Called when the node receives an argument.
    * @param ctx The callback context.
-   * @returns Options to override for the node.
    */
-  onArg?(ctx: Context<T>): ParseOptions | void;
+  onArg?(ctx: Context<T>): void;
   /**
    * Called when the node receives an option or command child node.
    * @param ctx The callback context.
-   * @returns Options to override for the node.
    */
-  onChild?(ctx: Context<T>): ParseOptions | void;
+  onChild?(ctx: Context<T>): void;
   /**
    * Called when all nodes of the same depth have been created.
    * @param ctx The callback context.
-   * @returns Options to override for the node.
    */
-  onDepth?(ctx: Context<T>): ParseOptions | void;
+  onDepth?(ctx: Context<T>): void;
   /**
    * Called after the node has received all arguments and direct child nodes that it can have.
    * @param ctx The callback context.
-   * @returns Options to override for the node.
    */
-  onData?(ctx: Context<T>): ParseOptions | void;
+  onData?(ctx: Context<T>): void;
   /**
    * Called once all nodes have been parsed and before any validation checks.
    * @param ctx The callback context.
-   * @returns Options to override for the node.
    */
-  onBeforeValidate?(ctx: Context<T>): ParseOptions | void;
+  onBeforeValidate?(ctx: Context<T>): void;
   /**
    * Called after throwing any validation errors for the node.
    * @param ctx The callback context.
-   * @returns Options to override for the node.
    */
-  onValidate?(ctx: Context<T>): ParseOptions | void;
+  onValidate?(ctx: Context<T>): void;
 }

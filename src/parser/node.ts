@@ -56,22 +56,10 @@ export class Node<T> {
     parent?.cb('onChild');
   }
 
-  /** Run callback option and handle options. */
+  /** Run the callback option. */
   cb(e: NodeEvent<T>): void {
-    // NOTE: consumer can directly modify the context object and skip validation
-    // should we prevent this? nope. probably not worth creating a shallow copy
-    // of the context object for this edge case
-
-    const c = this.ctx;
-
     // preserve `this` for callbacks
-    const opts = this.schema.options[e]?.(c);
-    if (!opts) return;
-
-    const { min = c.min, max = c.max } = opts;
-    if (opts.read != null) c.read = opts.read;
-
-    [c.min, c.max] = range(min, max, this.node, this.schema);
+    this.schema.options[e]?.(this.ctx);
   }
 
   // NOTE: return empty arrays to ignore values
@@ -116,7 +104,11 @@ export class Node<T> {
   }
 
   done(): void {
-    const { min, max } = this.ctx;
+    // there is no need to validate the range once a callback option is fired
+    // validate only after parsing since the context object
+    // may not have the correct range set by the consumer
+    // prettier-ignore
+    const [min, max] = range(this.ctx.min, this.ctx.max, this.node, this.schema);
 
     // validate node
     const len = this.node.args.length;
