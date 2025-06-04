@@ -1,7 +1,7 @@
 import { ParseError } from '../lib/error';
 import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
-import { Context, Options } from '../types/options.types';
+import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { Mutable } from '../types/util.types';
 import { display } from '../utils/display';
@@ -14,6 +14,8 @@ import { NormalizedOptions } from './normalize';
 export type NodeEvent<T> = keyof {
   [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
 };
+
+export type Parsed<T> = Schema<T> | Value;
 
 // NOTE: node instances will only have data types 'option' and 'command'
 // directly save value nodes into `this.node.children` instead
@@ -74,7 +76,7 @@ export class Node<T> {
 
   // NOTE: return empty arrays to ignore values
   // return undefined to fallback to default behavior
-  parse(arg: Arg): (Schema<T> | string)[] | undefined {
+  parse(arg: Arg): Parsed<T>[] | undefined {
     // preserve `this` for callbacks
     let p = this.schema.options.parser?.(arg, this.ctx);
 

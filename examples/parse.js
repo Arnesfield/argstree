@@ -35,20 +35,20 @@ function run(args) {
       .command('--', { strict: false });
   };
 
-  /** @type {import('../lib/index.js').Options<Metadata>['handler']} */
-  const handler = arg => {
+  /** @type {import('../lib/index.js').Options<Metadata>['parser']} */
+  const parser = arg => {
     if (
       arg.value == null &&
       arg.key.startsWith(prefix.cmd) &&
       arg.key !== `${prefix.cmd}--` // ignore 'cmd:--' that could be treated as '--'
     ) {
-      // create command with recursive handler
+      // create command with recursive parser
       const id = arg.key.slice(prefix.cmd.length);
-      return command({ id, name: id, init, handler });
+      return command({ id, name: id, init, parser });
     } else if (isOption(arg.key, 'short')) {
       // treat negative numbers as values
       if (!isNaN(Number(arg.key))) {
-        return arg.key;
+        return { args: arg.key, strict: false };
       }
 
       // each character becomes its own option
@@ -80,7 +80,7 @@ function run(args) {
   };
 
   /** @type {import('../lib/index.js').Schema<Metadata>} */
-  const cmd = command({ init, handler });
+  const cmd = command({ init, parser });
   const root = cmd.parse(args);
 
   /** @type {Record<string, unknown> & { __proto__: null, _: unknown[] }} */

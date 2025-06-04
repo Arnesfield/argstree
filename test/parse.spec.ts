@@ -660,7 +660,7 @@ describe('parse', () => {
     expect(called).to.deep.equal(actual);
   });
 
-  it("should run the 'handler' as fallback", () => {
+  it("should run the 'parser' as fallback", () => {
     let called = 0;
     const cmd = command({
       parser(arg, ctx) {
@@ -707,7 +707,7 @@ describe('parse', () => {
     expect(called).to.equal(1);
   });
 
-  // TODO: handler
+  // TODO: parser
   // TODO: callback options
   // TODO: handle parse options
 });

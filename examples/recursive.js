@@ -20,7 +20,7 @@ try {
 
 /** @param {string[]} args */
 function run(args) {
-  // use 'init' and 'handler' for root command and subcommands
+  // use 'init' and 'parser' for root command and subcommands
   const prefix = 'cmd:';
 
   /** @type {import('../lib/index.js').Options['init']} */
@@ -30,8 +30,8 @@ function run(args) {
       .command('--', { strict: false });
   };
 
-  /** @type {import('../lib/index.js').Options['handler']} */
-  const handler = arg => {
+  /** @type {import('../lib/index.js').Options['parser']} */
+  const parser = arg => {
     if (isOption(arg.key)) {
       // stop reading arguments for this option if a value is assigned
       // for option ids, remove first 2 hyphens
@@ -41,11 +41,11 @@ function run(args) {
       // commands should not have an assigned value
       // for command ids, remove prefix
       const id = arg.key.slice(prefix.length);
-      return command({ id, init, handler });
+      return command({ id, init, parser });
     }
   };
 
-  const cmd = command({ id: 'root', init, handler });
+  const cmd = command({ id: 'root', init, parser });
   const root = cmd.parse(args);
 
   for (const node of flatten(root)) {

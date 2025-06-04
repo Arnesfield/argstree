@@ -85,7 +85,7 @@ export function resolve<T>(
   // at this point, if there are no parsed options, arg can be:
   // - an exact alias
   // - a merged alias
-  // - options from handler
+  // - options from parser
   // - a value (or, if in strict mode, an unknown option-like)
   // for this case, handle exact alias
   // check raw first, then arg.key if they're different
@@ -105,7 +105,7 @@ export function resolve<T>(
   // now, arg cannot be an exact alias.
   // split arg.key by aliases
   // if no remainder, resolve split aliases with arg.value
-  // otherwise, parse by handler
+  // otherwise, parse by parser option
   // if has value, use parsed options
   // otherwise, arg must either be a value or an incorrect merged alias
   // if there are split remainders, throw error
@@ -125,7 +125,7 @@ export function resolve<T>(
     // if no split values, do nothing
   }
 
-  // NOTE: parse by handler outside of resolver
+  // NOTE: parse by parser option outside of resolver
 
   // assume `-{value}` always exists as long as split item is not a remainder
   // get last split item regardless if there are remainders or not
@@ -147,7 +147,7 @@ export function resolve<T>(
   // - assume `item` exists at this point since the last split item is not a remainder
   // - assume that aliases will always map to options
   // since it does not have to be assignable (only for the last alias arg)
-  // also, no more handler fallback for aliases!
+  // also, no more parser fallback for aliases!
   // prettier-ignore
   else arg.items = s.values.map((v, i, a) => i === a.length - 1 ? item! : get(opts, opts.alias['-' + v])!) as I;
 

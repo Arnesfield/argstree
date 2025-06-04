@@ -2,6 +2,7 @@ import { ParseError } from '../lib/error';
 import { Arg } from './arg.types';
 import { Node } from './node.types';
 import { Schema } from './schema.types';
+import { XOR } from './util.types';
 
 /** Options that can be changed during parsing for the node. */
 export interface ParseOptions {
@@ -25,6 +26,14 @@ export interface Context<T = unknown> {
   readonly node: Node<T>;
   /** The schema object. */
   readonly schema: Schema<T>;
+}
+
+/** The parser value. */
+export interface Value {
+  /** Arguments to be saved to the current node. */
+  args: string | string[];
+  /** Overrides the strict mode for the node when validating {@linkcode args}. */
+  strict?: boolean;
 }
 
 /** The schema options. */
@@ -142,10 +151,8 @@ export interface Options<T = unknown> {
    * - `Schema`s - Treated as options or commands.
    * If the option or command (or for arrays, the last option or command)
    * is a non-leaf node, the next arguments will be parsed using that node.
-   * - `string`s - Treated as value arguments and will be saved to either the
+   * - `Value`s - Treated as value arguments and will be saved to either the
    * current parent or child option or command depending on their provided options.
-   * These values are excluded from the {@linkcode strict} mode checks
-   * and are assumed to have been validated before being returned.
    * - `false` - The argument is ignored as if it was never parsed.
    * - Empty array, `true`, `undefined` - Fallback to the default behavior
    * where the parsed argument may be treated either as a value or
@@ -159,13 +166,13 @@ export interface Options<T = unknown> {
    * const cmd = command({
    *   strict: true,
    *   parser(arg) {
-   *     // allow negative numbers in strict mode
-   *     if (isOption(arg.key, 'short') && !isNaN(Number(arg.key))) {
-   *       return arg.key;
-   *     }
    *     // return an option when '--option' is matched
    *     if (arg.key === '--option') {
    *       return option({ args: arg.value });
+   *     }
+   *     // allow negative numbers in strict mode
+   *     if (isOption(arg.key, 'short') && !isNaN(Number(arg.key))) {
+   *       return { args: arg.key, strict: false };
    *     }
    *   }
    * });
@@ -173,7 +180,7 @@ export interface Options<T = unknown> {
   parser?(
     arg: Arg,
     ctx: Context<T>
-  ): Schema<T> | string | (Schema<T> | string)[] | boolean | void;
+  ): XOR<Schema<T>, Value> | XOR<Schema<T>, Value>[] | boolean | void;
   /**
    * Called when the node is created with its initial arguments.
    * @param ctx The callback context.

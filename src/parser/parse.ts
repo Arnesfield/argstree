@@ -1,10 +1,12 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
 import { Node as INode } from '../types/node.types';
+import { Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
+import { array } from '../utils/array';
 import { cnode, NodeOptions } from './cnode';
-import { Node } from './node';
+import { Node, Parsed } from './node';
 import { normalize, NormalizedOptions } from './normalize';
 import { resolve } from './resolve';
 
@@ -74,7 +76,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     else cdone();
   }
 
-  function setValue(raw: string, noStrict?: boolean) {
+  function setValue(raw: string, strict?: boolean) {
     // normally, you'd check if the child node can read one more argument
     // assume that it already can since there is a child.read() check
     // in the set() call where the child node is set
@@ -91,7 +93,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
           : parent.error(`xpected no arguments, but got: ${raw}`, undefined, 'e', 'E'));
 
     // strict mode: throw error if arg is an option-like
-    !noStrict && curr.strict && isOption(raw) && curr.error(`option: ${raw}`);
+    (strict ?? curr.strict) && isOption(raw) && curr.error(`option: ${raw}`);
     curr.node.args.push(raw);
 
     // if saving to parent, save arg to the value node
@@ -105,21 +107,22 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   }
 
   for (const raw of args) {
-    let p: (Schema<T> | string)[] | undefined;
+    let p: Parsed<T>[] | undefined;
     const arg = resolve(parent.opts, raw);
 
     // treat as value
     if (!arg) setValue(raw);
     // save resolved options
     else if (arg.items) set(raw, arg.items);
-    // parse options using handler before error
+    // parse options using parser before error
     else if ((p = parent.parse(arg))) {
+      type S = Schema<T>;
+      type V = Value;
       const opts: NodeOptions<T>[] = [];
 
       for (const v of p) {
-        typeof v === 'string'
-          ? setValue(v, true)
-          : opts.push({ key: arg.key, schema: v });
+        if ((v as S).schemas) opts.push({ key: arg.key, schema: v as S });
+        else for (const a of array((v as V).args)) setValue(a, (v as V).strict);
       }
 
       opts.length > 0 && set(raw, opts as NonEmptyArray<NodeOptions<T>>);

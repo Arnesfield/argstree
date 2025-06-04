@@ -19,7 +19,7 @@ Parse arguments into a tree structure.
 - Includes a [strict mode](#optionsstrict) for unrecognized options.
 - Can recognize and split combined [aliases](#optionsalias) (e.g. from `-abcd` to `-a`, `-bc`, `-d`).
 - Can recognize [assigned values](#optionsassign) for options and commands (e.g. `--option=value`, `command=value`).
-- Allows [dynamic parsing](#optionshandler) of values, options, and commands.
+- Allows [dynamic parsing](#optionsparser) of values, options, and commands.
 - Double-dash (`--`) is not treated as anything special but can be configured to be a non-strict subcommand.
 
 ## Limitations
@@ -285,7 +285,7 @@ When enabled, a [`ParseError`](#parseerror) is thrown for unrecognized arguments
 - `self` - Enable strict mode for self but disable it for descendants.
 - `descendants` - Disable strict mode for self but enable it for descendants.
 
-Note that string values returned by the [`handler`](#optionshandler) callback are excluded from the strict mode checks.
+Note that string values returned by the [`parser`](#optionsparser) callback are excluded from the strict mode checks.
 
 #### options.leaf
 
@@ -319,14 +319,14 @@ Type: `(schema: Schema) => void`
 
 Called only once when the schema is created and is used to gain a reference to the schema object to add options and/or commands.
 
-#### options.handler()
+#### options.parser()
 
-Type: `(arg: Arg, ctx: Context) => Schema | string | (Schema | string)[] | boolean | void`
+Type: `(arg: Arg, ctx: Context) => XOR<Schema<T>, Value> | XOR<Schema<T>, Value>[] | boolean | void`
 
 Serves as a fallback for parsed arguments that cannot be recognized using the list of configured options and commands. Can have the following return values:
 
 - `Schema`s - Treated as options or commands. If the option or command (or for arrays, the last option or command) is a non-leaf node, the next arguments will be parsed using that node.
-- `string`s - Treated as value arguments and will be saved to either the current parent or child option or command depending on their provided options. These values are excluded from the [`strict`](#optionsstrict) mode checks and are assumed to have been validated before being returned.
+- `Value`s - Treated as value arguments and will be saved to either the current parent or child option or command depending on their provided options.
 - `false` - The argument is ignored as if it was never parsed.
 - Empty array, `true`, `undefined` - Fallback to the default behavior where the parsed argument may be treated either as a value or an unrecognized argument depending on the provided options.
 
@@ -335,14 +335,14 @@ import command, { isOption, option } from 'argstree';
 
 const cmd = command({
   strict: true,
-  handler(arg) {
-    // allow negative numbers in strict mode
-    if (isOption(arg.key, 'short') && !isNaN(Number(arg.key))) {
-      return arg.key;
-    }
+  parser(arg) {
     // return an option when '--option' is matched
     if (arg.key === '--option') {
       return option({ args: arg.value });
+    }
+    // allow negative numbers in strict mode
+    if (isOption(arg.key, 'short') && !isNaN(Number(arg.key))) {
+      return { args: arg.key, strict: false };
     }
   }
 });
@@ -461,7 +461,7 @@ interface Metadata {
 }
 
 const cmd = command<Metadata>({
-  handler(arg) {
+  parser(arg) {
     // format: --{id}:{key}={value}
     const match = arg.key.match(/^--(.+?):(.+)$/);
     if (!match) return;
