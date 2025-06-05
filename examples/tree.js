@@ -19,52 +19,72 @@ try {
 
 /** @param {string[]} args */
 function run(args) {
-  /** @type {import('../lib/index.js').Options['parser']} */
-  const parser = (arg, ctx) => {
+  /**
+   * The node metadata.
+   * @typedef Metadata
+   * @property {boolean} [tree] Determines if the node args should be parsed.
+   */
+
+  /**
+   * @param {import('../lib/index.js').Schema<Metadata>} schema
+   * @param {number} depth
+   */
+  function addTreeOption(schema, depth) {
     // create subtree for :1, :2, etc.
-    // use value as name, e.g. :1=subtree
-    const depth = ctx.node.depth + 1;
-    const treeId = `:${depth}`;
+    schema.option(`:${depth}`, {
+      onCreate(ctx) {
+        // remove and use the assigned value as name, e.g. :1=subtree
+        ctx.node.name = ctx.node.args.pop() ?? `tree:depth(${depth})`;
+        // parse the args of this node later
+        ctx.node.meta = { tree: true };
+      }
+    });
+  }
 
-    // return option with onValidate parser when tree key is matched
-    if (arg.key === treeId) {
-      const name = arg.value ?? `tree:depth(${depth})`;
-      return option({ id: treeId, name, onValidate });
-    }
-
-    // do not parse as option if the last child node is a subtree
+  /** @type {import('../lib/index.js').Options<Metadata>['parser']} */
+  const parser = (arg, ctx) => {
+    // do not parse option if the last child node is the current node (value type)
     const lastChild = ctx.node.children[ctx.node.children.length - 1];
-    if ((!lastChild || lastChild.id !== treeId) && isOption(arg.key)) {
+    if ((!lastChild || lastChild.id === ctx.node.id) && isOption(arg.key)) {
       const id = arg.key.replace(/^--?/, '');
       return option({ id, name: id, args: arg.value, read: arg.value == null });
     }
   };
 
-  /** @type {import('../lib/index.js').Options['onValidate']} */
-  const onValidate = ctx => {
-    // create a subcommand that would parse ctx.node.args
+  const cmd = command({ parser })
+    .option('--help', { alias: '-h', assign: false, onCreate: help })
+    .command('--', { strict: false });
+  addTreeOption(cmd, 1);
+
+  // parse tree nodes with node.meta.tree flag
+  const root = cmd.parse(args);
+  const nodes = root.children.slice();
+
+  for (const node of nodes) {
+    if (!node.meta?.tree) continue;
+
+    // create a subcommand to parse node.args
     const subcmd = command({
+      id: node.id,
+      name: node.name,
       parser,
-      onCreate(subctx) {
-        // set subctx node values so descendant nodes will use these instead
-        subctx.node.id = ctx.node.id;
-        subctx.node.name = ctx.node.name;
-        subctx.node.depth = ctx.node.depth;
+      onCreate(ctx) {
+        // override depth so that descendant nodes will use it instead
+        ctx.node.depth = node.depth;
       }
     });
+    addTreeOption(subcmd, node.depth + 1);
 
     // parse tree using the args of the main tree node
-    const tree = subcmd.parse(ctx.node.args);
+    const tree = subcmd.parse(node.args);
 
     // replace args and children of the main tree node
-    ctx.node.args = tree.args;
-    ctx.node.children = tree.children;
-  };
+    node.args = tree.args;
+    node.children = tree.children;
 
-  const root = command({ parser })
-    .option('--help', { alias: '-h', assign: false, onCreate: help })
-    .command('--', { strict: false })
-    .parse(args);
+    // push to nodes to iterate through them as well
+    nodes.push(...node.children);
+  }
 
   for (const node of flatten(root)) {
     console.log(
