@@ -44,7 +44,6 @@ export function cnode<T>(
 ): NodeData<T> {
   // prettier-ignore
   const { key = null, alias = null, value = null, schema: { type, options: { id = key, name = key } } } = opts;
-  const depth = parent ? parent.depth + 1 : 0;
   // prettier-ignore
-  return { id, name, raw, key, alias, value, type, depth, args, parent, children: [] };
+  return { id, name, raw, key, alias, value, type, depth: parent ? parent.depth + 1 : 0, args, parent, children: [] };
 }
