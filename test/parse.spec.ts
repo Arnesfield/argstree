@@ -730,6 +730,77 @@ describe('parse', () => {
   });
 
   // TODO: parser
-  // TODO: callback options
-  // TODO: handle parse options
+
+  it('should allow updating the context object', () => {
+    // assume other callback options work the same way
+    // since they use the same context object
+    const cmd = command()
+      .option('--input', {
+        onCreate(ctx) {
+          ctx.read = ctx.node.args.length === 0;
+        }
+      })
+      .option('--output', {
+        min: 3,
+        max: 5,
+        onCreate(ctx) {
+          expect(ctx.min).to.equal(3);
+          expect(ctx.max).to.equal(5);
+          ctx.min = 1;
+          ctx.max = 2;
+        }
+      });
+
+    let args = '--input index.js package.json --input=src lib';
+    let root = cmd.parse(args.split(' '));
+    let [expected] = createNodes({
+      type: 'command',
+      args: ['lib'],
+      children: [
+        {
+          id: '--input',
+          name: '--input',
+          raw: '--input',
+          key: '--input',
+          args: ['index.js', 'package.json']
+        },
+        {
+          id: '--input',
+          name: '--input',
+          raw: '--input=src',
+          key: '--input',
+          value: 'src',
+          args: ['src']
+        },
+        { type: 'value', args: ['lib'] }
+      ]
+    });
+    expect(root).to.deep.equal(expected);
+
+    args = '--output src lib dist --output index.cjs index.mjs index.d.ts';
+    root = cmd.parse(args.split(' '));
+    [expected] = createNodes({
+      type: 'command',
+      args: ['dist', 'index.d.ts'],
+      children: [
+        {
+          id: '--output',
+          name: '--output',
+          raw: '--output',
+          key: '--output',
+          args: ['src', 'lib']
+        },
+        { type: 'value', args: ['dist'] },
+        {
+          id: '--output',
+          name: '--output',
+          raw: '--output',
+          key: '--output',
+          args: ['index.cjs', 'index.mjs']
+        },
+        { type: 'value', args: ['index.d.ts'] }
+      ]
+    });
+    expect(root).to.deep.equal(expected);
+  });
 });
