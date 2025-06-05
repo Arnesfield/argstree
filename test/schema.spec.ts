@@ -69,12 +69,12 @@ function describeSchemaFn(
       expect(map).to.be.an('object');
       expect(Object.getPrototypeOf(map)).to.be.null;
 
-      const actual: SchemaMap = {
+      const expected: SchemaMap = {
         '--foo': option(opts.foo),
         '--bar': option(opts.bar),
         baz: command(opts.baz)
       };
-      expect(map).to.deep.equal(actual);
+      expect(map).to.deep.equal(expected);
     });
   });
 }

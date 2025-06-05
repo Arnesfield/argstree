@@ -19,14 +19,14 @@ const invalidOptions = ['', 'a', 'foo', '=', '=value', '-', '--', '------'];
 
 function expectOptions(
   options: string[],
-  actual: boolean,
+  expected: boolean,
   type?: 'long' | 'short'
 ) {
   for (const option of options) {
     expect(
       isOption(option, type),
       `Invalid ${type ? `${type} ` : ''}option '${option}'`
-    ).to.equal(actual);
+    ).to.equal(expected);
   }
 }
 

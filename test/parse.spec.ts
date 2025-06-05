@@ -6,12 +6,12 @@ import { createNodes } from './utils/create-nodes';
 describe('parse', () => {
   it('should return the root node', () => {
     let root = command().parse([]);
-    let [actual] = createNodes({ type: 'command' });
-    expect(root).to.deep.equal(actual);
+    let [expected] = createNodes({ type: 'command' });
+    expect(root).to.deep.equal(expected);
 
     root = option().parse([]);
-    [actual] = createNodes();
-    expect(root).to.deep.equal(actual);
+    [expected] = createNodes();
+    expect(root).to.deep.equal(expected);
   });
 
   it("should fallback to 'key' for undefined options 'id' and 'name'", () => {
@@ -19,27 +19,27 @@ describe('parse', () => {
       .option('--input')
       .command('run', { id: undefined, name: undefined })
       .parse(['--input', 'run']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       children: [
         { id: '--input', name: '--input', raw: '--input', key: '--input' },
         { id: 'run', name: 'run', raw: 'run', key: 'run', type: 'command' }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it("should use the provided 'id' and 'name' options", () => {
     let root = command({ id: null, name: null }).parse([]);
-    let [actual] = createNodes({ id: null, name: null, type: 'command' });
-    expect(root).to.deep.equal(actual);
+    let [expected] = createNodes({ id: null, name: null, type: 'command' });
+    expect(root).to.deep.equal(expected);
 
     root = command({ id: 'root', name: 'root-name' })
       .option('--input', { id: 'INPUT', name: 'input' })
       .option('--output', { id: null, name: null })
       .command('run', { id: 'RUN', name: 'run-cmd' })
       .parse(['--input', '--output', 'run']);
-    [actual] = createNodes({
+    [expected] = createNodes({
       id: 'root',
       name: 'root-name',
       type: 'command',
@@ -49,7 +49,7 @@ describe('parse', () => {
         { id: 'RUN', name: 'run-cmd', raw: 'run', key: 'run', type: 'command' }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it('should not be strict by default', () => {
@@ -61,7 +61,7 @@ describe('parse', () => {
 
     for (const { fn, type } of fns) {
       let root = fn().command('cmd').parse(['--foo', 'cmd', '--bar']);
-      let [actual] = createNodes({
+      let [expected] = createNodes({
         type,
         args: ['--foo'],
         children: [
@@ -86,15 +86,15 @@ describe('parse', () => {
           }
         ]
       });
-      expect(root).to.deep.equal(actual);
+      expect(root).to.deep.equal(expected);
 
       root = fn({ strict: false }).parse(['foo', '--bar', '-baz']);
-      [actual] = createNodes({
+      [expected] = createNodes({
         type,
         args: ['foo', '--bar', '-baz'],
         children: [{ type: 'value', args: ['foo', '--bar', '-baz'] }]
       });
-      expect(root).to.deep.equal(actual);
+      expect(root).to.deep.equal(expected);
     }
   });
 
@@ -111,7 +111,7 @@ describe('parse', () => {
           ['cmd', '--foo', '--bar', '--baz']
         )
       );
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       args: ['foo'],
       children: [
@@ -150,7 +150,7 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it('should override existing options or commands', () => {
@@ -161,22 +161,22 @@ describe('parse', () => {
       .command('bar', { alias: 'b' });
 
     const map = schema.schemas();
-    const actualMap: SchemaMap = {
+    const expectedMap: SchemaMap = {
       '--foo': option({ id: 'FOO' }),
       bar: command({ alias: 'b' })
     };
     expect(Object.getPrototypeOf(map)).to.be.null;
-    expect(map).to.deep.equal(actualMap);
+    expect(map).to.deep.equal(expectedMap);
 
     const root = schema.parse(['--foo', 'bar']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       children: [
         { id: 'FOO', name: '--foo', raw: '--foo', key: '--foo' },
         { id: 'bar', name: 'bar', raw: 'bar', key: 'bar', type: 'command' }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it('should save initial arguments', () => {
@@ -184,7 +184,7 @@ describe('parse', () => {
       .option('--foo', { args: ['1', '2'] })
       .command('cmd', { args: ['arg1'] })
       .parse(['--foo=3', '4', 'cmd', 'arg2', '--foo=3']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       args: ['foo', 'bar'],
       children: [
@@ -216,13 +216,13 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it('should not use options.args as node.args', () => {
     const cmd = command({ args: ['0'] }).option('--input', { args: ['src'] });
     const root = cmd.parse(['1', '2', '--input', 'test']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       args: ['0', '1', '2'],
       children: [
@@ -236,7 +236,7 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
     expect(cmd.options.args).to.deep.equal(['0']);
     expect(cmd.schemas()['--input'].options.args).to.deep.equal(['src']);
   });
@@ -248,12 +248,12 @@ describe('parse', () => {
       .option('-n')
       .command('n')
       .parse(['-ion']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       args: ['-ion'],
       children: [{ type: 'value', args: ['-ion'] }]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it('should handle aliases and their args', () => {
@@ -262,7 +262,7 @@ describe('parse', () => {
       .option('--bar', { alias: ['-ba', ['-b', '4']], args: ['2', '3'] })
       .command('foo', { alias: 'f', args: '1' })
       .parse(['-f=0', '1', '-b', '5', 'f', '2', '3', '-b=4']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       children: [
         {
@@ -304,7 +304,7 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it('should split aliases and use their args', () => {
@@ -313,7 +313,7 @@ describe('parse', () => {
       .option('--interactive', { alias: ['in', ['-in', '3']], args: '2' })
       .option('--dry-run', { alias: ['--n', ['-n', '5']], args: ['3', '4'] })
       .parse(['-nini=3', '4', '--xnini']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       children: [
         {
@@ -343,7 +343,7 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it('should ignore empty aliases', () => {
@@ -351,14 +351,14 @@ describe('parse', () => {
       .option('--input', { alias: [] })
       .option('--output', { alias: [[], [], []] })
       .parse(['--input', '--output']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       children: [
         { id: '--input', name: '--input', raw: '--input', key: '--input' },
         { id: '--output', name: '--output', raw: '--output', key: '--output' }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it('should prioritize matching arguments over similar aliases', () => {
@@ -368,7 +368,7 @@ describe('parse', () => {
       .option('--output', { alias: '-o' })
       .command('run', { alias: '--input' })
       .parse(['-i', '0', '-io', '--input', 'run']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       children: [
         { id: '-i', name: '-i', raw: '-i', key: '-i', args: ['0'] },
@@ -390,7 +390,7 @@ describe('parse', () => {
         { id: 'run', name: 'run', raw: 'run', key: 'run', type: 'command' }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it("should handle 'max' range option", () => {
@@ -404,7 +404,7 @@ describe('parse', () => {
           ['--output', 'dist', 'lib', 'build']
         )
       );
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       args: ['tmp', 'node_modules', 'lib', 'build'],
       children: [
@@ -426,7 +426,7 @@ describe('parse', () => {
         { type: 'value', args: ['lib', 'build'] }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it("should not 'read' when set to false", () => {
@@ -434,7 +434,7 @@ describe('parse', () => {
     const root = command()
       .option('--help', { read: false })
       .parse(['--help', 'value']);
-    const [actual] = createNodes({
+    const [expected] = createNodes({
       type: 'command',
       args: ['value'],
       children: [
@@ -442,7 +442,7 @@ describe('parse', () => {
         { type: 'value', args: ['value'] }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it("should handle default 'assign' option", () => {
@@ -451,7 +451,7 @@ describe('parse', () => {
       .command('run', { alias: 'r' });
 
     let root = cmd.parse(['--input=0', 'run=1']);
-    let [actual] = createNodes({
+    let [expected] = createNodes({
       type: 'command',
       children: [
         {
@@ -464,10 +464,10 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
 
     root = cmd.parse(['-ii=0', 'r=1']);
-    [actual] = createNodes({
+    [expected] = createNodes({
       type: 'command',
       children: [
         {
@@ -488,7 +488,7 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it('should handle assign option', () => {
@@ -497,7 +497,7 @@ describe('parse', () => {
       .command('run', { alias: 'r', assign: true });
 
     let root = cmd.parse(['--input=0', 'run=1']);
-    let [actual] = createNodes({
+    let [expected] = createNodes({
       type: 'command',
       args: ['--input=0'],
       children: [
@@ -513,10 +513,10 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
 
     root = cmd.parse(['-ii=0', 'r=1']);
-    [actual] = createNodes({
+    [expected] = createNodes({
       type: 'command',
       args: ['-ii=0'],
       children: [
@@ -533,24 +533,24 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it("should handle 'leaf' option", () => {
     // assume default leaf option is handled by other cases
     let root = command({ leaf: true }).option('--input').parse(['--input']);
-    let [actual] = createNodes({
+    let [expected] = createNodes({
       type: 'command',
       args: ['--input'],
       children: [{ type: 'value', args: ['--input'] }]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
 
     root = command()
       .option('--input', { leaf: false })
       .command('run', { leaf: true })
       .parse(['run', 'build', '--input', 'src']);
-    [actual] = createNodes({
+    [expected] = createNodes({
       type: 'command',
       children: [
         {
@@ -580,57 +580,57 @@ describe('parse', () => {
         }
       ]
     });
-    expect(root).to.deep.equal(actual);
+    expect(root).to.deep.equal(expected);
   });
 
   it("should run 'init' once when `schema.parse()` is called", () => {
     const called: string[] = [];
-    const actual: string[] = [];
+    const expected: string[] = [];
     const cmd = command({
       init(schema) {
         called.push('root');
         expect(schema).to.equal(cmd);
       }
     });
-    expect(called).to.deep.equal(actual);
+    expect(called).to.deep.equal(expected);
 
     cmd.parse([]);
-    actual.push('root');
-    expect(called).to.deep.equal(actual);
+    expected.push('root');
+    expect(called).to.deep.equal(expected);
 
     cmd.parse([]);
-    expect(called).to.deep.equal(actual);
+    expect(called).to.deep.equal(expected);
   });
 
   it("should run 'init' once when `schema.schemas()` is called", () => {
     const called: string[] = [];
-    const actual: string[] = [];
+    const expected: string[] = [];
     const cmd = command({
       init(schema) {
         called.push('root');
         expect(schema).to.equal(cmd);
       }
     });
-    expect(called).to.deep.equal(actual);
+    expect(called).to.deep.equal(expected);
 
     cmd.schemas();
-    actual.push('root');
-    expect(called).to.deep.equal(actual);
+    expected.push('root');
+    expect(called).to.deep.equal(expected);
 
     cmd.schemas();
-    expect(called).to.deep.equal(actual);
+    expect(called).to.deep.equal(expected);
   });
 
   it("should run 'init' once when schemas are added and only when they are parsed", () => {
     const called: string[] = [];
-    const actual: string[] = [];
+    const expected: string[] = [];
     const cmd = command({
       init(schema) {
         called.push('root');
         expect(schema).to.equal(cmd);
       }
     });
-    expect(called).to.deep.equal(actual);
+    expect(called).to.deep.equal(expected);
 
     cmd.option('--input', {
       init(schema) {
@@ -638,8 +638,8 @@ describe('parse', () => {
         expect(schema).to.be.an('object').that.is.an.instanceOf(SchemaClass);
       }
     });
-    actual.push('root');
-    expect(called).to.deep.equal(actual);
+    expected.push('root');
+    expect(called).to.deep.equal(expected);
 
     cmd.option('--output', {
       init(schema) {
@@ -663,23 +663,23 @@ describe('parse', () => {
       }
     });
 
-    expect(called).to.deep.equal(actual);
+    expect(called).to.deep.equal(expected);
 
     cmd.parse(['--input']);
-    actual.push('--input');
-    expect(called).to.deep.equal(actual);
+    expected.push('--input');
+    expect(called).to.deep.equal(expected);
 
     cmd.parse(['run', '--output']);
-    actual.push('run');
-    expect(called).to.deep.equal(actual);
+    expected.push('run');
+    expect(called).to.deep.equal(expected);
 
     cmd.parse(['--output', '--input']);
-    actual.push('--output');
-    expect(called).to.deep.equal(actual);
+    expected.push('--output');
+    expect(called).to.deep.equal(expected);
 
     cmd.parse(['--input', '--output', 'run', '--if-present']);
-    actual.push('--if-present');
-    expect(called).to.deep.equal(actual);
+    expected.push('--if-present');
+    expect(called).to.deep.equal(expected);
   });
 
   it("should run the 'parser' as fallback", () => {
@@ -694,7 +694,7 @@ describe('parse', () => {
           value: '0'
         } satisfies Arg);
 
-        const [actualNode] = createNodes({
+        const [expectedNode] = createNodes({
           type: 'command',
           children: [
             {
@@ -713,7 +713,7 @@ describe('parse', () => {
           max: null,
           read: true,
           schema: cmd,
-          node: actualNode
+          node: expectedNode
         } satisfies Context);
       }
     })

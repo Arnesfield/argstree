@@ -41,7 +41,7 @@ describe('flatten', () => {
         )
       );
 
-    const actual = createNodes({
+    const expected = createNodes({
       type: 'command',
       args: ['1'],
       children: [
@@ -70,18 +70,18 @@ describe('flatten', () => {
       ]
     });
 
-    expect(root).to.deep.equal(actual[0]);
+    expect(root).to.deep.equal(expected[0]);
 
     const nodes = flatten(root);
-    expect(nodes).to.deep.equal(actual);
+    expect(nodes).to.deep.equal(expected);
 
     // try to flatten the next child command node by index
     const indices = [3, 3];
     for (const index of indices) {
       const node = root.children[index];
       const nodes = flatten(node);
-      const actualNodes = actual.slice(index + 1);
-      expect(nodes).to.deep.equal(actualNodes);
+      const expectedNodes = expected.slice(index + 1);
+      expect(nodes).to.deep.equal(expectedNodes);
     }
   });
 });
