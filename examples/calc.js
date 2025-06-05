@@ -27,6 +27,7 @@ try {
 
 /** @param {string[]} args */
 function run(args) {
+  const start = performance.now();
   const cmd = command();
 
   /** @type {import('../lib/index.js').Options} */
@@ -74,5 +75,7 @@ function run(args) {
     }
   }
 
+  const end = performance.now();
   console.log(result);
+  console.log('\nDone in %o ms (no logging)', end - start);
 }
