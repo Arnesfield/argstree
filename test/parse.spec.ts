@@ -219,6 +219,28 @@ describe('parse', () => {
     expect(root).to.deep.equal(actual);
   });
 
+  it('should not use options.args as node.args', () => {
+    const cmd = command({ args: ['0'] }).option('--input', { args: ['src'] });
+    const root = cmd.parse(['1', '2', '--input', 'test']);
+    const [actual] = createNodes({
+      type: 'command',
+      args: ['0', '1', '2'],
+      children: [
+        { type: 'value', args: ['1', '2'] },
+        {
+          id: '--input',
+          name: '--input',
+          raw: '--input',
+          key: '--input',
+          args: ['src', 'test']
+        }
+      ]
+    });
+    expect(root).to.deep.equal(actual);
+    expect(cmd.options.args).to.deep.equal(['0']);
+    expect(cmd.schemas()['--input'].options.args).to.deep.equal(['src']);
+  });
+
   it('should not split short options', () => {
     const root = command()
       .option('-i')
