@@ -6,9 +6,14 @@ import { Node } from '../types/node.types';
  * @returns The nodes from the tree.
  */
 export function flatten<T>(node: Node<T>): Node<T>[] {
-  // it is unlikely that a node with children is in between infertile nodes
-  // the order of nodes will be different in the unlikely event that it happens
-  const nodes = [node];
-  for (node of nodes) nodes.push(...node.children);
+  const nodes: Node<T>[] = [];
+  const stack: Node<T>[] = [node];
+
+  // reuse node variable
+  while ((node = stack.pop()!)) {
+    nodes.push(node);
+    for (let i = node.children.length; i--; ) stack.push(node.children[i]);
+  }
+
   return nodes;
 }
