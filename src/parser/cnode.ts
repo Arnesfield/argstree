@@ -40,7 +40,7 @@ export function cnode<T>(
   opts: CreateNodeOptions<T>,
   raw: string | null = null,
   parent: Node<T> | null = null,
-  args = array(opts.schema.options.args)
+  args = array(opts.schema.options.args, true)
 ): NodeData<T> {
   // prettier-ignore
   const { key = null, alias = null, value = null, schema: { type, options: { id = key, name = key } } } = opts;

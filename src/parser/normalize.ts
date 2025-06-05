@@ -55,10 +55,10 @@ export function normalize<T>(
   // apply aliases from args
   const items = Object.entries(map);
   for (const [key, s] of items) {
-    for (const item of array(s.options.alias, true)) {
+    for (const item of array(s.options.alias)) {
       // each item is an alias
       // if item is an array, item[0] is an alias
-      const arr = array(item, true);
+      const arr = array(item);
       if (arr.length === 0) continue;
 
       // use `alias[0]` as alias id and `arg` as arg

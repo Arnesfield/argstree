@@ -36,7 +36,7 @@ function get<T>(
     (!hasValue || (schema.options.assign ?? schema.type === 'option'))
   ) {
     // save alias args and value if any
-    const args = array(schema.options.args);
+    const args = array(schema.options.args, true);
     arg.args && args.push(...arg.args);
     hasValue && args.push(value);
     return { key: arg.key, alias: arg.alias, value, args, schema };
