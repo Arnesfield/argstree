@@ -28,7 +28,7 @@ function createOptions(): [Options, Call[]] {
       expect(ctx).to.have.property('node').that.is.an('object');
       expect(ctx).to.have.property('schema').that.is.an.instanceOf(SchemaClass);
 
-      const last = calls[calls.length - 1] as Call | undefined;
+      const last = calls.at(-1);
       if (last && last[0] === event) {
         last.push(ctx.node.id);
       } else {

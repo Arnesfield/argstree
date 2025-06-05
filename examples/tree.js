@@ -46,7 +46,7 @@ function run(args) {
   /** @type {import('../lib/index.js').Options<Metadata>['parser']} */
   const parser = (arg, ctx) => {
     // do not parse option if the last child node is the current node (value type)
-    const lastChild = ctx.node.children[ctx.node.children.length - 1];
+    const lastChild = ctx.node.children.at(-1);
     if ((!lastChild || lastChild.id === ctx.node.id) && isOption(arg.key)) {
       const id = arg.key.replace(/^--?/, '');
       return option({ id, name: id, args: arg.value, read: arg.value == null });

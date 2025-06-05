@@ -43,9 +43,10 @@ function run(args) {
   let result = 0;
   for (const node of root.children) {
     // get the last argument since value nodes can have multiple args
-    const arg = node.args.length > 0 ? node.args[node.args.length - 1] : null;
-    const n = arg !== null ? Number(arg) : NaN;
-    if (!isFinite(n)) {
+    /** @type {number} */
+    let n;
+    const arg = node.args.at(-1);
+    if (arg == null || !isFinite((n = Number(arg)))) {
       throw new Error(`Not a number: ${arg}`);
     }
 

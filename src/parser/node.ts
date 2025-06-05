@@ -1,6 +1,5 @@
 import { ParseError } from '../lib/error';
 import { Arg } from '../types/arg.types';
-import { Node as INode } from '../types/node.types';
 import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { Mutable } from '../types/util.types';
@@ -80,21 +79,16 @@ export class Node<T> {
 
   // save arg to the last value child node
   value(arg: string): void {
-    let node: INode<T>;
     const p = this.node;
-    const c = p.children;
+    const node = p.children.at(-1);
 
-    if (c.length > 0 && (node = c[c.length - 1]).type === 'value') {
-      node.args.push(arg);
-    } else {
-      // value node is almost the same as its parent but with different props
-
-      // keep value property since it acts as an identifier (key-value pair)
-      // also ignore node.meta since from the consumer's point of view,
-      // the meta property was only ever set to the main node
-      // prettier-ignore
-      c.push({ id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args: [arg], parent: p, children: [] });
-    }
+    if (node?.type === 'value') node.args.push(arg);
+    // value node is almost the same as its parent but with different props
+    // keep value property since it acts as an identifier (key-value pair)
+    // also ignore node.meta since from the consumer's point of view,
+    // the meta property was only ever set to the main node
+    // prettier-ignore
+    else p.children.push({ id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args: [arg], parent: p, children: [] });
   }
 
   /** Depth parsed. */

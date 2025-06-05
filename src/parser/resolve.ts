@@ -132,7 +132,7 @@ export function resolve<T>(
   // and if it's not a remainder but the options cannot be parsed,
   // assume it's not assignable and we should not return the split result
   else if (
-    !(last = s.items[s.items.length - 1]).remainder &&
+    !(last = s.items.at(-1)!).remainder &&
     !(item = get(opts, opts.alias['-' + last.value], arg.value))
   ) {
     // ignore split
