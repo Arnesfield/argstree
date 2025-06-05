@@ -4,8 +4,8 @@ import command from '../lib/index.js';
 /** @returns {never} */
 function help() {
   console.log(
-    'Usage: node examples/calc.js 3 + 1 + 2 x 3 + 2 / 2 + 1 x 2 x 3 + 3\n\n' +
-      'Operations:\n' +
+    'Usage: node examples/calc.js 3 + 1 + 2 x 3 + 2 / 2 + 1 x 2 x 3 + 3' +
+      '\n\nOperations:\n' +
       '  +  add\n' +
       '  -  subtract\n' +
       "  x  multiply (or '*' with noglob)\n" +

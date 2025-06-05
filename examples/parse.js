@@ -4,8 +4,7 @@ import command, { isOption, option } from '../lib/index.js';
 /** @returns {never} */
 function help() {
   console.log(
-    'Usage: node examples/parse.js ' +
-      'hello --num 3.14 --no-bool cmd:run world -abc=15 --x.y.z 92 -- -a -b 65'
+    'Usage: node examples/parse.js hello --num 3.14 --no-bool cmd:run world -abc=15 --x.y.z 92 -- -a -b 65'
   );
   process.exit();
 }
@@ -37,6 +36,7 @@ function run(args) {
 
   /** @type {import('../lib/index.js').Options<Metadata>['parser']} */
   const parser = arg => {
+    // match cmd:* commands
     if (
       arg.value == null &&
       arg.key.startsWith(prefix.cmd) &&
@@ -45,7 +45,10 @@ function run(args) {
       // create command with recursive parser
       const id = arg.key.slice(prefix.cmd.length);
       return command({ id, name: id, init, parser });
-    } else if (isOption(arg.key, 'short')) {
+    }
+
+    // match short options
+    if (isOption(arg.key, 'short')) {
       // treat negative numbers as values
       if (!isNaN(Number(arg.key))) {
         return { args: arg.key, strict: false };
@@ -60,7 +63,10 @@ function run(args) {
           const args = index === array.length - 1 ? arg.value : undefined;
           return option({ id, name: id, max: 1, args });
         });
-    } else if (isOption(arg.key, 'long')) {
+    }
+
+    // match long options
+    if (isOption(arg.key, 'long')) {
       // for option ids, remove first 2 hyphens
       const id = arg.key.slice(2);
       // for options starting with --no-*, stop reading args

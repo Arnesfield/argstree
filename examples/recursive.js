@@ -4,8 +4,7 @@ import command, { flatten, isOption, option } from '../lib/index.js';
 /** @returns {never} */
 function help() {
   console.log(
-    'Usage: node examples/recursive.js ' +
-      'hello --input=src world cmd:run build --option 2 3 -- -a -b'
+    'Usage: node examples/recursive.js hello --input=src world cmd:run build --option 2 3 -- -a -b'
   );
   process.exit();
 }
@@ -32,12 +31,16 @@ function run(args) {
 
   /** @type {import('../lib/index.js').Options['parser']} */
   const parser = arg => {
+    // match options
     if (isOption(arg.key)) {
       // stop reading arguments for this option if a value is assigned
       // for option ids, remove first 2 hyphens
       const id = arg.key.replace(/^--?/, '');
       return option({ id, args: arg.value, read: arg.value == null });
-    } else if (arg.value == null && arg.key.startsWith(prefix)) {
+    }
+
+    // match cmd:* commands
+    if (arg.value == null && arg.key.startsWith(prefix)) {
       // commands should not have an assigned value
       // for command ids, remove prefix
       const id = arg.key.slice(prefix.length);
