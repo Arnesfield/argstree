@@ -491,7 +491,7 @@ describe('parse', () => {
     expect(root).to.deep.equal(expected);
   });
 
-  it('should handle assign option', () => {
+  it("should handle 'assign' option", () => {
     const cmd = command()
       .option('--input', { alias: '-i', assign: false })
       .command('run', { alias: 'r', assign: true });
@@ -729,7 +729,64 @@ describe('parse', () => {
     expect(called).to.equal(1);
   });
 
-  // TODO: parser
+  it("should handle schemas and values from the 'parser' option", () => {
+    const cmd = command({
+      parser(arg) {
+        if (arg.key === '--input') {
+          return option({
+            args: arg.value != null ? [arg.value, 'value'] : []
+          });
+        }
+
+        if (arg.value == null && arg.key === 'run') {
+          return command({
+            strict: true,
+            parser(arg) {
+              if (arg.key === '--output') {
+                return option({ args: arg.value });
+              }
+              if (arg.raw === '--input') {
+                return [
+                  { args: 'input' },
+                  { args: [`${arg.raw}-value`, 'value'], strict: false }
+                ];
+              }
+            }
+          });
+        }
+      }
+    });
+    const root = cmd.parse(['--input=src', 'run', '--output', '--input']);
+    const [expected] = createNodes({
+      type: 'command',
+      children: [
+        {
+          id: '--input',
+          name: '--input',
+          raw: '--input=src',
+          key: '--input',
+          args: ['src', 'value']
+        },
+        {
+          id: 'run',
+          name: 'run',
+          raw: 'run',
+          key: 'run',
+          type: 'command',
+          children: [
+            {
+              id: '--output',
+              name: '--output',
+              raw: '--output',
+              key: '--output',
+              args: ['input', '--input-value', 'value']
+            }
+          ]
+        }
+      ]
+    });
+    expect(root).to.deep.equal(expected);
+  });
 
   it('should allow updating the context object', () => {
     // assume other callback options work the same way
