@@ -295,24 +295,6 @@ When `true`, parsed nodes will be treated as leaf nodes (no child nodes). When `
 
 If not provided, this option defaults to `true` for `option` types or if there are no options or commands configured for the schema. Otherwise, this is `false`.
 
-This allows command type nodes to be leaf nodes and option type nodes to have child nodes. In most cases, you wouldn't need to configure this option, but it is available in the rare chance that you do.
-
-```js
-const root = command()
-  .option('--tree', { leaf: false })
-  .command('run', { leaf: true })
-  .parse(['run', 'build', '--tree', 'run', 'build']);
-
-for (const node of root.children) {
-  console.log(node.id, node.type, node.args);
-}
-```
-
-```text
-run command [ 'build' ]
---tree option [ 'run', 'build' ]
-```
-
 #### options.init()
 
 Type: `(schema: Schema) => void`
@@ -321,7 +303,7 @@ Called only once when the schema is created and is used to gain a reference to t
 
 #### options.parser()
 
-Type: `(arg: Arg, ctx: Context) => XOR<Schema<T>, Value> | XOR<Schema<T>, Value>[] | boolean | void`
+Type: `(arg: Arg, ctx: Context) => XOR<Schema, Value> | XOR<Schema, Value>[] | boolean | void`
 
 Serves as a fallback for parsed arguments that cannot be recognized using the list of configured options and commands. Can have the following return values:
 
@@ -496,7 +478,7 @@ map @scope/[name] [ 'dist/[name]' ]
 
 ### ParseError
 
-For errors related to parsing and misconfiguration, a `ParseError` is thrown. You can import this class to reference in catch blocks.
+For errors related to parsing and misconfiguration, a `ParseError` is thrown.
 
 ```js
 import command, { ParseError } from 'argstree';
@@ -556,8 +538,6 @@ Determines if the argument looks like an option. By default, both `long` (e.g. `
 Type: `(value: string, matches: string[]) => Split`
 
 Splits the string based on the provided matches in order.
-
-Consider sorting the `matches` array by length in descending order to ensure that longer matches are split first.
 
 ```js
 import { split } from 'argstree';
