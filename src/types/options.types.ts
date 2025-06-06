@@ -40,9 +40,8 @@ export interface Options<T = unknown> {
    */
   name?: string | null;
   /**
-   * The initial arguments for the option or command.
-   * Note that this is not a default value and additional
-   * arguments will be added on top of this initial list.
+   * The initial arguments for the option or command. Strict mode does not apply to these values.
+   * Note that this is not a default value and additional arguments will be added on top of this list.
    */
   args?: string | string[];
   /**

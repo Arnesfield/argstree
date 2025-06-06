@@ -2,7 +2,8 @@ import { expect } from 'chai';
 import { display } from '../src/utils/display';
 
 // NOTE: expect error messages to follow the display name result
-// this is an internal function but test anyway to check the correctness of the display name
+// this is an internal function but test anyway
+// to check the correctness of the display name
 
 describe('display', () => {
   it('should be a function', () => {

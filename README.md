@@ -153,7 +153,7 @@ The option or command display name that is set to `Node.name` and is used for [`
 
 Type: `string | string[]`
 
-The initial arguments for the option or command. Note that this is not a default value and additional arguments will be added on top of this initial list.
+The initial arguments for the option or command. Strict mode does not apply to these values. Note that this is not a default value and additional arguments will be added on top of this list.
 
 #### options.min
 

@@ -9,9 +9,9 @@ export type NodeType = SchemaType | 'value';
  * @template T The metadata type.
  */
 export interface Node<T = unknown> {
-  /** The provided {@linkcode Options.id} or the {@linkcode Node.key}. */
+  /** The provided {@linkcode Options.id} or the {@linkcode key}. */
   id: string | null;
-  /** The provided {@linkcode Options.name} or the {@linkcode Node.key}. */
+  /** The provided {@linkcode Options.name} or the {@linkcode key}. */
   name: string | null;
   /** The unparsed argument. The value is `null` for the root node. */
   raw: string | null;
@@ -24,7 +24,7 @@ export interface Node<T = unknown> {
   value: string | null;
   /** The node type. */
   type: NodeType;
-  /** The node depth. */
+  /** The node depth (computed from the parent node's depth). */
   depth: number;
   /** The node arguments. */
   args: string[];
