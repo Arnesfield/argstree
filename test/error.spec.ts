@@ -1,6 +1,7 @@
 import { expect } from 'chai';
-import command, { option, Options, ParseError } from '../src';
+import command, { Arg, option, Options, ParseError } from '../src';
 import { createNodes } from './utils/create-nodes';
+import { createSplit } from './utils/create-split';
 import { expectError } from './utils/expect-error';
 
 describe('error', () => {
@@ -266,7 +267,7 @@ describe('error', () => {
   });
 
   describe('unrecognized alias error', () => {
-    it('should handle unrecognized alias error', () => {
+    it('should throw unrecognized alias error', () => {
       const code = ParseError.UNRECOGNIZED_ALIAS_ERROR;
 
       expectError({
@@ -328,10 +329,40 @@ describe('error', () => {
         }
       });
     });
+
+    it("should throw unrecognized alias error after 'parser' option", () => {
+      const code = ParseError.UNRECOGNIZED_ALIAS_ERROR;
+
+      let called = 0;
+      expectError({
+        code,
+        args: ['-efghi=value'],
+        message: 'Unrecognized aliases: -(e)f(gh)i',
+        options: {
+          init(schema) {
+            schema
+              .option('--input', { alias: '-i' })
+              .option('--force', { alias: ['-f'] })
+              .command('help', { alias: 'h' });
+          },
+          parser(arg) {
+            called++;
+            expect(arg).to.deep.equal({
+              raw: '-efghi=value',
+              key: '-efghi',
+              value: 'value',
+              split: createSplit([':e', 'f', ':gh', 'i'])
+            } satisfies Arg);
+          }
+        }
+      });
+
+      expect(called).to.equal(1);
+    });
   });
 
   describe('unrecognized argument error', () => {
-    it('should handle unrecognized argument error', () => {
+    it('should throw unrecognized argument error', () => {
       const code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
 
       expectError({
@@ -460,6 +491,39 @@ describe('error', () => {
           init(schema) {
             schema.option('--foo');
             schema.option('bar', match.options);
+          }
+        }
+      });
+    });
+
+    it("should handle strict values from 'parser' option", () => {
+      const code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
+
+      expectError({
+        code,
+        args: ['foo'],
+        message: 'Unrecognized option: --foo',
+        options: {
+          strict: true,
+          parser(arg) {
+            return [{ args: `--${arg.raw}` }];
+          }
+        }
+      });
+
+      expectError({
+        code,
+        args: ['foo=bar'],
+        message: 'Unrecognized option: -foo',
+        options: {
+          init(schema) {
+            schema.option('--foo', { alias: '-f' });
+          },
+          parser(arg) {
+            return [
+              { args: `--${arg.raw}` },
+              { args: [arg.raw, `-${arg.key}`], strict: true }
+            ];
           }
         }
       });
