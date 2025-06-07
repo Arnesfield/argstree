@@ -33,16 +33,10 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
   function cOk() {
     // NOTE: assume child exists whenever this function is called
-    // mark child as parsed and unset it
-    if (
-      !(
-        child!.ctx.read &&
-        (child!.ctx.max == null || child!.ctx.max > child!.node.args.length)
-      )
-    ) {
-      child!.ok();
-      child = null;
-    }
+    // mark child as parsed and unset it if it cannot accept any more arguments
+    if (child!.read()) return;
+    child!.ok();
+    child = null;
   }
 
   function set(raw: string, items: NonEmptyArray<NodeOptions<T>>) {
@@ -83,17 +77,25 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // otherwise, fallback to parent if child cannot accept any more args
     // if parent cannot read args, assume unrecognized argument
 
-    // prettier-ignore
-    const curr =
-      child ||
-      (parent.ctx.read
-        ? parent
-        : parent.opts.fertile
-          ? parent.error(`option or command: ${raw}`)
-          : parent.error(`xpected no arguments, but got: ${raw}`, undefined, 'e', 'E'));
+    const curr = child || (parent.read() && parent);
 
-    // strict mode: throw error if arg is an option-like
-    (strict ?? curr.strict) && isOption(raw) && curr.error(`option: ${raw}`);
+    // strict mode: throw error if arg looks like an option
+    // save isOption value so there's no need to re-evaluate it
+    let opt: boolean | undefined;
+
+    // the parent is checked first for strict mode
+    // since it is the node that parses child nodes as options
+    // also throw if no current node (assume parent.read() is false)
+    if (!curr || ((strict ?? parent.strict) && (opt = isOption(raw)))) {
+      return parent.error(`argument: ${raw}`);
+    }
+
+    // condition here is if child exists since we can assume
+    // that the child will be the current node (curr === child)
+    if (child && (strict ?? child.strict) && (opt ?? isOption(raw))) {
+      return child.error(`argument: ${raw}`);
+    }
+
     curr.node.args.push(raw);
 
     // if saving to parent, save arg to the value node

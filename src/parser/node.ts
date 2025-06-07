@@ -11,7 +11,11 @@ import { NormalizedOptions } from './normalize';
 // NOTE: internal
 
 export type NodeEvent<T> = keyof {
-  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
+  [K in keyof Options<T> as K extends 'onError'
+    ? never
+    : K extends `on${string}`
+      ? K
+      : never]: Options<T>[K];
 };
 
 export type Parsed<T> = Schema<T> | Value;
@@ -24,6 +28,7 @@ export class Node<T> {
   /** The strict mode value for descendants. */
   private readonly dstrict: boolean | undefined;
   private readonly children: Node<T>[] = [];
+  private err?: ParseError<T>;
 
   constructor(
     private readonly schema: Schema<T>,
@@ -59,6 +64,14 @@ export class Node<T> {
   cb(e: NodeEvent<T>): void {
     // preserve `this` for callbacks
     this.schema.options[e]?.(this.ctx);
+  }
+
+  /** Determines if the node can accept any more arguments. */
+  read(): boolean {
+    return (
+      this.ctx.read &&
+      (this.ctx.max == null || this.ctx.max > this.node.args.length)
+    );
   }
 
   // NOTE: return empty arrays to ignore values
@@ -98,6 +111,8 @@ export class Node<T> {
   }
 
   done(): void {
+    if (this.err) throw this.err;
+
     // there is no need to validate the range once a callback option is fired
     // validate only after parsing since the context object
     // may not have the correct range set by the consumer
@@ -106,7 +121,7 @@ export class Node<T> {
 
     // validate node
     const len = this.node.args.length;
-    const msg: [string | number, number] | null =
+    const m: [string | number, number] | null =
       min != null && max != null && (len < min || len > max)
         ? min === max
           ? [min, min]
@@ -117,12 +132,14 @@ export class Node<T> {
             ? [max && `up to ${max}`, max]
             : null;
 
-    if (msg) {
-      const err = `xpected ${msg[0]} argument${msg[1] === 1 ? '' : 's'}, but got ${len}.`;
-      this.error(err, ParseError.RANGE_ERROR, 'e', 'E');
+    if (m) {
+      const msg = `xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
+      this.error(msg, ParseError.RANGE_ERROR, 'e', 'E');
+      if (this.err) throw this.err;
     }
 
-    this.cb('onValidate');
+    // only run onValidate if no errors (even ignored ones)
+    else this.cb('onValidate');
   }
 
   /**
@@ -137,9 +154,15 @@ export class Node<T> {
     code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
     p1 = 'does not recognize the ',
     p2 = 'Unrecognized '
-  ): never {
+  ): void {
+    // skip if an error already exists
+    if (this.err) return;
+
     const name = display(this.node);
     // prettier-ignore
-    throw new ParseError(code, (name ? name + p1 : p2) + msg, this.node, this.schema);
+    const err = new ParseError(code, (name ? name + p1 : p2) + msg, this.node, this.schema);
+
+    // save error to throw later if onError does not return false
+    if (this.schema.options.onError?.(err, this.ctx) !== false) this.err = err;
   }
 }

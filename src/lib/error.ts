@@ -3,7 +3,7 @@ import { Options } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 
 /** The parse error. */
-export class ParseError<T> extends Error {
+export class ParseError<T = unknown> extends Error {
   /** The {@linkcode Options} provided has incorrect range options or duplicate aliases. */
   static readonly OPTIONS_ERROR = 'OPTIONS';
   /** The option or command did not satisfy the required number of arguments. */
