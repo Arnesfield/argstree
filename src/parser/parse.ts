@@ -141,7 +141,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
       const msg =
         `alias${arg.split.remainders.length === 1 ? '' : 'es'}: -` +
         arg.split.items
-          .map(i => (i.remainder ? `(${i.value})` : i.value))
+          .map(v => (v.remainder ? `(${v.value})` : v.value))
           .join('');
       nErr(parent.error(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR));
     }
@@ -158,13 +158,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   for (const n of nodes) n.cb('onBeforeValidate');
 
   // validate and run onValidate for all nodes
-  for (let i = 0; i < nodes.length; i++) {
+  let i = 0;
+  for (const n of nodes) {
+    n.done();
     // throw the error at the given position
-    if (err?.pos === i) throw err.error;
-    nodes[i].done();
+    // assume that position can never be 0
+    if (++i === err?.pos) throw err.error;
   }
-  // throw error in case the it is out of position (nodes.length + 1)
-  if (err) throw err.error;
 
   return root.node;
 }
