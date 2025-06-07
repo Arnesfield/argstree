@@ -162,8 +162,8 @@ export interface Options<T = unknown> {
    *       return option({ args: arg.value });
    *     }
    *     // allow negative numbers in strict mode
-   *     if (isOption(arg.key, 'short') && !isNaN(Number(arg.key))) {
-   *       return { args: arg.key, strict: false };
+   *     if (isOption(arg.raw, 'short') && !isNaN(Number(arg.raw))) {
+   *       return { args: arg.raw, strict: false };
    *     }
    *   }
    * });
