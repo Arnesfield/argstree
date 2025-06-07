@@ -24,9 +24,8 @@ export type Parsed<T> = Schema<T> | Value;
 // directly save value nodes into `this.node.children` instead
 export class Node<T> {
   readonly ctx: Mutable<Context<T>>;
-  readonly strict: boolean | undefined;
   /** The strict mode value for descendants. */
-  private readonly dstrict: boolean | undefined;
+  private readonly dstrict: boolean;
   private readonly children: Node<T>[] = [];
 
   constructor(
@@ -35,20 +34,20 @@ export class Node<T> {
     readonly node: NodeData<T>,
     parent: Node<T> | undefined
   ) {
-    const { read = true, strict } = schema.options;
-
-    // set context for callbacks
-    this.ctx = { min: opts.min, max: opts.max, read, node, schema };
+    const { read = true, strict: s } = schema.options;
 
     // if options.strict is not set, follow ancestor strict mode
     // otherwise, follow options.strict and also update this.dstrict
     // for descendant nodes
-    this.strict =
-      strict == null
-        ? (this.dstrict = parent?.dstrict)
-        : typeof strict === 'boolean'
-          ? (this.dstrict = strict)
-          : !(this.dstrict = strict !== 'self');
+    const strict =
+      s == null
+        ? (this.dstrict = !!parent?.dstrict)
+        : typeof s === 'boolean'
+          ? (this.dstrict = s)
+          : !(this.dstrict = s !== 'self');
+
+    // set context for callbacks
+    this.ctx = { min: opts.min, max: opts.max, read, strict, node, schema };
 
     // make sure the parent node adds the child node before any callbacks are fired
     parent?.children.push(this);

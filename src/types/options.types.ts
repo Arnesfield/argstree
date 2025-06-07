@@ -12,6 +12,8 @@ export interface Context<T = unknown> {
   max: number | null;
   /** The current {@linkcode Options.read} option for the node. */
   read: boolean;
+  /** The current {@linkcode Options.strict} option for the node. */
+  strict: boolean;
   /** The node object. */
   readonly node: Node<T>;
   /** The schema object. */

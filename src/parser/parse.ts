@@ -92,13 +92,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // the parent is checked first for strict mode
     // since it is the node that parses child nodes as options
     // also throw if no current node (assume parent.read() is false)
-    if (!curr || ((strict ?? parent.strict) && (opt = isOption(raw)))) {
+    if (!curr || ((strict ?? parent.ctx.strict) && (opt = isOption(raw)))) {
       return nErr(parent.error(`argument: ${raw}`));
     }
 
     // condition here is if child exists since we can assume
     // that the child will be the current node (curr === child)
-    if (child && (strict ?? child.strict) && (opt ?? isOption(raw))) {
+    if (child && (strict ?? child.ctx.strict) && (opt ?? isOption(raw))) {
       return nErr(child.error(`argument: ${raw}`));
     }
 

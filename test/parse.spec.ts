@@ -712,6 +712,7 @@ describe('parse', () => {
           min: null,
           max: null,
           read: true,
+          strict: false,
           schema: cmd,
           node: expectedNode
         } satisfies Context);
