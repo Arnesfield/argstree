@@ -51,7 +51,7 @@ function run(args) {
     // match short options
     if (isOption(arg.key, 'short')) {
       // treat negative numbers as values
-      if (!isNaN(Number(arg.key))) {
+      if (arg.value == null && !isNaN(Number(arg.key))) {
         return { args: arg.key, strict: false };
       }
 
