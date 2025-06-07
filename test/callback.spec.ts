@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import command, { Options } from '../src';
 import { NodeEvent } from '../src/parser/node';
-import { Schema as SchemaClass } from '../src/schema/schema.class';
+import { expectContext } from './utils/expect-context';
 
 const events: NodeEvent<unknown>[] = [
   'onCreate',
@@ -21,12 +21,7 @@ function createOptions(): [Options, Call[]] {
   const options: Options = {};
   for (const event of events) {
     options[event] = ctx => {
-      expect(ctx).to.be.an('object');
-      expect(ctx).to.have.property('min');
-      expect(ctx).to.have.property('max');
-      expect(ctx).to.have.property('read');
-      expect(ctx).to.have.property('node').that.is.an('object');
-      expect(ctx).to.have.property('schema').that.is.an.instanceOf(SchemaClass);
+      expectContext(ctx);
 
       const last = calls.at(-1);
       if (last && last[0] === event) {
