@@ -167,23 +167,25 @@ describe('error', () => {
 
       expectError({
         code,
-        args: ['foo', 'bar'],
         message: 'Expected up to 1 argument, but got 2.',
-        options: { max: 1 }
+        options: { max: 1, args: ['foo', 'bar'] }
       });
 
       expectError({
         code,
-        args: ['foo', 'bar', 'baz'],
         message: "Command 'foo' expected up to 2 arguments, but got 3.",
-        options: { name: 'foo', max: 2 }
+        options: { name: 'foo', max: 2, args: ['foo', 'bar', 'baz'] }
       });
 
-      const match = option({ max: 2, leaf: false });
+      const match = option({
+        max: 2,
+        leaf: false,
+        args: ['foo', 'bar', 'baz']
+      });
       match.schemas();
       expectError({
         code,
-        args: ['--foo', 'foo', 'bar', 'baz'],
+        args: ['--foo'],
         message: "Option '--foo' expected up to 2 arguments, but got 3.",
         match,
         options: {
@@ -199,14 +201,12 @@ describe('error', () => {
 
       expectError({
         code,
-        args: ['foo'],
         message: 'Expected 0 arguments, but got 1.',
-        options: { min: 0, max: 0 }
+        options: { min: 0, max: 0, args: ['foo'] }
       });
 
       expectError({
         code,
-        args: [],
         message: 'Expected 1 argument, but got 0.',
         options: { min: 1, max: 1 }
       });
@@ -218,11 +218,16 @@ describe('error', () => {
         options: { name: 'foo', min: 2, max: 2 }
       });
 
-      const match = option({ min: 2, max: 2, leaf: false });
+      const match = option({
+        min: 2,
+        max: 2,
+        leaf: false,
+        args: ['foo', 'bar', 'baz']
+      });
       match.schemas();
       expectError({
         code,
-        args: ['--foo', 'foo', 'bar', 'baz'],
+        args: ['--foo'],
         message: "Option '--foo' expected 2 arguments, but got 3.",
         match,
         options: {
@@ -238,9 +243,8 @@ describe('error', () => {
 
       expectError({
         code,
-        args: ['foo', 'bar'],
         message: 'Expected 0-1 arguments, but got 2.',
-        options: { min: 0, max: 1 }
+        options: { min: 0, max: 1, args: ['foo', 'bar'] }
       });
 
       expectError({
@@ -367,15 +371,22 @@ describe('error', () => {
 
       expectError({
         code,
+        args: ['baz'],
+        message: 'Unrecognized argument: baz',
+        options: { max: 1, args: ['foo', 'bar'] }
+      });
+
+      expectError({
+        code,
         args: ['foo', '-bar', '--baz'],
-        message: 'Unrecognized option: -bar',
+        message: 'Unrecognized argument: -bar',
         options: { strict: 'self' }
       });
 
       expectError({
         code,
         args: ['--foo', 'bar', '--foo=--baz', '--bar', '--baz'],
-        message: "Command 'foo' does not recognize the option: --bar",
+        message: "Command 'foo' does not recognize the argument: --bar",
         options: {
           name: 'foo',
           strict: true,
@@ -390,7 +401,7 @@ describe('error', () => {
       expectError({
         code,
         args: ['--foo', 'foo', '--foo=--bar', 'bar', 'baz', '--bar', '--baz'],
-        message: "Command 'bar' does not recognize the option: --bar",
+        message: "Command 'bar' does not recognize the argument: --bar",
         match,
         options: {
           strict: true,
@@ -407,7 +418,7 @@ describe('error', () => {
       expectError({
         code,
         args: ['-f', '--foo', '--bar', '--baz'],
-        message: "Option '--foo' does not recognize the option: --bar",
+        message: "Option '--foo' does not recognize the argument: --bar",
         match,
         options: {
           strict: 'descendants',
@@ -423,7 +434,7 @@ describe('error', () => {
       expectError({
         code,
         args: ['-f', '--foo', '--bar=--foo', 'foo', '--bar', '--baz'],
-        message: "Option '--bar' does not recognize the option: --bar",
+        message: "Option '--bar' does not recognize the argument: --bar",
         match,
         options: {
           strict: 'descendants',
@@ -440,17 +451,16 @@ describe('error', () => {
       expectError({
         code,
         args: ['foo', 'bar', 'baz'],
-        message: 'Expected no arguments, but got: foo',
-        options: { read: false, strict: true }
+        message: 'Unrecognized argument: foo',
+        options: { read: false }
       });
 
       expectError({
         code,
         args: ['foo', 'bar', 'baz'],
-        message: 'Unrecognized option or command: foo',
+        message: 'Unrecognized argument: foo',
         options: {
           read: false,
-          strict: true,
           init(schema) {
             schema.option('--foo');
           }
@@ -462,7 +472,7 @@ describe('error', () => {
       expectError({
         code,
         args: ['--foo', 'bar', '--baz'],
-        message: "Command 'bar' expected no arguments, but got: --baz",
+        message: "Command 'bar' does not recognize the argument: --baz",
         match,
         options: {
           strict: true,
@@ -484,7 +494,7 @@ describe('error', () => {
       expectError({
         code,
         args: ['--foo', 'bar', '--baz', 'foo'],
-        message: "Option 'bar' does not recognize the option or command: foo",
+        message: "Option 'bar' does not recognize the argument: foo",
         match,
         options: {
           strict: true,
@@ -502,7 +512,7 @@ describe('error', () => {
       expectError({
         code,
         args: ['foo'],
-        message: 'Unrecognized option: --foo',
+        message: 'Unrecognized argument: --foo',
         options: {
           strict: true,
           parser(arg) {
@@ -514,7 +524,7 @@ describe('error', () => {
       expectError({
         code,
         args: ['foo=bar'],
-        message: 'Unrecognized option: -foo',
+        message: 'Unrecognized argument: -foo',
         options: {
           init(schema) {
             schema.option('--foo', { alias: '-f' });
