@@ -212,6 +212,7 @@ export interface Options<T = unknown> {
    * ignored if `false` is returned, otherwise it is thrown during validation.
    * Note that configuration errors ({@linkcode ParseError.OPTIONS_ERROR})
    * are thrown immediately and will not go through this callback option.
+   * @param error The parse error.
    * @param ctx The callback context.
    * @returns A boolean value if the error should be ignored (`false`) or not.
    */
