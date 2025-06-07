@@ -28,7 +28,6 @@ export class Node<T> {
   /** The strict mode value for descendants. */
   private readonly dstrict: boolean | undefined;
   private readonly children: Node<T>[] = [];
-  private err?: ParseError<T>;
 
   constructor(
     private readonly schema: Schema<T>,
@@ -111,8 +110,6 @@ export class Node<T> {
   }
 
   done(): void {
-    if (this.err) throw this.err;
-
     // there is no need to validate the range once a callback option is fired
     // validate only after parsing since the context object
     // may not have the correct range set by the consumer
@@ -134,8 +131,8 @@ export class Node<T> {
 
     if (m) {
       const msg = `xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
-      this.error(msg, ParseError.RANGE_ERROR, 'e', 'E');
-      if (this.err) throw this.err;
+      const err = this.error(msg, ParseError.RANGE_ERROR, 'e', 'E');
+      if (err) throw err;
     }
 
     // only run onValidate if no errors (even ignored ones)
@@ -143,26 +140,24 @@ export class Node<T> {
   }
 
   /**
-   * Throws a {@linkcode ParseError}.
+   * Creates a {@linkcode ParseError}.
    * @param msg The error message after the prefix.
    * @param code The error code.
    * @param p1 Prefix before {@linkcode msg} if a display name is available.
    * @param p2 Prefix before {@linkcode msg} if a display name is not available.
+   * @returns The {@linkcode ParseError} if {@linkcode Options.onError} does not return `false`.
    */
   error(
     msg: string,
     code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
     p1 = 'does not recognize the ',
     p2 = 'Unrecognized '
-  ): void {
-    // skip if an error already exists
-    if (this.err) return;
-
+  ): ParseError<T> | undefined {
     const name = display(this.node);
     // prettier-ignore
     const err = new ParseError(code, (name ? name + p1 : p2) + msg, this.node, this.schema);
 
-    // save error to throw later if onError does not return false
-    if (this.schema.options.onError?.(err, this.ctx) !== false) this.err = err;
+    // return error to throw later if onError does not return false
+    if (this.schema.options.onError?.(err, this.ctx) !== false) return err;
   }
 }

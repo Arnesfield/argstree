@@ -168,6 +168,7 @@ describe('error', () => {
 
       expectError({
         code,
+        args: ['baz'],
         message: 'Expected up to 1 argument, but got 2.',
         options: { max: 1, args: ['foo', 'bar'] }
       });
@@ -244,6 +245,7 @@ describe('error', () => {
 
       expectError({
         code,
+        args: ['baz'],
         message: 'Expected 0-1 arguments, but got 2.',
         options: { min: 0, max: 1, args: ['foo', 'bar'] }
       });
@@ -369,13 +371,6 @@ describe('error', () => {
   describe('unrecognized argument error', () => {
     it('should throw unrecognized argument error', () => {
       const code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR;
-
-      expectError({
-        code,
-        args: ['baz'],
-        message: 'Unrecognized argument: baz',
-        options: { max: 1, args: ['foo', 'bar'] }
-      });
 
       expectError({
         code,
@@ -557,7 +552,7 @@ describe('error', () => {
           }
         }
       });
-      expect(called).to.be.equal(1);
+      expect(called).to.be.equal(3);
     });
 
     it("should ignore errors when 'onError' is called", () => {

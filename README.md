@@ -378,7 +378,7 @@ Called after throwing any validation errors for the node.
 
 Type: `(error: ParseError, ctx: Context) => boolean | void`
 
-Called when the node receives a [`ParseError`](#parseerror). The error is ignored if `false` is returned, otherwise it is thrown before [`onValidate`](#optionsonvalidate) is called. Note that this callback is skipped if an error will already be thrown before [`onValidate`](#optionsonvalidate).
+Called when the node receives a [`ParseError`](#parseerror). The error is ignored if `false` is returned, otherwise it is thrown during validation.
 
 ```js
 const logLevels = ['info', 'warn', 'error', 'debug'];

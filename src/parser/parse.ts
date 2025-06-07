@@ -29,7 +29,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   root.cb('onDepth');
   const nodes = [root];
   let parent: Node<T> = root,
-    child: Node<T> | null | undefined;
+    child: Node<T> | null | undefined,
+    err: { pos: number; error: ParseError<T> } | undefined;
+
+  /** Saves the {@linkcode ParseError} to throw later during validation. */
+  function nErr(e: ParseError<T> | undefined) {
+    err ||= e && { pos: nodes.length, error: e };
+  }
 
   function cOk() {
     // NOTE: assume child exists whenever this function is called
@@ -87,13 +93,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // since it is the node that parses child nodes as options
     // also throw if no current node (assume parent.read() is false)
     if (!curr || ((strict ?? parent.strict) && (opt = isOption(raw)))) {
-      return parent.error(`argument: ${raw}`);
+      return nErr(parent.error(`argument: ${raw}`));
     }
 
     // condition here is if child exists since we can assume
     // that the child will be the current node (curr === child)
     if (child && (strict ?? child.strict) && (opt ?? isOption(raw))) {
-      return child.error(`argument: ${raw}`);
+      return nErr(child.error(`argument: ${raw}`));
     }
 
     curr.node.args.push(raw);
@@ -137,7 +143,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
         arg.split.items
           .map(i => (i.remainder ? `(${i.value})` : i.value))
           .join('');
-      parent.error(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
+      nErr(parent.error(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR));
     }
 
     // treat as value
@@ -152,7 +158,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   for (const n of nodes) n.cb('onBeforeValidate');
 
   // validate and run onValidate for all nodes
-  for (const n of nodes) n.done();
+  for (let i = 0; i < nodes.length; i++) {
+    // throw the error at the given position
+    if (err?.pos === i) throw err.error;
+    nodes[i].done();
+  }
+  // throw error in case the it is out of position (nodes.length + 1)
+  if (err) throw err.error;
 
   return root.node;
 }

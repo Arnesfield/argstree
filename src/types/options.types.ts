@@ -206,9 +206,8 @@ export interface Options<T = unknown> {
    */
   onValidate?(ctx: Context<T>): void;
   /**
-   * Called when the node receives a {@linkcode ParseError}. The error is ignored
-   * if `false` is returned, otherwise it is thrown before {@linkcode onValidate} is called.
-   * Note that this callback is skipped if an error will already be thrown before {@linkcode onValidate}.
+   * Called when the node receives a {@linkcode ParseError}. The error is
+   * ignored if `false` is returned, otherwise it is thrown during validation.
    * @param ctx The callback context.
    * @returns A boolean value if the error should be ignored (`false`) or not.
    */
