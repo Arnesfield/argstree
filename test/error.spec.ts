@@ -626,4 +626,7 @@ describe('error', () => {
       });
     });
   });
+
+  // TODO: test ctx range error in node.done()
+  // TODO: test ctx strict error
 });
