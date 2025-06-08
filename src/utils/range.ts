@@ -20,8 +20,7 @@ export function range<T>(
 
   if (min != null && max != null && min > max) {
     const name = display(node);
-    const msg =
-      (name ? name + 'has i' : 'I') + `nvalid min and max range: ${min}-${max}`;
+    const msg = `${name ? name + 'has i' : 'I'}nvalid min and max range: ${min}-${max}`;
     throw new ParseError(ParseError.OPTIONS_ERROR, msg, node, schema);
   }
 

@@ -67,8 +67,7 @@ export function normalize<T>(
         // this node is for current value options
         // and is not being parsed but being validated
         const name = display((node = cnode({ key, schema: s }, key, node)));
-        const msg =
-          (name ? name + 'c' : 'C') + `annot use an existing alias: ${a}`;
+        const msg = `${name ? name + 'c' : 'C'}annot use an existing alias: ${a}`;
         throw new ParseError(ParseError.OPTIONS_ERROR, msg, node, s);
       }
 
