@@ -6,7 +6,7 @@ import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
 import { Alias, normalize, NormalizedOptions } from './normalize';
-import { canAssign, canRead, getArgs, isLeaf } from './utils';
+import { canAssign, getArgs, isLeaf, noRead } from './utils';
 
 // NOTE: internal
 
@@ -171,7 +171,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     if (!isLeaf(cInfo!.ctx.schema)) {
       ok(pInfo);
       pInfo = nInfo();
-    } else if (!canRead(cInfo!.ctx)) {
+    } else if (noRead(cInfo!.ctx)) {
       ok(cInfo!);
       cNode = cInfo = null;
     }
@@ -201,10 +201,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
     // save value to parent node
     // unrecognized argument if parent cannot read or if strict mode
-    if (
-      !canRead(pInfo.ctx) ||
-      ((strict ?? pInfo.ctx.strict) && isOption(raw))
-    ) {
+    if (noRead(pInfo.ctx) || ((strict ?? pInfo.ctx.strict) && isOption(raw))) {
       return nErr(error(pInfo.ctx, `argument: ${raw}`));
     }
 

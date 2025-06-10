@@ -30,6 +30,6 @@ export function canAssign<T>(
   return value == null || (schema.options.assign ?? schema.type === 'option');
 }
 
-export function canRead<T>(ctx: Context<T>): boolean {
-  return ctx.read && (ctx.max == null || ctx.max > ctx.node.args.length);
+export function noRead<T>(ctx: Context<T>): boolean {
+  return !ctx.read || (ctx.max != null && ctx.max <= ctx.node.args.length);
 }
