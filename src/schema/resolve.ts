@@ -1,11 +1,11 @@
 import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
+import { getArgs } from '../parser/get-args';
 import { Alias, NormalizedOptions } from '../parser/normalize';
 import { assignable } from '../parser/parse';
 import { Arg } from '../types/arg.types';
 import { ResolvedArg, ResolvedItem, Schema } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
-import { array } from '../utils/array';
 
 // like Arg but has conditional props `split` and `items`
 export type ResolveArg<T> = Arg &
@@ -14,24 +14,21 @@ export type ResolveArg<T> = Arg &
     | { split?: never; items?: NonEmptyArray<ResolvedItem<T>> }
   );
 
-// make props optional except 'key'
+// make props optional except 'key' and make 'alias' nullable
 export interface ParsedArg
   extends Pick<Alias, 'key'>,
-    Partial<Omit<Alias, 'key'>> {}
+    Partial<Omit<Alias, 'key' | 'alias'>> {
+  alias?: string | null;
+}
 
 function item<T>(
   schema: Schema<T>,
   value: string | null | undefined,
-  a: ParsedArg
+  { key, alias = null, args }: ParsedArg
 ): ResolvedItem<T> {
-  // eslint-disable-next-line prefer-const
-  let { id = a.key, name = a.key, args } = schema.options;
-  args = array(args, true);
-  a.args && args.push(...a.args);
-  value != null && args.push(value);
-
+  const { id = key, name = key } = schema.options;
   // prettier-ignore
-  return { key: a.key, alias: a.alias ?? null, type: schema.type, options: { ...schema.options, id, name, args } };
+  return { key, alias, type: schema.type, options: { ...schema.options, id, name, args: getArgs(schema, args, value) } };
 }
 
 export function resolve<T>(

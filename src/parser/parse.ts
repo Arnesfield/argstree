@@ -9,6 +9,7 @@ import { array } from '../utils/array';
 import { display } from '../utils/display';
 import { range } from '../utils/range';
 import { NodeData } from './cnode';
+import { getArgs } from './get-args';
 import { NodeEvent } from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
 
@@ -125,24 +126,18 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     key: string | null,
     value: string | null = null,
     alias: string | null = null,
-    aArgs?: string[]
+    args?: string[]
   ) {
     // mark previous info as parsed before creating next node info
     cInfo && ok(cInfo);
 
     const { type, options: o } = schema;
-
-    // create copy of args
-    const args = array(o.args, true);
-    aArgs && args.push(...aArgs);
-    value != null && args.push(value);
-
     const p = pInfo ? pInfo.ctx.node : null;
 
     // prettier-ignore
     const { id = key, name = key, min = null, max = null, read = true, strict: s } = o;
     // prettier-ignore
-    const node: NodeData<T> = cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args, parent: p, children: [] };
+    const node: NodeData<T> = cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(schema, args, value), parent: p, children: [] };
     p?.children.push(node);
 
     let dstrict: boolean;
