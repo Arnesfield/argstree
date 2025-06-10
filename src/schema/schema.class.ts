@@ -21,23 +21,23 @@ export class Schema<T> implements ISchema<T> {
     readonly options: Options<T> = {}
   ) {}
 
-  private add(arg: string, type: SchemaType, options?: Options<T>) {
-    this.schemas()[arg] = new Schema(type, options);
+  private add(arg: string, schema: Schema<T>) {
+    this.schemas()[arg] = schema;
     // clear cached options to re-evaluate it when needed
     this.opts = null;
     return this;
   }
 
   option(arg: string, options?: Options<T>): this {
-    return this.add(arg, 'option', options);
+    return this.add(arg, new Schema('option', options));
   }
 
   command(arg: string, options?: Options<T>): this {
-    return this.add(arg, 'command', options);
+    return this.add(arg, new Schema('command', options));
   }
 
   schemas(): SchemaMap<T> {
-    // consider as initialized if 'args' is already provided
+    // consider as initialized if 'map' is already provided
     if (!this.map) {
       this.map = { __proto__: null! };
       // only call init once and only after setting args
