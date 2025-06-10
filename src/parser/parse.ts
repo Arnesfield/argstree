@@ -1,8 +1,9 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
 import { split, Split } from '../lib/split';
+import { Arg } from '../types/arg.types';
 import { Node as INode } from '../types/node.types';
-import { Context, Value } from '../types/options.types';
+import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
 import { display } from '../utils/display';
@@ -20,12 +21,15 @@ interface InternalContext<T> extends Omit<Context<T>, 'node'> {
 interface NodeInfo<T> {
   dstrict: boolean;
   ctx: InternalContext<T>;
+  leaf?: boolean;
   opts?: NormalizedOptions<T>;
-  children: NodeInfo<T>[];
+  // children with onDepth callbacks only
+  onDepths: NodeInfo<T>[];
 }
 
 type NormalizedNodeInfo<T> = Required<NodeInfo<T>>;
 
+// NOTE: side effect: this would initialize the schema if options aren't satisfied
 function isLeaf<T>(schema: Schema<T>) {
   const o = schema.options;
   if (o.leaf != null) return o.leaf;
@@ -43,7 +47,7 @@ function cb<T>(ctx: InternalContext<T>, e: NodeEvent<T>) {
 }
 
 function ok<T>(info: NodeInfo<T>) {
-  for (const c of info.children) cb(c.ctx, 'onDepth');
+  for (const c of info.onDepths) cb(c.ctx, 'onDepth');
   cb(info.ctx, 'onData');
 }
 
@@ -102,12 +106,12 @@ function error<T>(
 export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   // keep track of and reuse existing normalized options
   const map = new WeakMap<Schema<T>, NormalizedOptions<T>>(),
-    list: NodeInfo<T>[] = [];
+    list: NodeInfo<T>[] = [],
+    bvList: NodeInfo<T>[] = [];
 
-  let info: NodeInfo<T>,
-    pInfo: NormalizedNodeInfo<T>,
+  let pInfo: NormalizedNodeInfo<T>,
     cNode: INode<T> | null | undefined,
-    cInfo: NormalizedNodeInfo<T> | null | undefined,
+    cInfo: NodeInfo<T> | null | undefined,
     err: { pos: number; error: ParseError<T> } | undefined;
 
   function make(
@@ -118,21 +122,25 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     alias: string | null = null,
     aArgs?: string[]
   ) {
+    // mark previous info as parsed before creating next node info
+    cInfo && ok(cInfo);
+
+    const { type, options: o } = schema;
+
     // create copy of args
-    const args = array(schema.options.args, true);
+    const args = array(o.args, true);
     aArgs && args.push(...aArgs);
     value != null && args.push(value);
 
     const p = pInfo ? pInfo.ctx.node : null;
 
     // prettier-ignore
-    const { type, options: { id = key, name = key } } = schema;
+    const { id = key, name = key, min = null, max = null, read = true, strict: s } = o;
     // prettier-ignore
-    const node: NodeData<T> = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args, parent: p, children: [] };
+    const node: NodeData<T> = cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args, parent: p, children: [] };
     p?.children.push(node);
 
     let dstrict: boolean;
-    const { min = null, max = null, read = true, strict: s } = schema.options;
     const strict =
       s == null
         ? (dstrict = !!pInfo?.dstrict)
@@ -141,107 +149,57 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
           : !(dstrict = s !== 'self');
 
     // prettier-ignore
-    list.push(info = { dstrict, children: [], ctx: { min, max, read, strict, node, schema } });
+    list.push(cInfo = { dstrict, onDepths: [], ctx: { min, max, read, strict, node, schema } });
+    // save to before validate list if has onBeforeValidate callback
+    o.onBeforeValidate && bvList.push(cInfo);
 
     // run callback options
-    cb(info.ctx, 'onCreate');
+    cb(cInfo.ctx, 'onCreate');
+
     if (pInfo) {
-      pInfo.children.push(info);
+      // save info to onDepths if has onDepth callback
+      o.onDepth && pInfo.onDepths.push(cInfo);
+
       cb(pInfo.ctx, 'onChild');
     }
   }
 
-  function nInfo() {
+  function nInfo(leaf: boolean) {
+    const info = cInfo as NormalizedNodeInfo<T>;
     const { node, schema } = info.ctx;
-    (info.opts = map.get(schema)) ||
+
+    info.leaf = leaf;
+    (info.opts = map.get(schema)!) ||
       map.set(schema, (info.opts = normalize(schema, node)));
-    return info as NormalizedNodeInfo<T>;
+
+    cNode = cInfo = null;
+    return info;
   }
 
   function use() {
-    const { node, schema } = info.ctx;
+    const { ctx } = cInfo!;
+    const leaf = isLeaf(ctx.schema);
 
-    if (!isLeaf(schema)) {
+    if (!leaf) {
       ok(pInfo);
 
-      pInfo = nInfo();
+      pInfo = nInfo(leaf);
+    } else if (
+      !(ctx.read && (ctx.max == null || ctx.max > cNode!.args.length))
+    ) {
+      ok(cInfo!);
       cNode = cInfo = null;
-    } else {
-      cInfo && ok(cInfo);
-
-      if (schema.options.max == null || node.args.length < schema.options.max) {
-        cNode = node;
-        cInfo = nInfo();
-      } else {
-        cNode = cInfo = null;
-      }
     }
   }
 
-  // function node(opts: NodeOptions<T>, raw?: string | null, curr?: Node<T>) {
-  //   const s = opts.schema;
-  //   const data = cnode(opts, raw, curr?.node, opts.args);
-
-  //   let nOpts;
-  //   (nOpts = map.get(s)) || map.set(s, (nOpts = normalize(s, data)));
-
-  //   return new Node<T>(s, nOpts, data, curr);
-  // }
-
   make(schema, null, null);
-  const rInfo = (pInfo = nInfo());
+  const rInfo = (pInfo = nInfo(isLeaf(schema)));
   cb(rInfo.ctx, 'onDepth');
-
-  // const root = node({ schema });
-  // root.cb('onDepth');
-  // const nodes = [root];
-  // let parent: Node<T> = root,
-  //   child: Node<T> | null | undefined,
-  // let err: { pos: number; error: ParseError<T> } | undefined;
 
   /** Saves the {@linkcode ParseError} to throw later during validation. */
   function nErr(e: ParseError<T> | undefined) {
     err ||= e && { pos: list.length, error: e };
   }
-
-  // function cOk() {
-  //   // NOTE: assume child exists whenever this function is called
-  //   // mark child as parsed and unset it if it cannot accept any more arguments
-  //   if (child!.read()) return;
-  //   child!.ok();
-  //   child = null;
-  // }
-
-  // function set(raw: string, items: NonEmptyArray<NodeOptions<T>>) {
-  //   // consider items: [option1, command1, option2, command2, option3]
-  //   // the previous implementation would only get
-  //   // the last child that can have children (command2)
-  //   // now, only the last child is checked if it can have children (option3)
-  //   // why? it may be unfair for command1 if command2 is chosen
-  //   // just because it was the last child that can do so.
-  //   // handling this edge case probably has no practical use
-  //   // and just adds more complexity for building the tree later
-
-  //   for (const item of items) {
-  //     // mark existing child as parsed then make new child
-  //     child?.ok();
-
-  //     // create child node from options
-  //     nodes.push((child = node(item, raw, parent)));
-  //   }
-
-  //   // assume child always exists (items has length)
-  //   // use child as next parent if it's not a leaf node
-  //   if (!child!.opts.leaf) {
-  //     // since we're removing reference to parent, mark it as parsed
-  //     parent.ok();
-  //     parent = child!;
-  //     child = null;
-  //   }
-
-  //   // if child cannot accept args, mark it as parsed
-  //   else cOk();
-  // }
 
   function setValue(raw: string, strict?: boolean) {
     // save value to child node if it exists
@@ -263,9 +221,10 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // save value to parent node
     // unrecognized argument if parent cannot read or if strict mode
     if (
-      (!(pInfo.ctx.read ?? true) &&
-        (pInfo.ctx.max == null ||
-          pInfo.ctx.max > pInfo.ctx.node.args.length)) ||
+      !(
+        pInfo.ctx.read &&
+        (pInfo.ctx.max == null || pInfo.ctx.max > pInfo.ctx.node.args.length)
+      ) ||
       ((strict ?? pInfo.ctx.strict) && isOption(raw))
     ) {
       return nErr(error(pInfo.ctx, `argument: ${raw}`));
@@ -283,45 +242,12 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     cb(pInfo.ctx, 'onArg');
   }
 
-  // function setValue(raw: string, strict?: boolean) {
-  //   // normally, you'd check if the child node can read one more argument
-  //   // assume that it already can since there is a child.read() check
-  //   // in the set() call where the child node is set
-  //   // otherwise, fallback to parent if child cannot accept any more args
-  //   // if parent cannot read args, assume unrecognized argument
-
-  //   const curr = child || (parent.read() && parent);
-
-  //   // strict mode: throw error if arg looks like an option
-  //   // save isOption value so there's no need to re-evaluate it
-  //   let opt: boolean | undefined;
-
-  //   // the parent is checked first for strict mode
-  //   // since it is the node that parses child nodes as options
-  //   // also throw if no current node (assume parent.read() is false)
-  //   if (!curr || ((strict ?? parent.ctx.strict) && (opt = isOption(raw)))) {
-  //     return nErr(parent.error(`argument: ${raw}`));
-  //   }
-
-  //   // condition here is if child exists since we can assume
-  //   // that the child will be the current node (curr === child)
-  //   if (child && (strict ?? child.ctx.strict) && (opt ?? isOption(raw))) {
-  //     return nErr(child.error(`argument: ${raw}`));
-  //   }
-
-  //   curr.node.args.push(raw);
-
-  //   // if saving to parent, save arg to the value node
-  //   curr === parent && curr.value(raw);
-
-  //   curr.cb('onArg');
-
-  //   // if argument was saved to the child node,
-  //   // mark it as parsed if it cannot accept anymore arguments
-  //   curr === child && cOk();
-  // }
-
   for (const raw of args) {
+    if (pInfo.leaf) {
+      setValue(raw);
+      continue;
+    }
+
     let key = raw,
       value: string | undefined;
     const index = raw.indexOf('=');
@@ -332,7 +258,8 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     const { ctx, opts } = pInfo;
     let schema = opts.map[key],
-      alias: Alias | undefined;
+      alias: Alias | undefined,
+      parsed: ReturnType<NonNullable<Options['parser']>> | undefined;
 
     if (schema && assignable(schema, value)) {
       make(schema, raw, key, value);
@@ -359,6 +286,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
       // if last split item is a value
       // check if last item is assignable
       let last;
+
       if (
         value != null &&
         !(last = s.items.at(-1)!).remainder &&
@@ -366,7 +294,6 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
       ) {
         // treat as value
       } else if (s.remainders.length > 0) {
-        // TODO: throw split after failed parser
         rSplit = s;
       } else {
         for (let i = 0, val; i < s.values.length; i++) {
@@ -384,7 +311,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     // parse by parser
 
-    let parsed = ctx.schema.options.parser?.({ raw, key, value }, ctx);
+    const o = ctx.schema.options;
+    if (o.parser) {
+      const arg: Arg = { raw, key, value };
+      rSplit && (arg.split = rSplit);
+      parsed = o.parser(arg, ctx);
+    }
+
     // ignore raw argument
     if (parsed === false) continue;
 
@@ -398,20 +331,20 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     ) {
       type V = Value;
 
-      let hasNodes: boolean | undefined;
+      let hasNode: boolean | undefined;
       for (const p of parsed) {
         if ((p as Schema<T>).schemas) {
-          hasNodes = true;
+          hasNode = true;
           // no value since it is handler by parser
           make(p as Schema<T>, raw, key);
         } else for (const v of array((p as V).args)) setValue(v, (p as V).strict); // prettier-ignore
       }
 
-      // skip if value was set (parsed.length > 0) but no created nodes
-      if (hasNodes) {
-        use();
-        continue;
-      }
+      // if make() was called, call use() after
+      hasNode && use();
+
+      // always skip after successful parser call (parsed.length > 0)
+      continue;
     }
 
     // parser done
@@ -431,27 +364,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
-  ok(pInfo);
   cInfo && ok(cInfo);
+  ok(pInfo);
 
-  // // finally, mark nodes as parsed then build tree and validate nodes
-  // child?.ok();
-  // parent.ok();
+  // run onBeforeValidate for all nodes per depth level incrementally
+  for (const n of bvList) cb(n.ctx, 'onBeforeValidate');
 
-  // // run onBeforeValidate for all nodes per depth level incrementally
-  // for (const n of nodes) n.cb('onBeforeValidate');
-
-  // // validate and run onValidate for all nodes
-  // let i = 0;
-  // for (const n of nodes) {
-  //   n.done();
-  //   // throw the error at the given position
-  //   // assume that position can never be 0
-  //   if (++i === err?.pos) throw err.error;
-  // }
-
-  for (const n of list) cb(n.ctx, 'onBeforeValidate');
-
+  // validate and run onValidate for all nodes
   let l = 0;
   for (const n of list) {
     done(n.ctx);
