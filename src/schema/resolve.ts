@@ -1,8 +1,7 @@
 import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
-import { getArgs } from '../parser/get-args';
 import { Alias, NormalizedOptions } from '../parser/normalize';
-import { canAssign } from '../parser/parse';
+import { canAssign, getArgs } from '../parser/utils';
 import { Arg } from '../types/arg.types';
 import { ResolvedArg, ResolvedItem, Schema } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';

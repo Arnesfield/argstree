@@ -6,9 +6,9 @@ import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
 import { NodeData } from './cnode';
-import { getArgs } from './get-args';
 import { NodeEvent } from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
+import { canAssign, canRead, getArgs, isLeaf } from './utils';
 
 // NOTE: internal
 
@@ -24,27 +24,6 @@ interface NodeInfo<T> {
 interface NormalizedNodeInfo<T>
   extends Omit<NodeInfo<T>, 'opts'>,
     Required<Pick<NodeInfo<T>, 'opts'>> {}
-
-// NOTE: side effect: this would initialize the schema if options aren't satisfied
-function isLeaf<T>(schema: Schema<T>) {
-  let o: Options<T> | string = schema.options;
-  if (o.leaf != null) return o.leaf;
-  if (o.parser) return false;
-  // WARNING: might be unsafe if consumer decides to implement their own schema object
-  for (o in schema.schemas()) return false;
-  return schema.type === 'option';
-}
-
-export function canAssign<T>(
-  schema: Schema<T>,
-  value: string | null | undefined
-): boolean {
-  return value == null || (schema.options.assign ?? schema.type === 'option');
-}
-
-function canRead<T>(ctx: Context<T>): boolean {
-  return ctx.read && (ctx.max == null || ctx.max > ctx.node.args.length);
-}
 
 function cb<T>(ctx: Context<T>, e: NodeEvent<T>) {
   ctx.schema.options[e]?.(ctx);
