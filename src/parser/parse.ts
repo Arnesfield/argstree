@@ -55,9 +55,14 @@ function ok<T>(info: NodeInfo<T>) {
   cb(info.ctx, 'onData');
 }
 
+// ensure non-negative number
+function number(n: number | null | undefined): number | null {
+  return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
+}
+
 function done<T>(ctx: Context<T>): void {
-  // eslint-disable-next-line prefer-const
-  let { min, max } = ctx;
+  const min = number(ctx.min);
+  let max = number(ctx.max);
 
   // if min is greater than max,
   // prioritize the min value instead of throwing an error
