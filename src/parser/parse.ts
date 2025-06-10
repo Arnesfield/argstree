@@ -38,7 +38,7 @@ function isLeaf<T>(schema: Schema<T>) {
   return schema.type !== 'command';
 }
 
-export function assignable<T>(
+export function canAssign<T>(
   schema: Schema<T>,
   value: string | null | undefined
 ): boolean {
@@ -251,7 +251,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     let schema = opts.map[key],
       alias: Alias | undefined;
 
-    if (schema && assignable(schema, value)) {
+    if (schema && canAssign(schema, value)) {
       make(schema, raw, key, value);
       use();
       continue;
@@ -259,7 +259,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     if (
       (alias = opts.alias[key]) &&
-      assignable((schema = opts.map[alias.key]!), value)
+      canAssign((schema = opts.map[alias.key]!), value)
     ) {
       make(schema, raw, alias.key, value, alias.alias, alias.args);
       use();
@@ -279,7 +279,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
       if (
         value != null &&
         !(last = s.items.at(-1)!).remainder &&
-        !assignable(opts.map[opts.alias['-' + last.value].key]!, value)
+        !canAssign(opts.map[opts.alias['-' + last.value].key]!, value)
       ) {
         // treat as value
       }

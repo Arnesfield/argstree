@@ -2,7 +2,7 @@ import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
 import { getArgs } from '../parser/get-args';
 import { Alias, NormalizedOptions } from '../parser/normalize';
-import { assignable } from '../parser/parse';
+import { canAssign } from '../parser/parse';
 import { Arg } from '../types/arg.types';
 import { ResolvedArg, ResolvedItem, Schema } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
@@ -51,14 +51,14 @@ export function resolve<T>(
     s: Split | undefined,
     last: SplitItem;
 
-  if (schema && assignable(schema, arg.value)) {
+  if (schema && canAssign(schema, arg.value)) {
     arg.items = [item(schema, arg.value, arg)];
   }
 
   // alias
   else if (
     (alias = opts.alias[arg.key]) &&
-    assignable((schema = opts.map[alias.key]!), arg.value)
+    canAssign((schema = opts.map[alias.key]!), arg.value)
   ) {
     arg.items = [item(schema, arg.value, alias)];
   }
@@ -75,7 +75,7 @@ export function resolve<T>(
     if (
       arg.value != null &&
       !(last = s.items.at(-1)!).remainder &&
-      !assignable(opts.map[opts.alias['-' + last.value].key]!, arg.value)
+      !canAssign(opts.map[opts.alias['-' + last.value].key]!, arg.value)
     ) {
       // treat as value
     } else if (s.remainders.length > 0) {
