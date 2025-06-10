@@ -26,15 +26,18 @@ interface NodeInfo<T> {
   onDepths: NodeInfo<T>[];
 }
 
-type NormalizedNodeInfo<T> = Required<NodeInfo<T>>;
+interface NormalizedNodeInfo<T>
+  extends Omit<NodeInfo<T>, 'opts'>,
+    Required<Pick<NodeInfo<T>, 'opts'>> {}
 
 // NOTE: side effect: this would initialize the schema if options aren't satisfied
 function isLeaf<T>(schema: Schema<T>) {
-  const o = schema.options;
+  let o: Options<T> | string = schema.options;
   if (o.leaf != null) return o.leaf;
   if (o.parser) return false;
-  for (const _ in schema.schemas()) return false;
-  return schema.type !== 'command';
+  // WARNING: might be unsafe if consumer decides to implement their own schema object
+  for (o in schema.schemas()) return false;
+  return schema.type === 'option';
 }
 
 export function canAssign<T>(
@@ -166,7 +169,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     }
   }
 
-  function nInfo(leaf: boolean) {
+  function nInfo(leaf?: boolean) {
     const info = cInfo as NormalizedNodeInfo<T>;
 
     info.leaf = leaf;
@@ -177,21 +180,14 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
   }
 
   function use() {
-    const { ctx } = cInfo!;
-    const leaf = isLeaf(ctx.schema);
-
-    if (!leaf) {
+    if (!isLeaf(cInfo!.ctx.schema)) {
       ok(pInfo);
-      pInfo = nInfo(leaf);
-    } else if (!canRead(ctx)) {
+      pInfo = nInfo();
+    } else if (!canRead(cInfo!.ctx)) {
       ok(cInfo!);
       cNode = cInfo = null;
     }
   }
-
-  make(schema, null, null);
-  const rInfo = (pInfo = nInfo(isLeaf(schema)));
-  cb(rInfo.ctx, 'onDepth');
 
   /** Saves the {@linkcode ParseError} to throw later during validation. */
   function nErr(e: ParseError<T> | undefined) {
@@ -235,6 +231,10 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     cb(pInfo.ctx, 'onArg');
   }
+
+  make(schema, null, null);
+  const rInfo = (pInfo = nInfo(isLeaf(schema)));
+  cb(rInfo.ctx, 'onDepth');
 
   for (const raw of args) {
     if (pInfo.leaf) {
