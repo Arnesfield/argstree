@@ -14,7 +14,8 @@ export function isOption(arg: string, type?: 'long' | 'short'): boolean {
     // before min, dashes must exist
     // after min, a non-dash should exist before reaching max
     // condition can be read as: i >= min
-    if (arg[i] !== '-') return i > (type === 'long' ? 1 : 0);
+    // 45: '-'
+    if (arg.charCodeAt(i) !== 45) return i > (type === 'long' ? 1 : 0);
   }
 
   return false;
