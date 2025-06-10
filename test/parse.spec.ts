@@ -691,7 +691,8 @@ describe('parse', () => {
         expect(arg).to.deep.equal({
           raw: '--fallback=0',
           key: '--fallback',
-          value: '0'
+          value: '0',
+          split: undefined
         } satisfies Arg);
 
         const [expectedNode] = createNodes({

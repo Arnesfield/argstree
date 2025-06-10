@@ -1,7 +1,6 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { split, Split } from '../lib/split';
-import { Arg } from '../types/arg.types';
+import { split, Split, SplitItem } from '../lib/split';
 import { Node as INode } from '../types/node.types';
 import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
@@ -250,8 +249,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     const { ctx, opts } = pInfo;
     let schema = opts.map[key],
-      alias: Alias | undefined,
-      parsed: ReturnType<NonNullable<Options['parser']>> | undefined;
+      alias: Alias | undefined;
 
     if (schema && assignable(schema, value)) {
       make(schema, raw, key, value);
@@ -259,17 +257,17 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
       continue;
     }
 
-    if ((alias = opts.alias[key])) {
-      schema = opts.map[alias.key]!;
-      if (assignable(schema, value)) {
-        make(schema, raw, alias.key, value, alias.alias, alias.args);
-        use();
-        continue;
-      }
+    if (
+      (alias = opts.alias[key]) &&
+      assignable((schema = opts.map[alias.key]!), value)
+    ) {
+      make(schema, raw, alias.key, value, alias.alias, alias.args);
+      use();
+      continue;
     }
 
     // split
-    let rSplit: Split | undefined, s: Split | undefined;
+    let rSplit: Split | undefined, s: Split | undefined, last: SplitItem;
     if (
       opts.keys.length > 0 &&
       isOption(key, 'short') &&
@@ -277,7 +275,6 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     ) {
       // if last split item is a value
       // check if last item is assignable
-      let last;
 
       if (
         value != null &&
@@ -285,15 +282,18 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
         !assignable(opts.map[opts.alias['-' + last.value].key]!, value)
       ) {
         // treat as value
-      } else if (s.remainders.length > 0) {
-        rSplit = s;
-      } else {
-        for (let i = 0, val; i < s.values.length; i++) {
+      }
+
+      // set split result for error later after parser
+      else if (s.remainders.length > 0) rSplit = s;
+      // handle split values
+      else {
+        for (let i = 0; i < s.values.length; i++) {
           alias = opts.alias['-' + s.values[i]];
           schema = opts.map[alias.key]!;
-          val = i === s.values.length - 1 ? value : null;
 
-          make(schema, raw, alias.key, val, alias.alias, alias.args);
+          // prettier-ignore
+          make(schema, raw, alias.key, i === s.values.length - 1 ? value : null, alias.alias, alias.args);
         }
 
         use();
@@ -303,46 +303,41 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     // parse by parser
 
-    const o = ctx.schema.options;
-    if (o.parser) {
-      const arg: Arg = { raw, key, value };
-      rSplit && (arg.split = rSplit);
-      parsed = o.parser(arg, ctx);
+    // prettier-ignore
+    let parsed = ctx.schema.options.parser?.({ raw, key, value, split: rSplit }, ctx);
+    if (parsed === false) {
+      // ignore raw argument
     }
-
-    // ignore raw argument
-    if (parsed === false) continue;
 
     // default behavior if no parsed or true
     // default behavior if empty array
     // otherwise, iterate through parsed
-    if (
+    else if (
       parsed != null &&
       parsed !== true &&
       (parsed = Array.isArray(parsed) ? parsed : [parsed]).length > 0
     ) {
       type V = Value;
 
-      let hasNode: boolean | undefined;
+      let doUse: boolean | undefined;
       for (const p of parsed) {
         if ((p as Schema<T>).schemas) {
-          hasNode = true;
+          doUse = true;
           // no value since it is handler by parser
           make(p as Schema<T>, raw, key);
         } else for (const v of array((p as V).args)) setValue(v, (p as V).strict); // prettier-ignore
       }
 
       // if make() was called, call use() after
-      hasNode && use();
+      doUse && use();
 
       // always skip after successful parser call (parsed.length > 0)
-      continue;
     }
 
     // parser done
 
     // handle split error
-    if (rSplit) {
+    else if (rSplit) {
       const msg =
         `alias${rSplit.remainders.length === 1 ? '' : 'es'}: -` +
         rSplit.items
