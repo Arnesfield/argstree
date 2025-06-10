@@ -104,9 +104,7 @@ function error<T>(
 }
 
 export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
-  // keep track of and reuse existing normalized options
-  const map = new WeakMap<Schema<T>, NormalizedOptions<T>>(),
-    list: NodeInfo<T>[] = [],
+  const list: NodeInfo<T>[] = [],
     bvList: NodeInfo<T>[] = [];
 
   let pInfo: NormalizedNodeInfo<T>,
@@ -166,11 +164,9 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
   function nInfo(leaf: boolean) {
     const info = cInfo as NormalizedNodeInfo<T>;
-    const { node, schema } = info.ctx;
 
     info.leaf = leaf;
-    (info.opts = map.get(schema)!) ||
-      map.set(schema, (info.opts = normalize(schema, node)));
+    info.opts = normalize(info.ctx.schema);
 
     cNode = cInfo = null;
     return info;
