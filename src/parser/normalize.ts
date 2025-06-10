@@ -30,8 +30,8 @@ export function normalize<T>(schema: Schema<T>): NormalizedOptions<T> {
   const alias: NormalizedOptions<T>['alias'] = { __proto__: null! };
 
   // apply aliases from args
-  for (const [key, s] of Object.entries(map)) {
-    for (let arr of array(s.options.alias)) {
+  for (const key in map) {
+    for (let arr of array(map[key].options.alias)) {
       // each array item is an alias
       // if item is an array, item[0] is an alias
       if ((arr = array(arr)).length === 0) continue;
