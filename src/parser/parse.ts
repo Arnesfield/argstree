@@ -45,6 +45,10 @@ export function assignable<T>(
   return value == null || (schema.options.assign ?? schema.type === 'option');
 }
 
+function canRead<T>(ctx: InternalContext<T>): boolean {
+  return ctx.read && (ctx.max == null || ctx.max > ctx.node.args.length);
+}
+
 function cb<T>(ctx: InternalContext<T>, e: NodeEvent<T>) {
   ctx.schema.options[e]?.(ctx);
 }
@@ -181,11 +185,8 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
 
     if (!leaf) {
       ok(pInfo);
-
       pInfo = nInfo(leaf);
-    } else if (
-      !(ctx.read && (ctx.max == null || ctx.max > cNode!.args.length))
-    ) {
+    } else if (!canRead(ctx)) {
       ok(cInfo!);
       cNode = cInfo = null;
     }
@@ -220,10 +221,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // save value to parent node
     // unrecognized argument if parent cannot read or if strict mode
     if (
-      !(
-        pInfo.ctx.read &&
-        (pInfo.ctx.max == null || pInfo.ctx.max > pInfo.ctx.node.args.length)
-      ) ||
+      !canRead(pInfo.ctx) ||
       ((strict ?? pInfo.ctx.strict) && isOption(raw))
     ) {
       return nErr(error(pInfo.ctx, `argument: ${raw}`));
