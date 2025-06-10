@@ -378,7 +378,7 @@ Called after throwing any validation errors for the node.
 
 Type: `(error: ParseError, ctx: Context) => boolean | void`
 
-Called when the node receives a [`ParseError`](#parseerror). The error is ignored if `false` is returned, otherwise it is thrown during validation. Note that configuration errors ([`ParseError.OPTIONS_ERROR`](src/lib/error.ts)) are thrown immediately and will not go through this callback option.
+Called when the node receives a [`ParseError`](#parseerror). The error is ignored if `false` is returned, otherwise it is thrown during validation.
 
 ```js
 const logLevels = ['info', 'warn', 'error', 'debug'];
@@ -484,7 +484,7 @@ map @scope/[name] [ 'dist/[name]' ]
 
 ### ParseError
 
-For errors related to parsing and misconfiguration, a `ParseError` is thrown.
+A `ParseError` is thrown when an error occurs during parsing.
 
 ```js
 import command, { ParseError } from 'argstree';

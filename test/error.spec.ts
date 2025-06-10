@@ -12,7 +12,6 @@ describe('error', () => {
   });
 
   it("should contain the 'error.code' strings as static members", () => {
-    expect(ParseError).to.have.property('OPTIONS_ERROR').that.equals('OPTIONS');
     expect(ParseError).to.have.property('RANGE_ERROR').that.equals('RANGE');
     expect(ParseError)
       .to.have.property('UNRECOGNIZED_ALIAS_ERROR')
@@ -26,108 +25,21 @@ describe('error', () => {
     const id = '--option';
     const [node] = createNodes({ id, name: id, raw: id, key: id, depth: 1 });
     const schema = command();
-    const error = new ParseError(ParseError.OPTIONS_ERROR, 'foo', node, schema);
+    const error = new ParseError(
+      ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
+      'foo',
+      node,
+      schema
+    );
 
     expect(error).to.be.instanceOf(Error).and.instanceOf(ParseError);
     expect(error).to.have.property('name').that.equals('ParseError');
     expect(error)
       .to.have.property('code')
-      .that.equals(ParseError.OPTIONS_ERROR);
+      .that.equals(ParseError.UNRECOGNIZED_ARGUMENT_ERROR);
     expect(error).to.have.property('message').that.equals('foo');
     expect(error).to.have.property('schema').that.equals(schema);
     expect(error).to.have.property('node').that.equals(node);
-  });
-
-  describe('options error', () => {
-    it('should handle duplicate aliases', () => {
-      const code = ParseError.OPTIONS_ERROR;
-
-      let options: Options = { alias: '-f' };
-      expectError({
-        code,
-        args: [],
-        message: "Option '--bar' cannot use an existing alias: -f",
-        match: option(options),
-        options: {
-          init(schema) {
-            schema.option('--foo', { alias: '-f' });
-            schema.option('--bar', options);
-          }
-        }
-      });
-
-      expectError({
-        code,
-        args: [],
-        message: "Command 'bar' cannot use an existing alias: -f",
-        match: command(options),
-        options: {
-          init(schema) {
-            schema.option('--foo', { alias: '-f' });
-            schema.command('bar', options);
-          }
-        }
-      });
-
-      options = { ...options, name: null };
-      expectError({
-        code,
-        args: [],
-        message: 'Cannot use an existing alias: -f',
-        match: option(options),
-        options: {
-          init(schema) {
-            schema.option('--foo', { alias: '-f' });
-            schema.option('--bar', options);
-          }
-        }
-      });
-
-      expectError({
-        code,
-        args: [],
-        message: 'Cannot use an existing alias: -f',
-        match: command(options),
-        options: {
-          init(schema) {
-            schema.option('--foo', { alias: '-f' });
-            schema.command('bar', options);
-          }
-        }
-      });
-    });
-
-    it('should handle invalid range options', () => {
-      const code = ParseError.OPTIONS_ERROR;
-
-      expectError({
-        code,
-        args: [],
-        message: 'Invalid min and max range: 1-0',
-        options: { min: 1, max: 0 }
-      });
-
-      expectError({
-        code,
-        args: [],
-        message: "Command 'foo' has invalid min and max range: 2-0",
-        options: { name: 'foo', min: 2, max: 0 }
-      });
-
-      const match = option({ min: 3, max: 1 });
-      match.schemas();
-      expectError({
-        code,
-        args: ['--foo'],
-        message: "Option '--foo' has invalid min and max range: 3-1",
-        match,
-        options: {
-          init(schema) {
-            schema.option('--foo', match.options);
-          }
-        }
-      });
-    });
   });
 
   describe('range error', () => {
