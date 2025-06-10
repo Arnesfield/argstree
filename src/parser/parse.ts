@@ -105,44 +105,44 @@ function error<T>(
 }
 
 export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
-  const list: NodeInfo<T>[] = [],
-    bvList: NodeInfo<T>[] = [];
+  const list: NodeInfo<T>[] = [], // all info items
+    bvList: NodeInfo<T>[] = []; // all info items that have an onBeforeValidate callback option
 
-  let pInfo: NormalizedNodeInfo<T>,
-    cNode: Node<T> | null | undefined,
-    cInfo: NodeInfo<T> | null | undefined,
-    err: { pos: number; error: ParseError<T> } | undefined;
+  let pInfo: NormalizedNodeInfo<T>, // parent info
+    cNode: Node<T> | null | undefined, // child node (can be value node)
+    cInfo: NodeInfo<T> | null | undefined, // child info
+    err: { pos: number; error: ParseError<T> } | undefined; // error at list position
 
   function make(
-    schema: Schema<T>,
+    s: Schema<T>,
     raw: string | null,
     key: string | null,
     value: string | null = null,
     alias: string | null = null,
-    args?: string[]
+    argv?: string[]
   ) {
     // mark previous info as parsed before creating next node info
     cInfo && ok(cInfo);
 
-    const { type, options: o } = schema;
+    const { type, options: o } = s;
     const p = pInfo ? pInfo.ctx.node : null;
 
     // prettier-ignore
-    const { id = key, name = key, min = null, max = null, read = true, strict: s } = o;
+    const { id = key, name = key, min = null, max = null, read = true, strict: st } = o;
     // prettier-ignore
-    const node: Node<T> = cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(schema, args, value), parent: p, children: [] };
-    p?.children.push(node);
+    cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(s, argv, value), parent: p, children: [] };
+    p?.children.push(cNode);
 
     let dstrict: boolean;
     const strict =
-      s == null
+      st == null
         ? (dstrict = !!pInfo?.dstrict)
-        : typeof s === 'boolean'
-          ? (dstrict = s)
-          : !(dstrict = s !== 'self');
+        : typeof st === 'boolean'
+          ? (dstrict = st)
+          : !(dstrict = st !== 'self');
 
     // prettier-ignore
-    list.push(cInfo = { dstrict, onDepths: [], ctx: { min, max, read, strict, node, schema } });
+    list.push(cInfo = { dstrict, onDepths: [], ctx: { min, max, read, strict, node: cNode, schema: s } });
     // save to before validate list if has onBeforeValidate callback
     o.onBeforeValidate && bvList.push(cInfo);
 
@@ -221,8 +221,8 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   }
 
   make(schema, null, null);
-  const rInfo = (pInfo = nInfo(isLeaf(schema)));
-  cb(rInfo.ctx, 'onDepth');
+  const root = (pInfo = nInfo(isLeaf(schema)));
+  cb(root.ctx, 'onDepth');
 
   for (const raw of args) {
     if (pInfo.leaf) {
@@ -231,7 +231,9 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     }
 
     let key = raw,
-      value: string | undefined;
+      value: string | undefined,
+      alias: Alias | undefined;
+
     const index = raw.indexOf('=');
     if (index > -1) {
       key = raw.slice(0, index);
@@ -239,10 +241,9 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     }
 
     const { ctx, opts } = pInfo;
-    let schema = opts.map[key],
-      alias: Alias | undefined;
 
-    if (schema && canAssign(schema, value)) {
+    // NOTE: reuse schema variable
+    if ((schema = opts.map[key]!) && canAssign(schema, value)) {
       make(schema, raw, key, value);
       use();
       continue;
@@ -357,5 +358,5 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     if (++l === err?.pos) throw err.error;
   }
 
-  return rInfo.ctx.node;
+  return root.ctx.node;
 }
