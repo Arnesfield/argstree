@@ -2,16 +2,8 @@ import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
 import { Alias, NormalizedOptions } from '../parser/normalize';
 import { canAssign, getArgs } from '../parser/utils';
-import { Arg } from '../types/arg.types';
 import { ResolvedArg, ResolvedItem, Schema } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
-
-// like Arg but has conditional props `split` and `items`
-export type ResolveArg<T> = Arg &
-  (
-    | { split: Split; items?: never }
-    | { split?: never; items?: NonEmptyArray<ResolvedItem<T>> }
-  );
 
 // make props optional except 'key' and make 'alias' nullable
 interface ParsedArg
@@ -35,60 +27,66 @@ export function resolve<T>(
   raw: string,
   val?: string | null
 ): ResolvedArg<T> | undefined {
-  const arg = { raw, key: raw } as ResolveArg<T>;
+  const arg = { raw, key: raw } as ResolvedArg<T>;
 
-  if (val === undefined) {
-    const index = raw.indexOf('=');
-    if (index > -1) {
-      arg.key = raw.slice(0, index);
-      arg.value = raw.slice(index + 1);
-    }
-  } else if (val != null) arg.value = val;
-
-  let schema = opts.map[arg.key],
+  let schema: Schema<T> | undefined,
     alias: Alias | undefined,
     s: Split | undefined,
-    last: SplitItem;
+    last: SplitItem,
+    i: number;
 
-  if (schema && canAssign(schema, arg.value)) {
-    arg.items = [item(schema, arg.value, arg)];
+  if (val === undefined && (i = raw.indexOf('=')) > -1) {
+    arg.key = raw.slice(0, i);
+    arg.value = raw.slice(i + 1);
+  } else if (val != null) arg.value = val;
+
+  const { key, value } = arg;
+
+  if ((schema = opts.map[key]) && canAssign(schema, value)) {
+    arg.items = [item(schema, value, arg)];
   }
 
   // alias
   else if (
-    (alias = opts.alias[arg.key]) &&
-    canAssign((schema = opts.map[alias.key]!), arg.value)
+    (alias = opts.alias[key]) &&
+    canAssign((schema = opts.map[alias.key]!), value)
   ) {
-    arg.items = [item(schema, arg.value, alias)];
+    arg.items = [item(schema, value, alias)];
   }
 
   // split
   else if (
-    opts.keys.length > 0 &&
-    isOption(arg.key, 'short') &&
-    (s = split(arg.key.slice(1), opts.keys)).values.length > 0
+    !(
+      opts.keys.length > 0 &&
+      isOption(key, 'short') &&
+      (s = split(key.slice(1), opts.keys)).values.length > 0
+    )
   ) {
-    // if last split item is a value
-    // check if last item is assignable
+    // treat as value if no split items
+  }
 
-    if (
-      arg.value != null &&
-      !(last = s.items.at(-1)!).remainder &&
-      !canAssign(opts.map[opts.alias['-' + last.value].key]!, arg.value)
-    ) {
-      // treat as value
-    } else if (s.remainders.length > 0) {
-      arg.split = s;
-    } else {
-      arg.items = [] as unknown as NonEmptyArray<ResolvedItem<T>>;
+  // handle split
+  // if last split item is a value, check if last item is assignable
+  else if (
+    value != null &&
+    !(last = s.items.at(-1)!).remainder &&
+    !canAssign(opts.map[opts.alias['-' + last.value].key]!, value)
+  ) {
+    // treat as value if last split item value is not assignable
+  }
 
-      for (let i = 0; i < s.values.length; i++) {
-        alias = opts.alias['-' + s.values[i]];
-        // prettier-ignore
-        arg.items.push(item(opts.map[alias.key]!, i === s.values.length - 1 ? arg.value : null, alias));
-      }
+  // set split result and skip setting items
+  else if (s.remainders.length > 0) arg.split = s;
+  else {
+    arg.items = [] as unknown as NonEmptyArray<ResolvedItem<T>>;
+
+    // NOTE: reuse i variable
+    for (i = 0; i < s.values.length; i++) {
+      alias = opts.alias['-' + s.values[i]];
+      // prettier-ignore
+      arg.items.push(item(opts.map[alias.key]!, i === s.values.length - 1 ? value : null, alias));
     }
   }
 
-  if (arg.items || arg.split) return arg as ResolvedArg<T>;
+  if (arg.items || arg.split) return arg;
 }
