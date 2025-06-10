@@ -38,7 +38,10 @@ function isLeaf<T>(schema: Schema<T>) {
   return schema.type !== 'command';
 }
 
-function assignable<T>(schema: Schema<T>, value: string | null | undefined) {
+export function assignable<T>(
+  schema: Schema<T>,
+  value: string | null | undefined
+): boolean {
   return value == null || (schema.options.assign ?? schema.type === 'option');
 }
 

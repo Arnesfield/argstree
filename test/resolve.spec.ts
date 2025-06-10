@@ -239,9 +239,14 @@ describe('resolve', () => {
       items: [
         {
           key: '--input',
-          alias: '-i=0',
+          alias: '-i',
           type: 'option',
-          options: { ...opts.input, id: '--input', name: '--input', args: [] }
+          options: {
+            ...opts.input,
+            id: '--input',
+            name: '--input',
+            args: ['0']
+          }
         }
       ]
     } satisfies ResolvedArg);
