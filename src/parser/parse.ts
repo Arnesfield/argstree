@@ -5,7 +5,6 @@ import { Node as INode } from '../types/node.types';
 import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
-import { display } from '../utils/display';
 import { NodeData } from './cnode';
 import { getArgs } from './get-args';
 import { NodeEvent } from './node';
@@ -13,13 +12,9 @@ import { Alias, normalize, NormalizedOptions } from './normalize';
 
 // NOTE: internal
 
-interface InternalContext<T> extends Omit<Context<T>, 'node'> {
-  node: NodeData<T>;
-}
-
 interface NodeInfo<T> {
   dstrict: boolean;
-  ctx: InternalContext<T>;
+  ctx: Context<T>;
   leaf?: boolean;
   opts?: NormalizedOptions<T>;
   // children with onDepth callbacks only
@@ -47,11 +42,11 @@ export function canAssign<T>(
   return value == null || (schema.options.assign ?? schema.type === 'option');
 }
 
-function canRead<T>(ctx: InternalContext<T>): boolean {
+function canRead<T>(ctx: Context<T>): boolean {
   return ctx.read && (ctx.max == null || ctx.max > ctx.node.args.length);
 }
 
-function cb<T>(ctx: InternalContext<T>, e: NodeEvent<T>) {
+function cb<T>(ctx: Context<T>, e: NodeEvent<T>) {
   ctx.schema.options[e]?.(ctx);
 }
 
@@ -60,7 +55,7 @@ function ok<T>(info: NodeInfo<T>) {
   cb(info.ctx, 'onData');
 }
 
-function done<T>(ctx: InternalContext<T>): void {
+function done<T>(ctx: Context<T>): void {
   // eslint-disable-next-line prefer-const
   let { min, max } = ctx;
 
@@ -102,13 +97,16 @@ function done<T>(ctx: InternalContext<T>): void {
  * @returns The {@linkcode ParseError} if {@linkcode Options.onError} does not return `false`.
  */
 function error<T>(
-  ctx: InternalContext<T>,
+  ctx: Context<T>,
   msg: string,
   code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
   p?: string,
   q?: string
 ): ParseError<T> | undefined {
-  const name = display(ctx.node);
+  const name =
+    ctx.node.name != null &&
+    `${ctx.node.type === 'option' ? 'Option' : 'Command'} '${ctx.node.name}' `;
+
   // prettier-ignore
   const err = new ParseError(code, (name ? name + (p || 'does not recognize the ') : (q || 'Unrecognized ')) + msg, ctx.node, ctx.schema);
 
