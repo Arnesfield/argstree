@@ -261,36 +261,39 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     // split
     let rSplit: Split | undefined, s: Split | undefined, last: SplitItem;
     if (
-      opts.keys.length > 0 &&
-      isOption(key, 'short') &&
-      (s = split(key.slice(1), opts.keys)).values.length > 0
+      !(
+        opts.keys.length > 0 &&
+        isOption(key, 'short') &&
+        (s = split(key.slice(1), opts.keys)).values.length > 0
+      )
     ) {
-      // if last split item is a value
-      // check if last item is assignable
+      // treat as value if no split items
+    }
 
-      if (
-        value != null &&
-        !(last = s.items.at(-1)!).remainder &&
-        !canAssign(opts.map[opts.alias['-' + last.value].key]!, value)
-      ) {
-        // treat as value
+    // handle split
+    // if last split item is a value
+    // check if last item is assignable
+    else if (
+      value != null &&
+      !(last = s.items.at(-1)!).remainder &&
+      !canAssign(opts.map[opts.alias['-' + last.value].key]!, value)
+    ) {
+      // treat as value if last split item value is not assignable
+    }
+
+    // set split result for error later after parser
+    else if (s.remainders.length > 0) rSplit = s;
+    // handle split values
+    else {
+      for (let i = 0; i < s.values.length; i++) {
+        schema = opts.map[(alias = opts.alias['-' + s.values[i]]).key]!;
+
+        // prettier-ignore
+        make(schema, raw, alias.key, i === s.values.length - 1 ? value : null, alias.alias, alias.args);
       }
 
-      // set split result for error later after parser
-      else if (s.remainders.length > 0) rSplit = s;
-      // handle split values
-      else {
-        for (let i = 0; i < s.values.length; i++) {
-          alias = opts.alias['-' + s.values[i]];
-          schema = opts.map[alias.key]!;
-
-          // prettier-ignore
-          make(schema, raw, alias.key, i === s.values.length - 1 ? value : null, alias.alias, alias.args);
-        }
-
-        use();
-        continue;
-      }
+      use();
+      continue;
     }
 
     // parse by parser
