@@ -6,7 +6,6 @@ import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
 import { display } from '../utils/display';
-import { range } from '../utils/range';
 import { NodeData } from './cnode';
 import { getArgs } from './get-args';
 import { NodeEvent } from './node';
@@ -59,15 +58,19 @@ function ok<T>(info: NodeInfo<T>) {
 }
 
 function done<T>(ctx: InternalContext<T>): void {
-  // there is no need to validate the range once a callback option is fired
-  // validate only after parsing since the context object
-  // may not have the correct range set by the consumer
-  const [min, max] = range(ctx.min, ctx.max, ctx.node, ctx.schema);
+  // eslint-disable-next-line prefer-const
+  let { min, max } = ctx;
+
+  // if min is greater than max,
+  // prioritize the min value instead of throwing an error
+  // also expect max to have value
+  const rng = min != null && max != null;
+  if (rng && min > max!) max = min;
 
   // validate node
   const len = ctx.node.args.length;
   const m: [string | number, number] | null =
-    min != null && max != null && (len < min || len > max)
+    rng && (len < min || len > max!)
       ? min === max
         ? [min, min]
         : [`${min}-${max}`, 0]
