@@ -5,11 +5,18 @@ import { Node } from '../types/node.types';
 import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
-import { NodeEvent } from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
 import { canAssign, canRead, getArgs, isLeaf } from './utils';
 
 // NOTE: internal
+
+type NodeEvent<T> = keyof {
+  [K in keyof Options<T> as K extends 'onError'
+    ? never
+    : K extends `on${string}`
+      ? K
+      : never]: Options<T>[K];
+};
 
 interface NodeInfo<T> {
   dstrict: boolean;

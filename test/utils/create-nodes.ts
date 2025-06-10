@@ -1,5 +1,4 @@
 import { Node } from '../../src';
-import { cnode } from '../../src/parser/cnode';
 
 export interface PartialNode
   extends Partial<Omit<Node, 'parent' | 'children'>> {
@@ -16,18 +15,28 @@ export function createNodes(partial: PartialNode = {}): Node[] {
     const { children, ...pNode } = item.partial;
 
     // remove undefined from pNode
-    for (const key of Object.keys(pNode) as (keyof typeof pNode)[]) {
-      if (pNode[key] === undefined) {
-        delete pNode[key];
+    // use for...in and assume no inherited keys
+    let k: keyof typeof pNode;
+    for (k in pNode) {
+      if (pNode[k] === undefined) {
+        delete pNode[k];
       }
     }
 
-    item.node = cnode(
-      { key: pNode.key ?? undefined, schema: { type: 'option', options: {} } },
-      pNode.key,
+    const { key = null } = pNode;
+    item.node = {
+      id: key,
+      name: key,
+      raw: key,
+      key,
+      alias: null,
+      value: null,
+      type: 'option',
+      depth: parent ? parent.depth + 1 : 0,
+      args: pNode.args || [],
       parent,
-      pNode.args || []
-    );
+      children: []
+    };
     Object.assign(item.node, pNode);
     parent?.children.push(item.node);
 

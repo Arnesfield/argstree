@@ -14,7 +14,7 @@ export type ResolveArg<T> = Arg &
   );
 
 // make props optional except 'key' and make 'alias' nullable
-export interface ParsedArg
+interface ParsedArg
   extends Pick<Alias, 'key'>,
     Partial<Omit<Alias, 'key' | 'alias'>> {
   alias?: string | null;
