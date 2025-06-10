@@ -1,11 +1,10 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
-import { Node as INode } from '../types/node.types';
+import { Node } from '../types/node.types';
 import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
-import { NodeData } from './cnode';
 import { NodeEvent } from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
 import { canAssign, canRead, getArgs, isLeaf } from './utils';
@@ -98,12 +97,12 @@ function error<T>(
   if (ctx.schema.options.onError?.(err, ctx) !== false) return err;
 }
 
-export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
+export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   const list: NodeInfo<T>[] = [],
     bvList: NodeInfo<T>[] = [];
 
   let pInfo: NormalizedNodeInfo<T>,
-    cNode: INode<T> | null | undefined,
+    cNode: Node<T> | null | undefined,
     cInfo: NodeInfo<T> | null | undefined,
     err: { pos: number; error: ParseError<T> } | undefined;
 
@@ -124,7 +123,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): INode<T> {
     // prettier-ignore
     const { id = key, name = key, min = null, max = null, read = true, strict: s } = o;
     // prettier-ignore
-    const node: NodeData<T> = cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(schema, args, value), parent: p, children: [] };
+    const node: Node<T> = cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(schema, args, value), parent: p, children: [] };
     p?.children.push(node);
 
     let dstrict: boolean;
