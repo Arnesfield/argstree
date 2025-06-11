@@ -233,17 +233,17 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
     let key = raw,
       value: string | undefined,
-      alias: Alias | undefined;
+      alias: Alias | undefined,
+      i = raw.indexOf('=');
 
-    const index = raw.indexOf('=');
-    if (index > -1) {
-      key = raw.slice(0, index);
-      value = raw.slice(index + 1);
+    if (i > -1) {
+      key = raw.slice(0, i);
+      value = raw.slice(i + 1);
     }
 
     const { ctx, opts } = pInfo;
 
-    // NOTE: reuse schema variable
+    // NOTE: reuse `schema` variable
     if ((schema = opts.map[key]!) && canAssign(schema, value)) {
       node(schema, raw, key, value);
       use();
@@ -286,11 +286,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     else if (s.remainders.length > 0) rSplit = s;
     // handle split values
     else {
-      for (let i = 0; i < s.values.length; i++) {
-        schema = opts.map[(alias = opts.alias['-' + s.values[i]]).key]!;
+      // NOTE: reuse `i` variable
+      i = 0;
+      for (const v of s.values) {
+        schema = opts.map[(alias = opts.alias['-' + v]).key]!;
 
         // prettier-ignore
-        node(schema, raw, alias.key, i === s.values.length - 1 ? value : null, alias.alias, alias.args);
+        node(schema, raw, alias.key, i++ === s.values.length - 1 ? value : null, alias.alias, alias.args);
       }
 
       use();

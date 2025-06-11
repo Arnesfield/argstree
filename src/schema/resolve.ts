@@ -82,11 +82,12 @@ export function resolve<T>(
   else {
     arg.items = [] as unknown as NonEmptyArray<ResolvedItem<T>>;
 
-    // NOTE: reuse i variable
-    for (i = 0; i < s.values.length; i++) {
-      alias = opts.alias['-' + s.values[i]];
+    // NOTE: reuse `i` variable
+    i = 0;
+    for (const v of s.values) {
+      alias = opts.alias['-' + v];
       // prettier-ignore
-      arg.items.push(item(opts.map[alias.key]!, i === s.values.length - 1 ? value : null, alias));
+      arg.items.push(item(opts.map[alias.key]!, i++ === s.values.length - 1 ? value : null, alias));
     }
   }
 
