@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import command, { Options } from '../src';
-import { NodeEvent } from '../src/parser/node';
+import { NodeEvent } from '../src/parser/parse';
 import { expectContext } from './utils/expect-context';
 
 const events: NodeEvent<unknown>[] = [

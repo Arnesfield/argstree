@@ -10,7 +10,7 @@ import { canAssign, getArgs, isLeaf, noRead } from './utils';
 
 // NOTE: internal
 
-type NodeEvent<T> = keyof {
+export type NodeEvent<T> = keyof {
   [K in keyof Options<T> as K extends 'onError'
     ? never
     : K extends `on${string}`
