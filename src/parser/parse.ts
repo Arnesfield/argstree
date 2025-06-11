@@ -21,7 +21,6 @@ export type NodeEvent<T> = keyof {
 interface NodeInfo<T> {
   dstrict: boolean;
   ctx: Context<T>;
-  leaf?: boolean;
   opts?: NormalizedOptions<T>;
   // children with onDepth callbacks only
   onDepths: NodeInfo<T>[];
@@ -157,10 +156,9 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     }
   }
 
-  function nInfo(leaf?: boolean) {
+  function nInfo() {
     const info = cInfo as NormalizedNodeInfo<T>;
 
-    info.leaf = leaf;
     info.opts = normalize(info.ctx.schema);
 
     cNode = cInfo = null;
@@ -217,12 +215,18 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     cb(pInfo.ctx, 'onArg');
   }
 
+  // create root node
   make(schema, null, null);
-  const root = (pInfo = nInfo(isLeaf(schema)));
+  const root = (pInfo = nInfo());
   cb(root.ctx, 'onDepth');
 
+  // NOTE: instead of saving `leaf` to multiple info objects,
+  // get it once since the next parent node info will always be non-leaf
+  // assume leaf is almost always false
+  const leaf = root.opts.value || isLeaf(schema);
+
   for (const raw of args) {
-    if (pInfo.opts.value || pInfo.leaf) {
+    if (pInfo.opts.value || leaf) {
       setValue(raw);
       continue;
     }
