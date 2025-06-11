@@ -24,7 +24,7 @@ export interface Context<T = unknown> {
 export interface Value {
   /** Arguments to be saved to the current node. */
   args: string | string[];
-  /** Overrides the strict mode for the node when validating {@linkcode args}. */
+  /** Overrides the strict mode for the current node. */
   strict?: boolean;
 }
 
@@ -105,9 +105,6 @@ export interface Options<T = unknown> {
    * - `false` - Disable strict mode for both self and descendants.
    * - `self` - Enable strict mode for self but disable it for descendants.
    * - `descendants` - Disable strict mode for self but enable it for descendants.
-   *
-   * Note that string values returned by the {@linkcode parser} callback
-   * are excluded from the strict mode checks.
    * @default false
    */
   strict?: boolean | 'self' | 'descendants';
@@ -207,12 +204,4 @@ export interface Options<T = unknown> {
    * @param ctx The callback context.
    */
   onValidate?(ctx: Context<T>): void;
-  /**
-   * Called when the node receives a {@linkcode ParseError}. The error is
-   * ignored if `false` is returned, otherwise it is thrown during validation.
-   * @param error The parse error.
-   * @param ctx The callback context.
-   * @returns A boolean value if the error should be ignored (`false`) or not.
-   */
-  onError?(error: ParseError<T>, ctx: Context<T>): boolean | void;
 }

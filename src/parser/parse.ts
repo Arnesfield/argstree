@@ -6,16 +6,12 @@ import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
 import { Alias, normalize, NormalizedOptions } from './normalize';
-import { canAssign, getArgs, isLeaf, noRead } from './utils';
+import { canAssign, display, getArgs, isLeaf, noRead } from './utils';
 
 // NOTE: internal
 
 export type NodeEvent<T> = keyof {
-  [K in keyof Options<T> as K extends 'onError'
-    ? never
-    : K extends `on${string}`
-      ? K
-      : never]: Options<T>[K];
+  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
 };
 
 interface NodeInfo<T> {
@@ -62,39 +58,13 @@ function done<T>(ctx: Context<T>): void {
           : null;
 
   if (m) {
-    const msg = `xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
-    const err = error(ctx, msg, ParseError.RANGE_ERROR, 'e', 'E');
-    if (err) throw err;
+    const name = display(ctx.node);
+    const msg = `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
+    throw new ParseError(ParseError.RANGE_ERROR, msg, ctx.node, ctx.schema);
   }
 
-  // only run onValidate if no errors (even ignored ones)
-  else cb(ctx, 'onValidate');
-}
-
-/**
- * Creates a {@linkcode ParseError}.
- * @param msg The error message after the prefix.
- * @param code The error code.
- * @param p Prefix before {@linkcode msg} if a display name is available.
- * @param q Prefix before {@linkcode msg} if a display name is not available.
- * @returns The {@linkcode ParseError} if {@linkcode Options.onError} does not return `false`.
- */
-function error<T>(
-  ctx: Context<T>,
-  msg: string,
-  code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
-  p?: string,
-  q?: string
-): ParseError<T> | undefined {
-  const name =
-    ctx.node.name != null &&
-    `${ctx.node.type === 'option' ? 'Option' : 'Command'} '${ctx.node.name}' `;
-
-  // prettier-ignore
-  const err = new ParseError(code, (name ? name + (p || 'does not recognize the ') : (q || 'Unrecognized ')) + msg, ctx.node, ctx.schema);
-
-  // return error to throw later if onError does not return false
-  if (ctx.schema.options.onError?.(err, ctx) !== false) return err;
+  // run onValidate if no errors
+  cb(ctx, 'onValidate');
 }
 
 export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
@@ -107,7 +77,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     cInfo: NodeInfo<T> | null | undefined, // child info
     pdstrict = false, // parent node strict descendants
     dstrict: boolean, // current child node strict descendants
-    err: { pos: number; error: ParseError<T> } | undefined; // error at list position
+    err: ParseError<T> | undefined; // error before validation
 
   function node(
     s: Schema<T>,
@@ -171,22 +141,30 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     }
   }
 
-  /** Saves the {@linkcode ParseError} to throw later during validation. */
-  function nErr(e: ParseError<T> | undefined) {
-    err ||= e && { pos: list.length, error: e };
+  /** Saves the unrecognized error to throw later during validation. */
+  function uerr(msg: string, code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR) {
+    // skip if cached error is already set
+    if (err) return;
+
+    // always use parent node for unrecognized arguments
+    const name = display(pInfo.ctx.node);
+    msg = (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg;
+    err = new ParseError(code, msg, pInfo.ctx.node, pInfo.ctx.schema);
   }
 
   function setValue(raw: string, strict?: boolean) {
     // save value to child node if it exists
-    if (cNode && cInfo) {
+    if (cInfo) {
       if ((strict ?? cInfo.ctx.strict) && isOption(raw)) {
-        return nErr(error(cInfo.ctx, `argument: ${raw}`));
+        // use parent node for unrecognized argument errors even for child nodes
+        return uerr(`argument: ${raw}`);
       }
 
-      cNode.args.push(raw);
+      // assume cNode exists if cInfo exists
+      cNode!.args.push(raw);
       cb(cInfo.ctx, 'onArg');
 
-      if (cInfo.ctx.max != null && cNode.args.length >= cInfo.ctx.max) {
+      if (cInfo.ctx.max != null && cNode!.args.length >= cInfo.ctx.max) {
         ok(cInfo);
         cNode = cInfo = null;
       }
@@ -196,7 +174,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     // save value to parent node
     // unrecognized argument if parent cannot read or if strict mode
     if (noRead(pInfo.ctx) || ((strict ?? pInfo.ctx.strict) && isOption(raw))) {
-      return nErr(error(pInfo.ctx, `argument: ${raw}`));
+      return uerr(`argument: ${raw}`);
     }
 
     const p = pInfo.ctx.node;
@@ -338,7 +316,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
         rSplit.items
           .map(v => (v.remainder ? `(${v.value})` : v.value))
           .join('');
-      nErr(error(ctx, msg, ParseError.UNRECOGNIZED_ALIAS_ERROR));
+      uerr(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
     }
 
     // otherwise, set value
@@ -352,14 +330,11 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   // run onBeforeValidate for all nodes per depth level incrementally
   for (const n of bvList) cb(n.ctx, 'onBeforeValidate');
 
+  // throw error before validation
+  if (err) throw err;
+
   // validate and run onValidate for all nodes
-  let l = 0;
-  for (const n of list) {
-    done(n.ctx);
-    // throw the error at the given position
-    // assume that position can never be 0
-    if (++l === err?.pos) throw err.error;
-  }
+  for (const n of list) done(n.ctx);
 
   return root.ctx.node;
 }

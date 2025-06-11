@@ -285,8 +285,6 @@ When enabled, a [`ParseError`](#parseerror) is thrown for unrecognized arguments
 - `self` - Enable strict mode for self but disable it for descendants.
 - `descendants` - Disable strict mode for self but enable it for descendants.
 
-Note that string values returned by the [`parser`](#optionsparser) callback are excluded from the strict mode checks.
-
 #### options.leaf
 
 Type: `boolean`
@@ -373,12 +371,6 @@ Called once all nodes have been parsed and before any validation checks.
 #### options.onValidate()
 
 Called after throwing any validation errors for the node.
-
-#### options.onError()
-
-Type: `(error: ParseError, ctx: Context) => boolean | void`
-
-Called when the node receives a [`ParseError`](#parseerror). The error is ignored if `false` is returned, otherwise it is thrown during validation.
 
 ```js
 const logLevels = ['info', 'warn', 'error', 'debug'];

@@ -1,8 +1,7 @@
 import { expect } from 'chai';
-import command, { Arg, option, Options, ParseError } from '../src';
+import command, { Arg, option, ParseError } from '../src';
 import { createNodes } from './utils/create-nodes';
 import { createSplit } from './utils/create-split';
-import { expectContext } from './utils/expect-context';
 import { expectError } from './utils/expect-error';
 
 describe('error', () => {
@@ -444,97 +443,6 @@ describe('error', () => {
             ];
           }
         }
-      });
-    });
-  });
-
-  describe('options.onError', () => {
-    it("should throw error if 'onError' does not return 'false'", () => {
-      let called = 0;
-      expectError({
-        code: ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
-        args: ['foo', 'bar', 'baz'],
-        message: 'Unrecognized argument: foo',
-        options: {
-          max: 0,
-          onError(error, ctx) {
-            called++;
-            expect(error).to.be.instanceOf(Error).and.instanceOf(ParseError);
-            expectContext(ctx);
-          }
-        }
-      });
-      expect(called).to.be.equal(3);
-    });
-
-    it("should ignore errors when 'onError' is called", () => {
-      const errors: ParseError[] = [];
-
-      const onError: Options['onError'] = (error, ctx) => {
-        errors.push(error);
-        expect(error).to.be.instanceOf(Error).and.instanceOf(ParseError);
-        expectContext(ctx);
-        return false;
-      };
-
-      const cmd = command({ max: 1, strict: true, onError });
-      cmd.command('run', { args: ['a'], onError });
-
-      expect(errors).to.have.length(0);
-      const root = cmd.parse(['--test', 'foo', 'bar', 'baz', 'run', '-b', 'c']);
-      const [expected] = createNodes({
-        type: 'command',
-        args: ['foo'],
-        children: [
-          { type: 'value', args: ['foo'] },
-          {
-            id: 'run',
-            name: 'run',
-            raw: 'run',
-            key: 'run',
-            type: 'command',
-            args: ['a', 'c'],
-            children: [
-              {
-                id: 'run',
-                name: 'run',
-                raw: 'run',
-                key: 'run',
-                type: 'value',
-                args: ['c']
-              }
-            ]
-          }
-        ]
-      });
-      expect(root).to.deep.equal(expected);
-
-      const expectedErrors = [
-        {
-          code: ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
-          message: 'Unrecognized argument: --test'
-        },
-        {
-          code: ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
-          message: 'Unrecognized argument: bar'
-        },
-        {
-          code: ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
-          message: 'Unrecognized argument: baz'
-        },
-        {
-          code: ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
-          message: "Command 'run' does not recognize the argument: -b"
-        }
-      ];
-
-      expect(errors).to.have.length(expectedErrors.length);
-
-      expectedErrors.forEach((expectedError, i) => {
-        const error = errors[i];
-        expect({ code: error.code, message: error.message }).to.deep.equal(
-          expectedError
-        );
       });
     });
   });

@@ -1,6 +1,14 @@
+import { Node } from '../types/node.types';
 import { Context, Options } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
+
+export function display<T>(node: Node<T>): string | false {
+  return (
+    node.name != null &&
+    `${node.type === 'option' ? 'Option' : 'Command'} '${node.name}' `
+  );
+}
 
 export function getArgs<T>(
   schema: Schema<T>, // only to get options.args
