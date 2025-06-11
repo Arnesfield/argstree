@@ -5,6 +5,7 @@ import { Node } from '../types/node.types';
 import { Context, Options, Value } from '../types/options.types';
 import { Schema } from '../types/schema.types';
 import { array } from '../utils/array';
+import { __assertNotNull } from '../utils/assert';
 import { Alias, normalize, NormalizedOptions } from './normalize';
 import { canAssign, display, getArgs, isLeaf, noRead } from './utils';
 
@@ -42,12 +43,14 @@ function done<T>(ctx: Context<T>): void {
   // prioritize the min value instead of throwing an error
   // also expect max to have value
   const rng = min != null && max != null;
-  if (rng && min > max!) max = min;
+
+  __assertNotNull(max);
+  if (rng && min > max) max = min;
 
   // validate node
   const len = ctx.node.args.length;
   const m: [string | number, number] | null =
-    rng && (len < min || len > max!)
+    rng && (len < min || len > max)
       ? min === max
         ? [min, min]
         : [`${min}-${max}`, 0]
@@ -123,20 +126,25 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   }
 
   function nOpts() {
-    pInfo = cInfo!;
+    // set current child node info as new parent node info
+    __assertNotNull(cInfo);
+    pInfo = cInfo;
+
     // set dstrict and normalized options for parent node info
     pdstrict = dstrict;
+    opts = normalize(pInfo.ctx.schema);
+
     // clear child node info since it's now the parent node
     cNode = cInfo = null;
-    return normalize(pInfo.ctx.schema);
   }
 
   function use() {
-    if (!isLeaf(cInfo!.ctx.schema)) {
+    __assertNotNull(cInfo);
+    if (!isLeaf(cInfo.ctx.schema)) {
       ok(pInfo);
-      opts = nOpts();
-    } else if (noRead(cInfo!.ctx)) {
-      ok(cInfo!);
+      nOpts();
+    } else if (noRead(cInfo.ctx)) {
+      ok(cInfo);
       cNode = cInfo = null;
     }
   }
@@ -155,16 +163,18 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   function setValue(raw: string, strict?: boolean) {
     // save value to child node if it exists
     if (cInfo) {
+      // assume cNode exists if cInfo exists
+      __assertNotNull(cNode);
+
       if ((strict ?? cInfo.ctx.strict) && isOption(raw)) {
         // use parent node for unrecognized argument errors even for child nodes
         return uerr(`argument: ${raw}`);
       }
 
-      // assume cNode exists if cInfo exists
-      cNode!.args.push(raw);
+      cNode.args.push(raw);
       cb(cInfo.ctx, 'onArg');
 
-      if (cInfo.ctx.max != null && cNode!.args.length >= cInfo.ctx.max) {
+      if (cInfo.ctx.max != null && cNode.args.length >= cInfo.ctx.max) {
         ok(cInfo);
         cNode = cInfo = null;
       }
@@ -191,9 +201,12 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
   // create root node
   node(schema, null, null);
-  opts = nOpts();
+  // calling nOpts() should set opts and pInfo
+  nOpts();
+  __assertNotNull(opts!);
+  __assertNotNull(pInfo!);
 
-  const root = pInfo!;
+  const root = pInfo;
   cb(root.ctx, 'onDepth');
 
   // NOTE: instead of saving `leaf` to multiple info objects,
@@ -273,7 +286,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     // parse by parser
 
     // prettier-ignore
-    let parsed = pInfo!.ctx.schema.options.parser?.({ raw, key, value, split: rSplit }, pInfo!.ctx);
+    let parsed = pInfo.ctx.schema.options.parser?.({ raw, key, value, split: rSplit }, pInfo.ctx);
     if (parsed === false) {
       // ignore raw argument
     }
@@ -321,7 +334,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
   // finally, mark nodes as parsed then build tree and validate nodes
   cInfo && ok(cInfo);
-  ok(pInfo!);
+  ok(pInfo);
 
   // run onBeforeValidate for all nodes per depth level incrementally
   for (const n of bvList) cb(n.ctx, 'onBeforeValidate');

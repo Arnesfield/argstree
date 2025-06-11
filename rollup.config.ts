@@ -20,7 +20,11 @@ export default defineConfig([
     input,
     output: { file: pkg.module, format: 'esm', exports: 'named' },
     plugins: [
-      esbuild({ target: 'esnext' }),
+      esbuild({
+        target: 'esnext',
+        // strip assertion checks
+        define: { 'process.env.DEBUG': 'false' }
+      }),
       cleanup({
         comments: ['some', 'sources', /__PURE__/],
         extensions: ['js', 'ts']
