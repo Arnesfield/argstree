@@ -6,16 +6,16 @@ import { ResolvedArg, ResolvedItem, Schema } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
 
 // make props optional except 'key' and make 'alias' nullable
-interface ParsedArg
-  extends Pick<Alias, 'key'>,
-    Partial<Omit<Alias, 'key' | 'alias'>> {
+interface ParsedArg<T>
+  extends Pick<Alias<T>, 'key'>,
+    Partial<Omit<Alias<T>, 'key' | 'alias'>> {
   alias?: string | null;
 }
 
 function item<T>(
   schema: Schema<T>,
   value: string | null | undefined,
-  { key, alias = null, args }: ParsedArg
+  { key, alias = null, args }: ParsedArg<T>
 ): ResolvedItem<T> {
   const { id = key, name = key } = schema.options;
   // prettier-ignore
@@ -32,7 +32,7 @@ export function resolve<T>(
   const arg = { raw, key: raw } as ResolvedArg<T>;
 
   let schema: Schema<T> | undefined,
-    alias: Alias | undefined,
+    alias: Alias<T> | undefined,
     s: Split | undefined,
     last: SplitItem,
     i: number;
@@ -44,52 +44,50 @@ export function resolve<T>(
 
   const { key, value } = arg;
 
+  // get item by map
   if ((schema = opts.map[key]) && canAssign(schema, value)) {
     arg.items = [item(schema, value, arg)];
   }
 
-  // alias
-  else if (
-    (alias = opts.alias[key]) &&
-    canAssign((schema = opts.map[alias.key]!), value)
-  ) {
-    arg.items = [item(schema, value, alias)];
+  // get item by alias
+  else if ((alias = opts.alias[key]) && canAssign(alias.schema, value)) {
+    arg.items = [item(alias.schema, value, alias)];
   }
 
-  // split
+  // handle split
+  // condition 1 - check if can split and has split values
+  // condition 2 - check if last split item is a value and is assignable
   else if (
     !(
       opts.keys.length > 0 &&
       isOption(key, 'short') &&
       (s = split(key.slice(1), opts.keys)).values.length > 0
-    )
+    ) ||
+    (value != null &&
+      !(last = s.items.at(-1)!).remainder &&
+      !canAssign(opts.alias['-' + last.value].schema, value))
   ) {
     // treat as value if no split items
-  }
-
-  // handle split
-  // if last split item is a value, check if last item is assignable
-  else if (
-    value != null &&
-    !(last = s.items.at(-1)!).remainder &&
-    !canAssign(opts.map[opts.alias['-' + last.value].key]!, value)
-  ) {
-    // treat as value if last split item value is not assignable
+    // or if last split item value is not assignable
+    return;
   }
 
   // set split result and skip setting items
-  else if (s.remainders.length > 0) arg.split = s;
-  else {
-    arg.items = [] as unknown as NonEmptyArray<ResolvedItem<T>>;
+  else if (s.remainders.length > 0) {
+    arg.split = s;
+  }
 
+  // if no remainders, resolve all split values
+  else {
     // NOTE: reuse `i` variable
     i = 0;
+    arg.items = [] as unknown as NonEmptyArray<ResolvedItem<T>>;
     for (const v of s.values) {
       alias = opts.alias['-' + v];
       // prettier-ignore
-      arg.items.push(item(opts.map[alias.key]!, i++ === s.values.length - 1 ? value : null, alias));
+      arg.items.push(item(alias.schema, i++ === s.values.length - 1 ? value : null, alias));
     }
   }
 
-  if (arg.items || arg.split) return arg;
+  return arg;
 }

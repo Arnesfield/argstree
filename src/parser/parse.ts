@@ -209,7 +209,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
     let key = raw,
       value: string | undefined,
-      alias: Alias | undefined,
+      alias: Alias<T> | undefined,
       i = raw.indexOf('=');
 
     if (i > -1) {
@@ -218,55 +218,52 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     }
 
     // NOTE: reuse `schema` variable
+    // get node by map
     if ((schema = opts.map[key]!) && canAssign(schema, value)) {
       node(schema, raw, key, value);
       use();
       continue;
     }
 
-    if (
-      (alias = opts.alias[key]) &&
-      canAssign((schema = opts.map[alias.key]!), value)
-    ) {
-      node(schema, raw, alias.key, value, alias.alias, alias.args);
+    // get node by alias
+    if ((alias = opts.alias[key]) && canAssign(alias.schema, value)) {
+      node(alias.schema, raw, alias.key, value, alias.alias, alias.args);
       use();
       continue;
     }
 
-    // split
+    // handle split
+    // condition 1 - check if can split and has split values
+    // condition 2 - check if last split item is a value and is assignable
     let rSplit: Split | undefined, s: Split | undefined, last: SplitItem;
     if (
       !(
         opts.keys.length > 0 &&
         isOption(key, 'short') &&
         (s = split(key.slice(1), opts.keys)).values.length > 0
-      )
+      ) ||
+      (value != null &&
+        !(last = s.items.at(-1)!).remainder &&
+        !canAssign(opts.alias['-' + last.value].schema, value))
     ) {
-      // treat as value if no split items
-    }
-
-    // handle split
-    // if last split item is a value
-    // check if last item is assignable
-    else if (
-      value != null &&
-      !(last = s.items.at(-1)!).remainder &&
-      !canAssign(opts.map[opts.alias['-' + last.value].key]!, value)
-    ) {
-      // treat as value if last split item value is not assignable
+      // parse by parser or treat as value if no split items
+      // or if last split item value is not assignable
     }
 
     // set split result for error later after parser
-    else if (s.remainders.length > 0) rSplit = s;
-    // handle split values
+    else if (s.remainders.length > 0) {
+      rSplit = s;
+    }
+
+    // if no remainders, resolve all split values
     else {
       // NOTE: reuse `i` variable
       i = 0;
       for (const v of s.values) {
-        schema = opts.map[(alias = opts.alias['-' + v]).key]!;
+        alias = opts.alias['-' + v];
 
         // prettier-ignore
-        node(schema, raw, alias.key, i++ === s.values.length - 1 ? value : null, alias.alias, alias.args);
+        node(alias.schema, raw, alias.key, i++ === s.values.length - 1 ? value : null, alias.alias, alias.args);
       }
 
       use();
@@ -275,9 +272,8 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
     // parse by parser
 
-    const { ctx } = pInfo!;
     // prettier-ignore
-    let parsed = ctx.schema.options.parser?.({ raw, key, value, split: rSplit }, ctx);
+    let parsed = pInfo!.ctx.schema.options.parser?.({ raw, key, value, split: rSplit }, pInfo!.ctx);
     if (parsed === false) {
       // ignore raw argument
     }
@@ -292,17 +288,17 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     ) {
       type V = Value;
 
-      let doUse: boolean | undefined;
+      let call: boolean | undefined;
       for (const p of parsed) {
         if ((p as Schema<T>).schemas) {
-          doUse = true;
+          call = true;
           // no value since it is handler by parser
           node(p as Schema<T>, raw, key);
         } else for (const v of array((p as V).args)) setValue(v, (p as V).strict); // prettier-ignore
       }
 
-      // if make() was called, call use() after
-      doUse && use();
+      // if node() was called, call use() after
+      call && use();
 
       // always skip after successful parser call (parsed.length > 0)
     }

@@ -5,11 +5,12 @@ import { array } from '../utils/array';
 
 // NOTE: internal
 
-export interface Alias extends Pick<Arg, 'key'> {
+export interface Alias<T> extends Pick<Arg, 'key'> {
   /** Alias name. */
   alias: string;
   /** Alias arguments. */
   args: string[];
+  schema: Schema<T>;
 }
 
 export interface NormalizedOptions<T> {
@@ -18,7 +19,7 @@ export interface NormalizedOptions<T> {
   /** Safe schema map object. */
   readonly map: Partial<SchemaMap<T>>;
   /** Safe alias map object. */
-  readonly alias: { [alias: string]: Alias };
+  readonly alias: { [alias: string]: Alias<T> };
   /** A sorted list of splittable alias keys without the `-` prefix. */
   readonly keys: string[];
 }
@@ -38,7 +39,9 @@ export function normalize<T>(schema: Schema<T>): NormalizedOptions<T> {
   for (const key in map) {
     value = false;
 
-    for (let arr of array(map[key].options.alias)) {
+    // NOTE: reuse `schema` variable
+    schema = map[key];
+    for (let arr of array(schema.options.alias)) {
       // each array item is an alias
       // if item is an array, item[0] is an alias
       if ((arr = array(arr)).length === 0) continue;
@@ -51,7 +54,7 @@ export function normalize<T>(schema: Schema<T>): NormalizedOptions<T> {
       !alias[a] && isOption(a, 'short') && keys.push(a.slice(1));
 
       // override existing alias
-      alias[a] = { key, alias: a, args: arr.slice(1) };
+      alias[a] = { key, alias: a, args: arr.slice(1), schema };
     }
   }
 
