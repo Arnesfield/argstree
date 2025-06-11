@@ -20,21 +20,19 @@ export type NodeEvent<T> = keyof {
 
 interface NodeInfo<T> {
   ctx: Context<T>;
-  // children with onDepth callbacks only
-  onDepths: NodeInfo<T>[];
+  /** Children with `onDepth` callbacks only. */
+  children: NodeInfo<T>[];
   opts?: NormalizedOptions<T>;
 }
 
-interface NormalizedNodeInfo<T>
-  extends Omit<NodeInfo<T>, 'opts'>,
-    Required<Pick<NodeInfo<T>, 'opts'>> {}
+type NormalizedNodeInfo<T> = Required<NodeInfo<T>>;
 
 function cb<T>(ctx: Context<T>, e: NodeEvent<T>) {
   ctx.schema.options[e]?.(ctx);
 }
 
 function ok<T>(info: NodeInfo<T>) {
-  for (const c of info.onDepths) cb(c.ctx, 'onDepth');
+  for (const n of info.children) cb(n.ctx, 'onDepth');
   cb(info.ctx, 'onData');
 }
 
@@ -141,7 +139,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
           : !(dstrict = st !== 'self');
 
     // prettier-ignore
-    list.push(cInfo = { onDepths: [], ctx: { min, max, read, strict, node: cNode, schema: s } });
+    list.push(cInfo = { children: [], ctx: { min, max, read, strict, node: cNode, schema: s } });
     // save to before validate list if has onBeforeValidate callback
     o.onBeforeValidate && bvList.push(cInfo);
 
@@ -150,7 +148,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
     if (pInfo) {
       // save info to onDepths if has onDepth callback
-      o.onDepth && pInfo.onDepths.push(cInfo);
+      o.onDepth && pInfo.children.push(cInfo);
 
       cb(pInfo.ctx, 'onChild');
     }
