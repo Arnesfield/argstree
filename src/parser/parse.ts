@@ -19,11 +19,10 @@ export type NodeEvent<T> = keyof {
 };
 
 interface NodeInfo<T> {
-  dstrict: boolean;
   ctx: Context<T>;
-  opts?: NormalizedOptions<T>;
   // children with onDepth callbacks only
   onDepths: NodeInfo<T>[];
+  opts?: NormalizedOptions<T>;
 }
 
 interface NormalizedNodeInfo<T>
@@ -110,6 +109,8 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   let pInfo: NormalizedNodeInfo<T>, // parent info
     cNode: Node<T> | null | undefined, // child node (can be value node)
     cInfo: NodeInfo<T> | null | undefined, // child info
+    pdstrict = false, // parent node strict descendants
+    dstrict: boolean, // current child node strict descendants
     err: { pos: number; error: ParseError<T> } | undefined; // error at list position
 
   function make(
@@ -132,16 +133,15 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(s, argv, value), parent: p, children: [] };
     p?.children.push(cNode);
 
-    let dstrict: boolean;
     const strict =
       st == null
-        ? (dstrict = !!pInfo?.dstrict)
+        ? (dstrict = pdstrict)
         : typeof st === 'boolean'
           ? (dstrict = st)
           : !(dstrict = st !== 'self');
 
     // prettier-ignore
-    list.push(cInfo = { dstrict, onDepths: [], ctx: { min, max, read, strict, node: cNode, schema: s } });
+    list.push(cInfo = { onDepths: [], ctx: { min, max, read, strict, node: cNode, schema: s } });
     // save to before validate list if has onBeforeValidate callback
     o.onBeforeValidate && bvList.push(cInfo);
 
@@ -159,6 +159,8 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   function nInfo() {
     const info = cInfo as NormalizedNodeInfo<T>;
 
+    // set dstrict and normalized options for parent node info
+    pdstrict = dstrict;
     info.opts = normalize(info.ctx.schema);
 
     cNode = cInfo = null;
