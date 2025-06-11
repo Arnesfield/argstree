@@ -36,7 +36,8 @@ export function split(value: string, matches: string[]): Split {
     if (item.index == null) {
       s.items.push(item);
       s.values.push(item.value);
-    } else if (item.index > matches.length - 1) {
+    } else if (item.index === matches.length) {
+      // it is unlikely that index will be greater than matches.length
       s.items.push({ value: item.value, remainder: true });
       s.remainders.push(item.value);
     } else {
