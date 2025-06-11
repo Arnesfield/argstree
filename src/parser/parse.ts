@@ -22,10 +22,7 @@ interface NodeInfo<T> {
   ctx: Context<T>;
   /** Children with `onDepth` callbacks only. */
   children: NodeInfo<T>[];
-  opts?: NormalizedOptions<T>;
 }
-
-type NormalizedNodeInfo<T> = Required<NodeInfo<T>>;
 
 function cb<T>(ctx: Context<T>, e: NodeEvent<T>) {
   ctx.schema.options[e]?.(ctx);
@@ -104,7 +101,8 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   const list: NodeInfo<T>[] = [], // all info items
     bvList: NodeInfo<T>[] = []; // all info items that have an onBeforeValidate callback option
 
-  let pInfo: NormalizedNodeInfo<T>, // parent info
+  let opts: NormalizedOptions<T>, // parent normalized options
+    pInfo: NodeInfo<T>, // parent info
     cNode: Node<T> | null | undefined, // child node (can be value node)
     cInfo: NodeInfo<T> | null | undefined, // child info
     pdstrict = false, // parent node strict descendants
@@ -154,21 +152,19 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     }
   }
 
-  function nInfo() {
-    const info = cInfo as NormalizedNodeInfo<T>;
-
+  function nOpts() {
+    pInfo = cInfo!;
     // set dstrict and normalized options for parent node info
     pdstrict = dstrict;
-    info.opts = normalize(info.ctx.schema);
-
+    // clear child node info since it's now the parent node
     cNode = cInfo = null;
-    return info;
+    return normalize(pInfo.ctx.schema);
   }
 
   function use() {
     if (!isLeaf(cInfo!.ctx.schema)) {
       ok(pInfo);
-      pInfo = nInfo();
+      opts = nOpts();
     } else if (noRead(cInfo!.ctx)) {
       ok(cInfo!);
       cNode = cInfo = null;
@@ -217,16 +213,18 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
   // create root node
   node(schema, null, null);
-  const root = (pInfo = nInfo());
+  opts = nOpts();
+
+  const root = pInfo!;
   cb(root.ctx, 'onDepth');
 
   // NOTE: instead of saving `leaf` to multiple info objects,
   // get it once since the next parent node info will always be non-leaf
   // assume leaf is almost always false
-  const leaf = root.opts.value || isLeaf(schema);
+  const leaf = opts.value || isLeaf(schema);
 
   for (const raw of args) {
-    if (pInfo.opts.value || leaf) {
+    if (opts.value || leaf) {
       setValue(raw);
       continue;
     }
@@ -240,8 +238,6 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
       key = raw.slice(0, i);
       value = raw.slice(i + 1);
     }
-
-    const { ctx, opts } = pInfo;
 
     // NOTE: reuse `schema` variable
     if ((schema = opts.map[key]!) && canAssign(schema, value)) {
@@ -301,6 +297,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
     // parse by parser
 
+    const { ctx } = pInfo!;
     // prettier-ignore
     let parsed = ctx.schema.options.parser?.({ raw, key, value, split: rSplit }, ctx);
     if (parsed === false) {
@@ -341,7 +338,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
         rSplit.items
           .map(v => (v.remainder ? `(${v.value})` : v.value))
           .join('');
-      nErr(error(pInfo.ctx, msg, ParseError.UNRECOGNIZED_ALIAS_ERROR));
+      nErr(error(ctx, msg, ParseError.UNRECOGNIZED_ALIAS_ERROR));
     }
 
     // otherwise, set value
@@ -350,7 +347,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
   // finally, mark nodes as parsed then build tree and validate nodes
   cInfo && ok(cInfo);
-  ok(pInfo);
+  ok(pInfo!);
 
   // run onBeforeValidate for all nodes per depth level incrementally
   for (const n of bvList) cb(n.ctx, 'onBeforeValidate');
