@@ -222,7 +222,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   cb(root.ctx, 'onDepth');
 
   for (const raw of args) {
-    if (pInfo.leaf) {
+    if (pInfo.opts.value || pInfo.leaf) {
       setValue(raw);
       continue;
     }

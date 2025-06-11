@@ -13,6 +13,8 @@ export interface Alias extends Pick<Arg, 'key'> {
 }
 
 export interface NormalizedOptions<T> {
+  /** Determines if the node cannot actually have child nodes (value only). */
+  readonly value: boolean;
   /** Safe schema map object. */
   readonly map: Partial<SchemaMap<T>>;
   /** Safe alias map object. */
@@ -29,8 +31,13 @@ export function normalize<T>(schema: Schema<T>): NormalizedOptions<T> {
   const keys: string[] = [];
   const alias: NormalizedOptions<T>['alias'] = { __proto__: null! };
 
+  // check if node is value only (no child nodes)
+  let value = !schema.options.parser;
+
   // apply aliases from args
   for (const key in map) {
+    value = false;
+
     for (let arr of array(map[key].options.alias)) {
       // each array item is an alias
       // if item is an array, item[0] is an alias
@@ -51,5 +58,5 @@ export function normalize<T>(schema: Schema<T>): NormalizedOptions<T> {
   // sort by length desc for splitting later on
   keys.sort((a, b) => b.length - a.length);
 
-  return { map, alias, keys };
+  return { value, map, alias, keys };
 }

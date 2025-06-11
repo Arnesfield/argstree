@@ -27,6 +27,8 @@ export function resolve<T>(
   raw: string,
   val?: string | null
 ): ResolvedArg<T> | undefined {
+  if (opts.value) return;
+
   const arg = { raw, key: raw } as ResolvedArg<T>;
 
   let schema: Schema<T> | undefined,
