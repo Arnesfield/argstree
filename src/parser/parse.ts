@@ -113,7 +113,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     dstrict: boolean, // current child node strict descendants
     err: { pos: number; error: ParseError<T> } | undefined; // error at list position
 
-  function make(
+  function node(
     s: Schema<T>,
     raw: string | null,
     key: string | null,
@@ -218,7 +218,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   }
 
   // create root node
-  make(schema, null, null);
+  node(schema, null, null);
   const root = (pInfo = nInfo());
   cb(root.ctx, 'onDepth');
 
@@ -247,7 +247,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
     // NOTE: reuse schema variable
     if ((schema = opts.map[key]!) && canAssign(schema, value)) {
-      make(schema, raw, key, value);
+      node(schema, raw, key, value);
       use();
       continue;
     }
@@ -256,7 +256,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
       (alias = opts.alias[key]) &&
       canAssign((schema = opts.map[alias.key]!), value)
     ) {
-      make(schema, raw, alias.key, value, alias.alias, alias.args);
+      node(schema, raw, alias.key, value, alias.alias, alias.args);
       use();
       continue;
     }
@@ -292,7 +292,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
         schema = opts.map[(alias = opts.alias['-' + s.values[i]]).key]!;
 
         // prettier-ignore
-        make(schema, raw, alias.key, i === s.values.length - 1 ? value : null, alias.alias, alias.args);
+        node(schema, raw, alias.key, i === s.values.length - 1 ? value : null, alias.alias, alias.args);
       }
 
       use();
@@ -322,7 +322,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
         if ((p as Schema<T>).schemas) {
           doUse = true;
           // no value since it is handler by parser
-          make(p as Schema<T>, raw, key);
+          node(p as Schema<T>, raw, key);
         } else for (const v of array((p as V).args)) setValue(v, (p as V).strict); // prettier-ignore
       }
 
