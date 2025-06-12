@@ -180,8 +180,38 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
   // assume leaf is almost always false (unless the consumer says otherwise)
   const leaf = opts.value || isLeaf(cfg);
 
-  for (const raw of args) {
+  for (let i = 0; i < args.length; i++) {
+    let raw = args[i];
+
     if (opts.value || leaf) {
+      // if a value node exists and not strict mode for the current node,
+      // capture all args up until the end is reached if it's not null
+      // allow number and undefined for end value
+      // note that `end` is used twice (to get length of args and for the end index)
+      // also note that `cNode` is expected to be a value node at this point
+      let end: number | null | undefined;
+      if (
+        cNode &&
+        !pCtx.strict &&
+        (end =
+          pCtx.max == null
+            ? undefined
+            : pCtx.max > (end = pCtx.node.args.length)
+              ? i + (pCtx.max - end)
+              : null) !== null
+      ) {
+        // make sure to push args to child node
+        const argv = args.slice(i, end);
+        pCtx.node.args = pCtx.node.args.concat(argv);
+        cNode.args = cNode.args.concat(argv);
+
+        // stop here if capturing all args
+        if (end == null || end >= args.length) break;
+
+        // call setValue for next raw argument
+        raw = args[(i = end)];
+      }
+
       setValue(raw);
       continue;
     }
@@ -189,11 +219,11 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     let key = raw,
       value: string | undefined,
       alias: Alias<T> | undefined,
-      i = raw.indexOf('=');
+      j = raw.indexOf('=');
 
-    if (i > -1) {
-      key = raw.slice(0, i);
-      value = raw.slice(i + 1);
+    if (j > -1) {
+      key = raw.slice(0, j);
+      value = raw.slice(j + 1);
     }
 
     // NOTE: reuse `cfg` variable
@@ -236,13 +266,13 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
 
     // if no remainders, resolve all split values
     else {
-      // NOTE: reuse `i` variable
-      i = 0;
+      // NOTE: reuse `j` variable
+      j = 0;
       for (const v of s.values) {
         alias = opts.alias['-' + v];
 
         // prettier-ignore
-        node(alias.cfg, raw, alias.key, i++ === s.values.length - 1 ? value : null, alias.alias, alias.args);
+        node(alias.cfg, raw, alias.key, j++ === s.values.length - 1 ? value : null, alias.alias, alias.args);
       }
 
       use();
