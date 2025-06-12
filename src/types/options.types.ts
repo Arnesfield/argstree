@@ -169,24 +169,11 @@ export interface Options<T = unknown> {
    * @returns Options to override for the node.
    */
   onCreate?(node: Node<T>): ParseOptions | void;
-  // TODO: remove?
-  /**
-   * Called when the node receives an argument.
-   * @param node The node object.
-   */
-  onArg?(node: Node<T>): void;
-  // TODO: remove?
   /**
    * Called when the node receives an option or command child node.
    * @param node The node object.
    */
   onChild?(node: Node<T>): void;
-  // TODO: remove?
-  /**
-   * Called when all nodes of the same depth have been created.
-   * @param node The node object.
-   */
-  onDepth?(node: Node<T>): void;
   /**
    * Called after the node has received all arguments and direct child nodes that it can have.
    * @param node The node object.

@@ -348,17 +348,9 @@ Callback options are fired at specific events during parsing. Some options for t
 
 Called when the node is created with its initial arguments.
 
-#### options.onArg()
-
-Called when the node receives an argument.
-
 #### options.onChild()
 
 Called when the node receives an option or command child node.
-
-#### options.onDepth()
-
-Called when all nodes of the same depth have been created.
 
 #### options.onData()
 
@@ -388,7 +380,7 @@ cmd.option('--help', {
 // show version only after other nodes have been created (to prioritize '--help')
 cmd.option('--version', {
   read: false,
-  onDepth() {
+  onBeforeValidate() {
     console.log('v2.0.0');
     process.exit();
   }

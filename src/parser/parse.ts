@@ -23,17 +23,10 @@ interface Context<T> {
   max: number | null;
   read: boolean;
   strict: boolean | undefined;
-  /** Children with `onDepth` callbacks only. */
-  children: Context<T>[];
-}
-
-function cb<T>(ctx: Context<T>, e: NodeEvent<T>) {
-  ctx.cfg.options[e]?.(ctx.node);
 }
 
 function ok<T>(ctx: Context<T>) {
-  for (const c of ctx.children) cb(c, 'onDepth');
-  cb(ctx, 'onData');
+  ctx.cfg.options.onData?.(ctx.node);
 }
 
 function noRead<T>(ctx: Context<T>) {
@@ -47,7 +40,7 @@ function number(n: number | null | undefined): number | null {
 
 function done<T>(ctx: Context<T>): void {
   // validate node
-  const { min, max, node } = ctx;
+  const { min, max, node, cfg } = ctx;
   const len = node.args.length;
   const m: [string | number, number] | null =
     min != null && max != null && (len < min || len > max)
@@ -63,11 +56,11 @@ function done<T>(ctx: Context<T>): void {
   if (m) {
     const name = display(node);
     const msg = `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
-    throw new ParseError(ParseError.RANGE_ERROR, msg, node, ctx.cfg.options);
+    throw new ParseError(ParseError.RANGE_ERROR, msg, node, cfg.options);
   }
 
   // run onValidate if no errors
-  cb(ctx, 'onValidate');
+  cfg.options.onValidate?.(node);
 }
 
 export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
@@ -110,11 +103,13 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // prettier-ignore
     // eslint-disable-next-line prefer-const
     let { min = o.min, max = o.max, read = o.read ?? true } = o.onCreate?.(cNode) || o;
+    // run onChild for parent node
+    p && pCtx!.cfg.options.onChild?.(p);
+
+    // validate range: if min is greater than max,
+    // prioritize the min value instead of throwing an error
     min = number(min);
     max = number(max);
-
-    // if min is greater than max,
-    // prioritize the min value instead of throwing an error
     if (min != null && max != null && min > max) max = min;
 
     const strict =
@@ -124,17 +119,9 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
           ? (dstrict = s)
           : !(dstrict = s !== 'self');
 
-    // prettier-ignore
-    all.push(cCtx = { cfg: c, node: cNode, min, max, read, strict, children: [] });
+    all.push((cCtx = { cfg: c, node: cNode, min, max, read, strict }));
     // save to before validate list if has onBeforeValidate callback
     o.onBeforeValidate && bvAll.push(cCtx);
-
-    if (pCtx) {
-      // save context to onDepths if has onDepth callback
-      o.onDepth && pCtx.children.push(cCtx);
-
-      o.onChild?.(pCtx.node);
-    }
   }
 
   function nOpts() {
@@ -185,7 +172,6 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
       __assertNotNull(cNode);
 
       cNode.args.push(raw);
-      cb(cCtx, 'onArg');
 
       if (cCtx.max != null && cCtx.max <= cNode.args.length) {
         ok(cCtx);
@@ -215,8 +201,6 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // add value node if it doesn't exist
     // prettier-ignore
     else p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args: [raw], parent: p, children: [] });
-
-    cb(pCtx, 'onArg');
   }
 
   // create root node
@@ -227,7 +211,6 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
   __assertNotNull(pCtx!);
 
   const root = pCtx;
-  cb(root, 'onDepth');
 
   // NOTE: instead of saving `leaf` to multiple context objects,
   // get it once since the next parent node context will always be non-leaf
@@ -357,7 +340,8 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
   ok(pCtx);
 
   // run onBeforeValidate for all nodes per depth level incrementally
-  for (const n of bvAll) cb(n, 'onBeforeValidate');
+  // NOTE: expect onBeforeValidate to exist if part of `bvAll`
+  for (const n of bvAll) n.cfg.options.onBeforeValidate!(n.node);
 
   // throw error before validation
   if (err) throw err;
