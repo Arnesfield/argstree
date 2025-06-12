@@ -10,7 +10,7 @@ export interface Alias<T> extends Pick<Arg, 'key'> {
   alias: string;
   /** Alias arguments. */
   args: string[];
-  /** The config object. */
+  /** The schema config. */
   cfg: ArgConfig<T>;
 }
 

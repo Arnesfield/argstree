@@ -7,6 +7,24 @@ import { Options } from './options.types';
 /** The schema type. */
 export type SchemaType = 'option' | 'command';
 
+/** The schema config. */
+export interface Config<T = unknown> {
+  /** The schema type. */
+  readonly type: SchemaType;
+  /** The schema options. */
+  readonly options: Options<T>;
+  /**
+   * The list of configs for the options and commands.
+   * Note that the config properties may change during parsing.
+   */
+  readonly map: { [arg: string]: ArgConfig<T> };
+}
+
+/** The config for options and commands. */
+export interface ArgConfig<T = unknown>
+  extends Omit<Config<T>, 'map'>,
+    Partial<Pick<Config<T>, 'map'>> {}
+
 /** The resolved options. */
 export interface ResolvedOptions<T = unknown> extends Options<T> {
   // require id and name
@@ -39,21 +57,6 @@ export type ResolvedArg<T = unknown> = Arg &
       }
   );
 
-/** The config object. */
-export interface Config<T = unknown> {
-  /** The schema type. */
-  readonly type: SchemaType;
-  /** The schema options. */
-  readonly options: Options<T>;
-  // TODO: doc
-  readonly map: { [arg: string]: ArgConfig<T> };
-}
-
-// TODO: doc
-export interface ArgConfig<T = unknown>
-  extends Omit<Config<T>, 'map'>,
-    Partial<Pick<Config<T>, 'map'>> {}
-
 /** The schema object. */
 export interface Schema<T = unknown> {
   /**
@@ -70,7 +73,11 @@ export interface Schema<T = unknown> {
    * @returns `this` for chaining.
    */
   command(arg: string, options?: Options<T>): this;
-  // TODO: doc
+  /**
+   * Gets the schema config and can also update the existing schema options.
+   * @param options The schema options to update.
+   * @returns The schema config.
+   */
   config(options?: Options<T>): Config<T>;
   /**
    * Gets the configuration for the matched options and commands.
