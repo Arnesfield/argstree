@@ -7,12 +7,12 @@ import { Node } from '../types/node.types';
  */
 export function flatten<T>(node: Node<T>): Node<T>[] {
   const nodes: Node<T>[] = [];
-  const stack: Node<T>[] = [node];
+  const stack = [node];
 
-  // reuse node variable
+  // NOTE: reuse `node` variable
   while ((node = stack.pop()!)) {
     nodes.push(node);
-    for (let i = node.children.length; i--; ) stack.push(node.children[i]);
+    for (let i = node.children.length; i-- > 0; ) stack.push(node.children[i]);
   }
 
   return nodes;

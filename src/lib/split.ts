@@ -47,7 +47,7 @@ export function split(value: string, matches: string[]): Split {
 
       // push into stack to process
       // NOTE: reuse `i` variable
-      for (i = strs.length; i--; ) {
+      for (i = strs.length; i-- > 0; ) {
         const v = strs[i];
         v && stack.push({ value: v, index: item.index });
         i > 0 && stack.push({ value, remainder: false });

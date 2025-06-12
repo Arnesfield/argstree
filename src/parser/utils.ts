@@ -21,12 +21,13 @@ export function getArgs<T>(
   return a;
 }
 
-// NOTE: side effect: this would initialize the schema if options aren't satisfied
 export function isLeaf<T>(schema: Schema<T>): boolean {
   let o: Options<T> | string = schema.options;
   if (o.leaf != null) return o.leaf;
   if (o.parser) return false;
-  // WARNING: might be unsafe if consumer decides to implement their own schema object
+  // WARNING:
+  // side effect: this would initialize the schema if options aren't satisfied
+  // and might be unsafe if consumer decides to implement their own schema object
   for (o in schema.schemas()) return false;
   return schema.type === 'option';
 }
