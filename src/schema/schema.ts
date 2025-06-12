@@ -8,7 +8,7 @@ import { Schema as SchemaClass } from './schema.class';
  * @returns The schema object.
  */
 export function option<T>(options?: Options<T>): Schema<T> {
-  return new SchemaClass('option', options);
+  return new SchemaClass({ type: 'option', options });
 }
 
 /**
@@ -17,5 +17,5 @@ export function option<T>(options?: Options<T>): Schema<T> {
  * @returns The schema object.
  */
 export function command<T>(options?: Options<T>): Schema<T> {
-  return new SchemaClass('command', options);
+  return new SchemaClass({ type: 'command', options });
 }

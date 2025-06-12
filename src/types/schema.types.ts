@@ -7,11 +7,6 @@ import { Options } from './options.types';
 /** The schema type. */
 export type SchemaType = 'option' | 'command';
 
-/** The schema map. */
-export interface SchemaMap<T = unknown> {
-  [arg: string]: Schema<T>;
-}
-
 /** The resolved options. */
 export interface ResolvedOptions<T = unknown> extends Options<T> {
   // require id and name
@@ -44,12 +39,23 @@ export type ResolvedArg<T = unknown> = Arg &
       }
   );
 
-/** The schema object. */
-export interface Schema<T = unknown> {
+/** The config object. */
+export interface Config<T = unknown> {
   /** The schema type. */
   readonly type: SchemaType;
   /** The schema options. */
   readonly options: Options<T>;
+  // TODO: doc
+  readonly map: { [arg: string]: ArgConfig<T> };
+}
+
+// TODO: doc
+export interface ArgConfig<T = unknown>
+  extends Omit<Config<T>, 'map'>,
+    Partial<Pick<Config<T>, 'map'>> {}
+
+/** The schema object. */
+export interface Schema<T = unknown> {
   /**
    * Adds an option. The argument is overwritten if it already exists.
    * @param arg The argument to match.
@@ -64,11 +70,8 @@ export interface Schema<T = unknown> {
    * @returns `this` for chaining.
    */
   command(arg: string, options?: Options<T>): this;
-  /**
-   * Gets the list configured schemas.
-   * @returns The schema map.
-   */
-  schemas(): SchemaMap<T>;
+  // TODO: doc
+  config(options?: Options<T>): Config<T>;
   /**
    * Gets the configuration for the matched options and commands.
    * The {@linkcode key} is checked to have a value (e.g. `--option=value`)

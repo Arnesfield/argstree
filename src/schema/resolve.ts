@@ -2,7 +2,7 @@ import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
 import { Alias, NormalizedOptions } from '../parser/normalize';
 import { canAssign, getArgs } from '../parser/utils';
-import { ResolvedArg, ResolvedItem, Schema } from '../types/schema.types';
+import { ArgConfig, ResolvedArg, ResolvedItem } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
 
 // make props optional except 'key' and make 'alias' nullable
@@ -13,13 +13,13 @@ interface ParsedArg<T>
 }
 
 function item<T>(
-  schema: Schema<T>,
+  cfg: ArgConfig<T>,
   value: string | null | undefined,
   { key, alias = null, args }: ParsedArg<T>
 ): ResolvedItem<T> {
-  const { id = key, name = key } = schema.options;
+  const { id = key, name = key } = cfg.options;
   // prettier-ignore
-  return { key, alias, type: schema.type, options: { ...schema.options, id, name, args: getArgs(schema, args, value) } };
+  return { key, alias, type: cfg.type, options: { ...cfg.options, id, name, args: getArgs(cfg.options, args, value) } };
 }
 
 export function resolve<T>(
@@ -31,7 +31,7 @@ export function resolve<T>(
 
   const arg = { raw, key: raw } as ResolvedArg<T>;
 
-  let schema: Schema<T> | undefined,
+  let cfg: ArgConfig<T> | undefined,
     alias: Alias<T> | undefined,
     s: Split | undefined,
     last: SplitItem,
@@ -45,13 +45,13 @@ export function resolve<T>(
   const { key, value } = arg;
 
   // get item by map
-  if ((schema = opts.map[key]) && canAssign(schema, value)) {
-    arg.items = [item(schema, value, arg)];
+  if ((cfg = opts.map[key]) && canAssign(cfg, value)) {
+    arg.items = [item(cfg, value, arg)];
   }
 
   // get item by alias
-  else if ((alias = opts.alias[key]) && canAssign(alias.schema, value)) {
-    arg.items = [item(alias.schema, value, alias)];
+  else if ((alias = opts.alias[key]) && canAssign(alias.cfg, value)) {
+    arg.items = [item(alias.cfg, value, alias)];
   }
 
   // handle split
@@ -65,7 +65,7 @@ export function resolve<T>(
     ) ||
     (value != null &&
       !(last = s.items.at(-1)!).remainder &&
-      !canAssign(opts.alias['-' + last.value].schema, value))
+      !canAssign(opts.alias['-' + last.value].cfg, value))
   ) {
     // treat as value if no split items
     // or if last split item value is not assignable
@@ -85,7 +85,7 @@ export function resolve<T>(
     for (const v of s.values) {
       alias = opts.alias['-' + v];
       // prettier-ignore
-      arg.items.push(item(alias.schema, i++ === s.values.length - 1 ? value : null, alias));
+      arg.items.push(item(alias.cfg, i++ === s.values.length - 1 ? value : null, alias));
     }
   }
 

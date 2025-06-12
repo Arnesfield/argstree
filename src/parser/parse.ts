@@ -1,33 +1,48 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
+import { Schema } from '../schema/schema.class';
 import { Node } from '../types/node.types';
-import { Context, Options, Value } from '../types/options.types';
-import { Schema } from '../types/schema.types';
+import { Options, Value } from '../types/options.types';
+import { ArgConfig } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { Alias, normalize, NormalizedOptions } from './normalize';
-import { canAssign, display, getArgs, isLeaf, noRead } from './utils';
+import { canAssign, display, getArgs, isLeaf } from './utils';
 
 // NOTE: internal
 
 export type NodeEvent<T> = keyof {
-  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
+  [K in keyof Options<T> as K extends 'onCreate'
+    ? never
+    : K extends `on${string}`
+      ? K
+      : never]: Options<T>[K];
 };
 
-interface NodeInfo<T> {
-  ctx: Context<T>;
+// TODO: rename to Context
+export interface NodeInfo<T> {
+  cfg: ArgConfig<T>;
+  node: Node<T>;
+  min: number | null | undefined;
+  max: number | null | undefined;
+  read: boolean | undefined;
+  strict: boolean | undefined;
   /** Children with `onDepth` callbacks only. */
   children: NodeInfo<T>[];
 }
 
-function cb<T>(ctx: Context<T>, e: NodeEvent<T>) {
-  ctx.schema.options[e]?.(ctx);
+function cb<T>(ctx: NodeInfo<T>, e: NodeEvent<T>) {
+  ctx.cfg.options[e]?.(ctx.node);
 }
 
 function ok<T>(info: NodeInfo<T>) {
-  for (const n of info.children) cb(n.ctx, 'onDepth');
-  cb(info.ctx, 'onData');
+  for (const n of info.children) cb(n, 'onDepth');
+  cb(info, 'onData');
+}
+
+function noRead<T>(ctx: NodeInfo<T>) {
+  return !ctx.read || (ctx.max != null && ctx.max <= ctx.node.args.length);
 }
 
 // ensure non-negative number
@@ -35,7 +50,7 @@ function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
-function done<T>(ctx: Context<T>): void {
+function done<T>(ctx: NodeInfo<T>): void {
   const min = number(ctx.min);
   let max = number(ctx.max);
 
@@ -63,14 +78,15 @@ function done<T>(ctx: Context<T>): void {
   if (m) {
     const name = display(ctx.node);
     const msg = `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
-    throw new ParseError(ParseError.RANGE_ERROR, msg, ctx.node, ctx.schema);
+    // prettier-ignore
+    throw new ParseError(ParseError.RANGE_ERROR, msg, ctx.node, ctx.cfg.options);
   }
 
   // run onValidate if no errors
   cb(ctx, 'onValidate');
 }
 
-export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
+export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
   const list: NodeInfo<T>[] = [], // all info items
     bvList: NodeInfo<T>[] = []; // all info items that have an onBeforeValidate callback option
 
@@ -78,12 +94,12 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     pInfo: NodeInfo<T>, // parent info
     cNode: Node<T> | null | undefined, // child node (can be value node)
     cInfo: NodeInfo<T> | null | undefined, // child info
-    pdstrict = false, // parent node strict descendants
-    dstrict: boolean, // current child node strict descendants
+    pdstrict: boolean | undefined, // parent node strict descendants
+    dstrict: boolean | undefined, // current child node strict descendants
     err: ParseError<T> | undefined; // error before validation
 
   function node(
-    s: Schema<T>,
+    c: ArgConfig<T>,
     raw: string | null,
     key: string | null,
     value: string | null = null,
@@ -93,14 +109,22 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     // mark previous info as parsed before creating next node info
     cInfo && ok(cInfo);
 
-    const { type, options: o } = s;
-    const p = pInfo ? pInfo.ctx.node : null;
+    // make sure to initialize config before accessing options
+    // NOTE: creating the schema instance should mutate and initialize the config object
+    !c.map && c.options.init && new Schema(c);
+
+    const { type, options: o } = c;
+    const p = pInfo ? pInfo.node : null;
 
     // prettier-ignore
-    const { id = key, name = key, min = null, max = null, read = true, strict: st } = o;
+    const { id = key, name = key, strict: st } = o;
     // prettier-ignore
-    cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(s, argv, value), parent: p, children: [] };
+    cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o, argv, value), parent: p, children: [] };
     p?.children.push(cNode);
+
+    // run onCreate and get parse options
+    // prettier-ignore
+    const { min = o.min, max = o.max, read = o.read ?? true } = o.onCreate?.(cNode) || o;
 
     const strict =
       st == null
@@ -110,18 +134,15 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
           : !(dstrict = st !== 'self');
 
     // prettier-ignore
-    list.push(cInfo = { children: [], ctx: { min, max, read, strict, node: cNode, schema: s } });
+    list.push(cInfo = { cfg: c, node: cNode, min, max, read, strict, children: [] });
     // save to before validate list if has onBeforeValidate callback
     o.onBeforeValidate && bvList.push(cInfo);
-
-    // run callback options
-    cb(cInfo.ctx, 'onCreate');
 
     if (pInfo) {
       // save info to onDepths if has onDepth callback
       o.onDepth && pInfo.children.push(cInfo);
 
-      cb(pInfo.ctx, 'onChild');
+      o.onChild?.(pInfo.node);
     }
   }
 
@@ -132,7 +153,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
     // set dstrict and normalized options for parent node info
     pdstrict = dstrict;
-    opts = normalize(pInfo.ctx.schema);
+    opts = normalize(pInfo.cfg);
 
     // clear child node info since it's now the parent node
     cNode = cInfo = null;
@@ -140,10 +161,10 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
   function use() {
     __assertNotNull(cInfo);
-    if (!isLeaf(cInfo.ctx.schema)) {
+    if (!isLeaf(cInfo.cfg)) {
       ok(pInfo);
       nOpts();
-    } else if (noRead(cInfo.ctx)) {
+    } else if (noRead(cInfo)) {
       ok(cInfo);
       cNode = cInfo = null;
     }
@@ -155,9 +176,9 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     if (err) return;
 
     // always use parent node for unrecognized arguments
-    const name = display(pInfo.ctx.node);
+    const name = display(pInfo.node);
     msg = (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg;
-    err = new ParseError(code, msg, pInfo.ctx.node, pInfo.ctx.schema);
+    err = new ParseError(code, msg, pInfo.node, pInfo.cfg.options);
   }
 
   function setValue(raw: string, strict?: boolean) {
@@ -166,15 +187,15 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
       // assume cNode exists if cInfo exists
       __assertNotNull(cNode);
 
-      if ((strict ?? cInfo.ctx.strict) && isOption(raw)) {
+      if ((strict ?? cInfo.strict) && isOption(raw)) {
         // use parent node for unrecognized argument errors even for child nodes
         return uerr(`argument: ${raw}`);
       }
 
       cNode.args.push(raw);
-      cb(cInfo.ctx, 'onArg');
+      cb(cInfo, 'onArg');
 
-      if (cInfo.ctx.max != null && cNode.args.length >= cInfo.ctx.max) {
+      if (cInfo.max != null && cNode.args.length >= cInfo.max) {
         ok(cInfo);
         cNode = cInfo = null;
       }
@@ -183,11 +204,11 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
     // save value to parent node
     // unrecognized argument if parent cannot read or if strict mode
-    if (noRead(pInfo.ctx) || ((strict ?? pInfo.ctx.strict) && isOption(raw))) {
+    if (noRead(pInfo) || ((strict ?? pInfo.strict) && isOption(raw))) {
       return uerr(`argument: ${raw}`);
     }
 
-    const p = pInfo.ctx.node;
+    const p = pInfo.node;
     p.args.push(raw);
 
     // save to value node
@@ -196,23 +217,23 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     // prettier-ignore
     else p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args: [raw], parent: p, children: [] });
 
-    cb(pInfo.ctx, 'onArg');
+    cb(pInfo, 'onArg');
   }
 
   // create root node
-  node(schema, null, null);
+  node(cfg, null, null);
   // calling nOpts() should set opts and pInfo
   nOpts();
   __assertNotNull(opts!);
   __assertNotNull(pInfo!);
 
   const root = pInfo;
-  cb(root.ctx, 'onDepth');
+  cb(root, 'onDepth');
 
   // NOTE: instead of saving `leaf` to multiple info objects,
   // get it once since the next parent node info will always be non-leaf
   // assume leaf is almost always false
-  const leaf = opts.value || isLeaf(schema);
+  const leaf = opts.value || isLeaf(cfg);
 
   for (const raw of args) {
     if (opts.value || leaf) {
@@ -230,17 +251,17 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
       value = raw.slice(i + 1);
     }
 
-    // NOTE: reuse `schema` variable
+    // NOTE: reuse `cfg` variable
     // get node by map
-    if ((schema = opts.map[key]!) && canAssign(schema, value)) {
-      node(schema, raw, key, value);
+    if ((cfg = opts.map[key]!) && canAssign(cfg, value)) {
+      node(cfg, raw, key, value);
       use();
       continue;
     }
 
     // get node by alias
-    if ((alias = opts.alias[key]) && canAssign(alias.schema, value)) {
-      node(alias.schema, raw, alias.key, value, alias.alias, alias.args);
+    if ((alias = opts.alias[key]) && canAssign(alias.cfg, value)) {
+      node(alias.cfg, raw, alias.key, value, alias.alias, alias.args);
       use();
       continue;
     }
@@ -257,7 +278,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
       ) ||
       (value != null &&
         !(last = s.items.at(-1)!).remainder &&
-        !canAssign(opts.alias['-' + last.value].schema, value))
+        !canAssign(opts.alias['-' + last.value].cfg, value))
     ) {
       // parse by parser or treat as value if no split items
       // or if last split item value is not assignable
@@ -276,7 +297,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
         alias = opts.alias['-' + v];
 
         // prettier-ignore
-        node(alias.schema, raw, alias.key, i++ === s.values.length - 1 ? value : null, alias.alias, alias.args);
+        node(alias.cfg, raw, alias.key, i++ === s.values.length - 1 ? value : null, alias.alias, alias.args);
       }
 
       use();
@@ -286,7 +307,7 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
     // parse by parser
 
     // prettier-ignore
-    let parsed = pInfo.ctx.schema.options.parser?.({ raw, key, value, split: rSplit }, pInfo.ctx);
+    let parsed = pInfo.cfg.options.parser?.({ raw, key, value, split: rSplit }, pInfo.node);
     if (parsed === false) {
       // ignore raw argument
     }
@@ -303,10 +324,10 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
 
       let call: boolean | undefined;
       for (const p of parsed) {
-        if ((p as Schema<T>).schemas) {
+        if ((p as Schema<T>).config) {
           call = true;
           // no value since it is handler by parser
-          node(p as Schema<T>, raw, key);
+          node((p as Schema<T>).config(), raw, key);
         } else for (const v of array((p as V).args)) setValue(v, (p as V).strict); // prettier-ignore
       }
 
@@ -337,13 +358,13 @@ export function parse<T>(args: readonly string[], schema: Schema<T>): Node<T> {
   ok(pInfo);
 
   // run onBeforeValidate for all nodes per depth level incrementally
-  for (const n of bvList) cb(n.ctx, 'onBeforeValidate');
+  for (const n of bvList) cb(n, 'onBeforeValidate');
 
   // throw error before validation
   if (err) throw err;
 
   // validate and run onValidate for all nodes
-  for (const n of list) done(n.ctx);
+  for (const n of list) done(n);
 
-  return root.ctx.node;
+  return root.node;
 }

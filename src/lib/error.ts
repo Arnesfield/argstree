@@ -1,5 +1,5 @@
 import { Node } from '../types/node.types';
-import { Schema } from '../types/schema.types';
+import { Options } from '../types/options.types';
 
 /** The parse error. */
 export class ParseError<T = unknown> extends Error {
@@ -20,13 +20,13 @@ export class ParseError<T = unknown> extends Error {
    * - {@linkcode ParseError.UNRECOGNIZED_ARGUMENT_ERROR}
    * @param message The error message.
    * @param node The node object.
-   * @param schema The schema object.
+   * @param options The schema options.
    */
   constructor(
     public code: string,
     message: string,
     public node: Node<T>,
-    public schema: Schema<T>
+    public options: Options<T>
   ) {
     super(message);
   }

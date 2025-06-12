@@ -4,20 +4,14 @@ import { Node } from './node.types';
 import { Schema } from './schema.types';
 import { XOR } from './util.types';
 
-/** The callback context. */
-export interface Context<T = unknown> {
-  /** The current {@linkcode Options.min} option for the node. */
-  min: number | null;
-  /** The current {@linkcode Options.max} option for the node. */
-  max: number | null;
-  /** The current {@linkcode Options.read} option for the node. */
-  read: boolean;
-  /** The current {@linkcode Options.strict} option for the node. */
-  strict: boolean;
-  /** The node object. */
-  readonly node: Node<T>;
-  /** The schema object. */
-  readonly schema: Schema<T>;
+/** Options that can be changed during parsing for the node. */
+export interface ParseOptions {
+  /** Overrides or clears the {@linkcode Options.min} option for the node. */
+  min?: number | null;
+  /** Overrides or clears the {@linkcode Options.max} option for the node. */
+  max?: number | null;
+  /** Overrides the {@linkcode Options.read} option for the node. */
+  read?: boolean;
 }
 
 /** The parser value. */
@@ -146,7 +140,7 @@ export interface Options<T = unknown> {
    * where the parsed argument may be treated either as a value or
    * an unrecognized argument depending on the provided options.
    * @param arg The parsed argument.
-   * @param ctx The callback context.
+   * @param node The node object.
    * @returns The schemas or values if any.
    * @example
    * import command, { isOption, option } from 'argstree';
@@ -167,41 +161,45 @@ export interface Options<T = unknown> {
    */
   parser?(
     arg: Arg,
-    ctx: Context<T>
+    node: Node<T>
   ): XOR<Schema<T>, Value> | XOR<Schema<T>, Value>[] | boolean | void;
   /**
    * Called when the node is created with its initial arguments.
-   * @param ctx The callback context.
+   * @param node The node object.
+   * @returns Options to override for the node.
    */
-  onCreate?(ctx: Context<T>): void;
+  onCreate?(node: Node<T>): ParseOptions | void;
+  // TODO: remove?
   /**
    * Called when the node receives an argument.
-   * @param ctx The callback context.
+   * @param node The node object.
    */
-  onArg?(ctx: Context<T>): void;
+  onArg?(node: Node<T>): void;
+  // TODO: remove?
   /**
    * Called when the node receives an option or command child node.
-   * @param ctx The callback context.
+   * @param node The node object.
    */
-  onChild?(ctx: Context<T>): void;
+  onChild?(node: Node<T>): void;
+  // TODO: remove?
   /**
    * Called when all nodes of the same depth have been created.
-   * @param ctx The callback context.
+   * @param node The node object.
    */
-  onDepth?(ctx: Context<T>): void;
+  onDepth?(node: Node<T>): void;
   /**
    * Called after the node has received all arguments and direct child nodes that it can have.
-   * @param ctx The callback context.
+   * @param node The node object.
    */
-  onData?(ctx: Context<T>): void;
+  onData?(node: Node<T>): void;
   /**
    * Called once all nodes have been parsed and before any validation checks.
-   * @param ctx The callback context.
+   * @param node The node object.
    */
-  onBeforeValidate?(ctx: Context<T>): void;
+  onBeforeValidate?(node: Node<T>): void;
   /**
    * Called after throwing any validation errors for the node.
-   * @param ctx The callback context.
+   * @param node The node object.
    */
-  onValidate?(ctx: Context<T>): void;
+  onValidate?(node: Node<T>): void;
 }
