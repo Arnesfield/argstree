@@ -1,7 +1,7 @@
 import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
+import { canAssign, getArgs } from '../parser/node';
 import { Alias, NormalizedOptions } from '../parser/normalize';
-import { canAssign, getArgs } from '../parser/utils';
 import { ArgConfig, ResolvedArg, ResolvedItem } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
 import { __assertNotNull } from '../utils/assert';

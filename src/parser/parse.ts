@@ -3,64 +3,27 @@ import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
 import { Schema } from '../schema/schema.class';
 import { Node } from '../types/node.types';
-import { Options, Value } from '../types/options.types';
+import { Value } from '../types/options.types';
 import { ArgConfig } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
+import {
+  canAssign,
+  Context,
+  display,
+  done,
+  getArgs,
+  isLeaf,
+  noRead,
+  ok
+} from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
-import { canAssign, display, getArgs, isLeaf } from './utils';
 
 // NOTE: internal
-
-export type NodeEvent<T> = keyof {
-  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
-};
-
-interface Context<T> {
-  cfg: ArgConfig<T>;
-  node: Node<T>;
-  min: number | null;
-  max: number | null;
-  read: boolean;
-  strict: boolean | undefined;
-}
-
-function ok<T>(ctx: Context<T>) {
-  ctx.cfg.options.onData?.(ctx.node);
-}
-
-function noRead<T>(ctx: Context<T>) {
-  return !ctx.read || (ctx.max != null && ctx.max <= ctx.node.args.length);
-}
 
 // ensure non-negative number
 function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
-}
-
-function done<T>(ctx: Context<T>): void {
-  // validate node
-  const { min, max, node, cfg } = ctx;
-  const len = node.args.length;
-  const m: [string | number, number] | null =
-    min != null && max != null && (len < min || len > max)
-      ? min === max
-        ? [min, min]
-        : [`${min}-${max}`, 0]
-      : min != null && len < min
-        ? [`at least ${min}`, min]
-        : max != null && len > max
-          ? [max && `up to ${max}`, max]
-          : null;
-
-  if (m) {
-    const name = display(node);
-    const msg = `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
-    throw new ParseError(ParseError.RANGE_ERROR, msg, node, cfg.options);
-  }
-
-  // run onValidate if no errors
-  cfg.options.onValidate?.(node);
 }
 
 export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
