@@ -13,15 +13,10 @@ import { canAssign, display, getArgs, isLeaf } from './utils';
 // NOTE: internal
 
 export type NodeEvent<T> = keyof {
-  [K in keyof Options<T> as K extends 'onCreate'
-    ? never
-    : K extends `on${string}`
-      ? K
-      : never]: Options<T>[K];
+  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
 };
 
-// TODO: rename to Context
-export interface NodeInfo<T> {
+interface Context<T> {
   cfg: ArgConfig<T>;
   node: Node<T>;
   min: number | null | undefined;
@@ -29,19 +24,19 @@ export interface NodeInfo<T> {
   read: boolean | undefined;
   strict: boolean | undefined;
   /** Children with `onDepth` callbacks only. */
-  children: NodeInfo<T>[];
+  children: Context<T>[];
 }
 
-function cb<T>(ctx: NodeInfo<T>, e: NodeEvent<T>) {
+function cb<T>(ctx: Context<T>, e: NodeEvent<T>) {
   ctx.cfg.options[e]?.(ctx.node);
 }
 
-function ok<T>(info: NodeInfo<T>) {
-  for (const n of info.children) cb(n, 'onDepth');
-  cb(info, 'onData');
+function ok<T>(ctx: Context<T>) {
+  for (const c of ctx.children) cb(c, 'onDepth');
+  cb(ctx, 'onData');
 }
 
-function noRead<T>(ctx: NodeInfo<T>) {
+function noRead<T>(ctx: Context<T>) {
   return !ctx.read || (ctx.max != null && ctx.max <= ctx.node.args.length);
 }
 
@@ -50,7 +45,7 @@ function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
-function done<T>(ctx: NodeInfo<T>): void {
+function done<T>(ctx: Context<T>): void {
   const min = number(ctx.min);
   let max = number(ctx.max);
 
@@ -87,13 +82,13 @@ function done<T>(ctx: NodeInfo<T>): void {
 }
 
 export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
-  const list: NodeInfo<T>[] = [], // all info items
-    bvList: NodeInfo<T>[] = []; // all info items that have an onBeforeValidate callback option
+  const all: Context<T>[] = [], // all node contexts
+    bvAll: Context<T>[] = []; // all node contexts that have an onBeforeValidate callback option
 
   let opts: NormalizedOptions<T>, // parent normalized options
-    pInfo: NodeInfo<T>, // parent info
+    pCtx: Context<T>, // parent node context
     cNode: Node<T> | null | undefined, // child node (can be value node)
-    cInfo: NodeInfo<T> | null | undefined, // child info
+    cCtx: Context<T> | null | undefined, // child node context
     pdstrict: boolean | undefined, // parent node strict descendants
     dstrict: boolean | undefined, // current child node strict descendants
     err: ParseError<T> | undefined; // error before validation
@@ -106,15 +101,15 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     alias: string | null = null,
     argv?: string[]
   ) {
-    // mark previous info as parsed before creating next node info
-    cInfo && ok(cInfo);
+    // mark previous node as parsed before creating next node
+    cCtx && ok(cCtx);
 
     // make sure to initialize config before accessing options
     // NOTE: creating the schema instance should mutate and initialize the config object
     !c.map && c.options.init && new Schema(c);
 
     const { type, options: o } = c;
-    const p = pInfo ? pInfo.node : null;
+    const p = pCtx ? pCtx.node : null;
 
     // prettier-ignore
     const { id = key, name = key, strict: st } = o;
@@ -134,39 +129,39 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
           : !(dstrict = st !== 'self');
 
     // prettier-ignore
-    list.push(cInfo = { cfg: c, node: cNode, min, max, read, strict, children: [] });
+    all.push(cCtx = { cfg: c, node: cNode, min, max, read, strict, children: [] });
     // save to before validate list if has onBeforeValidate callback
-    o.onBeforeValidate && bvList.push(cInfo);
+    o.onBeforeValidate && bvAll.push(cCtx);
 
-    if (pInfo) {
-      // save info to onDepths if has onDepth callback
-      o.onDepth && pInfo.children.push(cInfo);
+    if (pCtx) {
+      // save context to onDepths if has onDepth callback
+      o.onDepth && pCtx.children.push(cCtx);
 
-      o.onChild?.(pInfo.node);
+      o.onChild?.(pCtx.node);
     }
   }
 
   function nOpts() {
-    // set current child node info as new parent node info
-    __assertNotNull(cInfo);
-    pInfo = cInfo;
+    // set current child node context as new parent node context
+    __assertNotNull(cCtx);
+    pCtx = cCtx;
 
-    // set dstrict and normalized options for parent node info
+    // set dstrict and normalized options for parent node context
     pdstrict = dstrict;
-    opts = normalize(pInfo.cfg);
+    opts = normalize(pCtx.cfg);
 
-    // clear child node info since it's now the parent node
-    cNode = cInfo = null;
+    // clear child node context since it's now the parent node
+    cNode = cCtx = null;
   }
 
   function use() {
-    __assertNotNull(cInfo);
-    if (!isLeaf(cInfo.cfg)) {
-      ok(pInfo);
+    __assertNotNull(cCtx);
+    if (!isLeaf(cCtx.cfg)) {
+      ok(pCtx);
       nOpts();
-    } else if (noRead(cInfo)) {
-      ok(cInfo);
-      cNode = cInfo = null;
+    } else if (noRead(cCtx)) {
+      ok(cCtx);
+      cNode = cCtx = null;
     }
   }
 
@@ -176,39 +171,43 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     if (err) return;
 
     // always use parent node for unrecognized arguments
-    const name = display(pInfo.node);
+    const name = display(pCtx.node);
     msg = (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg;
-    err = new ParseError(code, msg, pInfo.node, pInfo.cfg.options);
+    err = new ParseError(code, msg, pCtx.node, pCtx.cfg.options);
   }
 
   function setValue(raw: string, strict?: boolean) {
     // save value to child node if it exists
-    if (cInfo) {
-      // assume cNode exists if cInfo exists
+    if (cCtx) {
+      // assume cNode exists if cCtx exists
       __assertNotNull(cNode);
 
-      if ((strict ?? cInfo.strict) && isOption(raw)) {
+      if ((strict ?? cCtx.strict) && isOption(raw)) {
         // use parent node for unrecognized argument errors even for child nodes
         return uerr(`argument: ${raw}`);
       }
 
       cNode.args.push(raw);
-      cb(cInfo, 'onArg');
+      cb(cCtx, 'onArg');
 
-      if (cInfo.max != null && cNode.args.length >= cInfo.max) {
-        ok(cInfo);
-        cNode = cInfo = null;
+      if (cCtx.max != null && cNode.args.length >= cCtx.max) {
+        ok(cCtx);
+        cNode = cCtx = null;
       }
       return;
     }
 
+    // TODO: fix strict check
+    // - if child is strict, pass it over to parent
+    // - then if parent is non-strict, child is marked as parsed and accept arg
+
     // save value to parent node
     // unrecognized argument if parent cannot read or if strict mode
-    if (noRead(pInfo) || ((strict ?? pInfo.strict) && isOption(raw))) {
+    if (noRead(pCtx) || ((strict ?? pCtx.strict) && isOption(raw))) {
       return uerr(`argument: ${raw}`);
     }
 
-    const p = pInfo.node;
+    const p = pCtx.node;
     p.args.push(raw);
 
     // save to value node
@@ -217,22 +216,22 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // prettier-ignore
     else p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args: [raw], parent: p, children: [] });
 
-    cb(pInfo, 'onArg');
+    cb(pCtx, 'onArg');
   }
 
   // create root node
   node(cfg, null, null);
-  // calling nOpts() should set opts and pInfo
+  // calling nOpts() should set opts and pCtx
   nOpts();
   __assertNotNull(opts!);
-  __assertNotNull(pInfo!);
+  __assertNotNull(pCtx!);
 
-  const root = pInfo;
+  const root = pCtx;
   cb(root, 'onDepth');
 
-  // NOTE: instead of saving `leaf` to multiple info objects,
-  // get it once since the next parent node info will always be non-leaf
-  // assume leaf is almost always false
+  // NOTE: instead of saving `leaf` to multiple context objects,
+  // get it once since the next parent node context will always be non-leaf
+  // assume leaf is almost always false (unless the consumer says otherwise)
   const leaf = opts.value || isLeaf(cfg);
 
   for (const raw of args) {
@@ -307,7 +306,7 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // parse by parser
 
     // prettier-ignore
-    let parsed = pInfo.cfg.options.parser?.({ raw, key, value, split: rSplit }, pInfo.node);
+    let parsed = pCtx.cfg.options.parser?.({ raw, key, value, split: rSplit }, pCtx.node);
     if (parsed === false) {
       // ignore raw argument
     }
@@ -354,17 +353,17 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
-  cInfo && ok(cInfo);
-  ok(pInfo);
+  cCtx && ok(cCtx);
+  ok(pCtx);
 
   // run onBeforeValidate for all nodes per depth level incrementally
-  for (const n of bvList) cb(n, 'onBeforeValidate');
+  for (const n of bvAll) cb(n, 'onBeforeValidate');
 
   // throw error before validation
   if (err) throw err;
 
   // validate and run onValidate for all nodes
-  for (const n of list) done(n);
+  for (const n of all) done(n);
 
   return root.node;
 }
