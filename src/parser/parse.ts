@@ -19,9 +19,9 @@ export type NodeEvent<T> = keyof {
 interface Context<T> {
   cfg: ArgConfig<T>;
   node: Node<T>;
-  min: number | null | undefined;
-  max: number | null | undefined;
-  read: boolean | undefined;
+  min: number | null;
+  max: number | null;
+  read: boolean;
   strict: boolean | undefined;
   /** Children with `onDepth` callbacks only. */
   children: Context<T>[];
@@ -46,21 +46,11 @@ function number(n: number | null | undefined): number | null {
 }
 
 function done<T>(ctx: Context<T>): void {
-  const min = number(ctx.min);
-  let max = number(ctx.max);
-
-  // if min is greater than max,
-  // prioritize the min value instead of throwing an error
-  // also expect max to have value
-  const rng = min != null && max != null;
-
-  __assertNotNull(max);
-  if (rng && min > max) max = min;
-
   // validate node
-  const len = ctx.node.args.length;
+  const { min, max, node } = ctx;
+  const len = node.args.length;
   const m: [string | number, number] | null =
-    rng && (len < min || len > max)
+    min != null && max != null && (len < min || len > max)
       ? min === max
         ? [min, min]
         : [`${min}-${max}`, 0]
@@ -71,10 +61,9 @@ function done<T>(ctx: Context<T>): void {
           : null;
 
   if (m) {
-    const name = display(ctx.node);
+    const name = display(node);
     const msg = `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
-    // prettier-ignore
-    throw new ParseError(ParseError.RANGE_ERROR, msg, ctx.node, ctx.cfg.options);
+    throw new ParseError(ParseError.RANGE_ERROR, msg, node, ctx.cfg.options);
   }
 
   // run onValidate if no errors
@@ -112,21 +101,28 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     const p = pCtx ? pCtx.node : null;
 
     // prettier-ignore
-    const { id = key, name = key, strict: st } = o;
+    const { id = key, name = key, strict: s } = o;
     // prettier-ignore
     cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o, argv, value), parent: p, children: [] };
     p?.children.push(cNode);
 
     // run onCreate and get parse options
     // prettier-ignore
-    const { min = o.min, max = o.max, read = o.read ?? true } = o.onCreate?.(cNode) || o;
+    // eslint-disable-next-line prefer-const
+    let { min = o.min, max = o.max, read = o.read ?? true } = o.onCreate?.(cNode) || o;
+    min = number(min);
+    max = number(max);
+
+    // if min is greater than max,
+    // prioritize the min value instead of throwing an error
+    if (min != null && max != null && min > max) max = min;
 
     const strict =
-      st == null
+      s == null
         ? (dstrict = pdstrict)
-        : typeof st === 'boolean'
-          ? (dstrict = st)
-          : !(dstrict = st !== 'self');
+        : typeof s === 'boolean'
+          ? (dstrict = s)
+          : !(dstrict = s !== 'self');
 
     // prettier-ignore
     all.push(cCtx = { cfg: c, node: cNode, min, max, read, strict, children: [] });
@@ -191,7 +187,7 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
       cNode.args.push(raw);
       cb(cCtx, 'onArg');
 
-      if (cCtx.max != null && cNode.args.length >= cCtx.max) {
+      if (cCtx.max != null && cCtx.max <= cNode.args.length) {
         ok(cCtx);
         cNode = cCtx = null;
       }
