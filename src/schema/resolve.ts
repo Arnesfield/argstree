@@ -4,6 +4,7 @@ import { Alias, NormalizedOptions } from '../parser/normalize';
 import { canAssign, getArgs } from '../parser/utils';
 import { ArgConfig, ResolvedArg, ResolvedItem } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
+import { __assertNotNull } from '../utils/assert';
 
 // make props optional except 'key' and make 'alias' nullable
 interface ParsedArg<T>
@@ -13,13 +14,27 @@ interface ParsedArg<T>
 }
 
 function item<T>(
-  cfg: ArgConfig<T>,
   value: string | null | undefined,
-  { key, alias = null, args }: ParsedArg<T>
+  alias: Alias<T>
+): ResolvedItem<T>;
+
+function item<T>(
+  value: string | null | undefined,
+  arg: ParsedArg<T>,
+  cfg: ArgConfig<T>
+): ResolvedItem<T>;
+
+function item<T>(
+  value: string | null | undefined,
+  { key, alias = null, args, cfg }: ParsedArg<T>,
+  c = cfg
 ): ResolvedItem<T> {
-  const { id = key, name = key } = cfg.options;
+  // assume that config will always be provided
+  __assertNotNull(c);
+  const o = c.options;
+  const { id = key, name = key } = o;
   // prettier-ignore
-  return { key, alias, type: cfg.type, options: { ...cfg.options, id, name, args: getArgs(cfg.options, args, value) } };
+  return { key, alias, type: c.type, options: { ...o, id, name, args: getArgs(o, args, value) } };
 }
 
 export function resolve<T>(
@@ -46,12 +61,12 @@ export function resolve<T>(
 
   // get item by map
   if ((cfg = opts.map[key]) && canAssign(cfg, value)) {
-    arg.items = [item(cfg, value, arg)];
+    arg.items = [item(value, arg, cfg)];
   }
 
   // get item by alias
   else if ((alias = opts.alias[key]) && canAssign(alias.cfg, value)) {
-    arg.items = [item(alias.cfg, value, alias)];
+    arg.items = [item(value, alias)];
   }
 
   // handle split
@@ -84,8 +99,7 @@ export function resolve<T>(
     arg.items = [] as unknown as NonEmptyArray<ResolvedItem<T>>;
     for (const v of s.values) {
       alias = opts.alias['-' + v];
-      // prettier-ignore
-      arg.items.push(item(alias.cfg, i++ === s.values.length - 1 ? value : null, alias));
+      arg.items.push(item(i++ === s.values.length - 1 ? value : null, alias));
     }
   }
 
