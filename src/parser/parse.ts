@@ -177,15 +177,16 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
   }
 
   function setValue(raw: string, strict?: boolean) {
-    // save value to child node if it exists
-    if (cCtx) {
+    // if child is strict, pass it over to parent
+    // if parent is non-strict, child is marked as parsed and accept arg
+
+    // cache isOption result
+    let opt;
+
+    // save value to child node if it exists and strict mode is satisfied
+    if (cCtx && !((strict ?? cCtx.strict) && (opt = isOption(raw)))) {
       // assume cNode exists if cCtx exists
       __assertNotNull(cNode);
-
-      if ((strict ?? cCtx.strict) && isOption(raw)) {
-        // use parent node for unrecognized argument errors even for child nodes
-        return uerr(`argument: ${raw}`);
-      }
 
       cNode.args.push(raw);
       cb(cCtx, 'onArg');
@@ -197,18 +198,21 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
       return;
     }
 
-    // TODO: fix strict check
-    // - if child is strict, pass it over to parent
-    // - then if parent is non-strict, child is marked as parsed and accept arg
-
     // save value to parent node
     // unrecognized argument if parent cannot read or if strict mode
-    if (noRead(pCtx) || ((strict ?? pCtx.strict) && isOption(raw))) {
+    // at this point, the value of `opt` is either true or undefined
+    if (noRead(pCtx) || ((strict ?? pCtx.strict) && (opt ?? isOption(raw)))) {
       return uerr(`argument: ${raw}`);
     }
 
     const p = pCtx.node;
     p.args.push(raw);
+
+    // if cCtx exists, it means cNode is not a value node yet
+    if (cCtx) {
+      ok(cCtx);
+      cNode = cCtx = null;
+    }
 
     // save to value node
     if (cNode) cNode.args.push(raw);
