@@ -34,20 +34,20 @@ function run(args) {
   function addTreeOption(schema, depth) {
     // create subtree for :1, :2, etc.
     schema.option(`:${depth}`, {
-      onCreate(ctx) {
+      onCreate(node) {
         // remove and use the assigned value as name, e.g. :1=subtree
-        ctx.node.name = ctx.node.args.pop() ?? `tree:depth(${depth})`;
+        node.name = node.args.pop() ?? `tree:depth(${depth})`;
         // parse the args of this node later
-        ctx.node.meta = { tree: true };
+        node.meta = { tree: true };
       }
     });
   }
 
   /** @type {import('../lib/index.js').Options<Metadata>['parser']} */
-  const parser = (arg, ctx) => {
+  const parser = (arg, node) => {
     // do not parse option if the last child node is the current node (value type)
-    const lastChild = ctx.node.children.at(-1);
-    if ((!lastChild || lastChild.id === ctx.node.id) && isOption(arg.key)) {
+    const lastChild = node.children.at(-1);
+    if ((!lastChild || lastChild.id === node.id) && isOption(arg.key)) {
       const id = arg.key.replace(/^--?/, '');
       return option({ id, name: id, args: arg.value, read: arg.value == null });
     }
@@ -70,9 +70,9 @@ function run(args) {
       id: node.id,
       name: node.name,
       parser,
-      onCreate(ctx) {
+      onCreate(subnode) {
         // override depth so that descendant nodes will use it instead
-        ctx.node.depth = node.depth;
+        subnode.depth = node.depth;
       }
     });
     addTreeOption(subcmd, node.depth + 1);

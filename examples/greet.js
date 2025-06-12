@@ -23,7 +23,7 @@ try {
 /** @param {string[]} args */
 function run(args) {
   const start = performance.now();
-  const root = command({ read: false })
+  const root = command({ read: false, strict: true })
     .option('--name', { id: 'name', min: 1, max: 1, alias: '-n' })
     .option('--message', { id: 'message', min: 1, max: 1, alias: '-m' })
     .option('--help', { alias: '-h', assign: false, onCreate: help })
