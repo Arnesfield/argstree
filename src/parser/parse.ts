@@ -177,7 +177,7 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
   __assertNotNull(opts!);
   __assertNotNull(pCtx!);
 
-  const root = pCtx;
+  const root = pCtx.node;
 
   // NOTE: instead of saving `leaf` to multiple context objects,
   // get it once since the next parent node context will always be non-leaf
@@ -348,5 +348,5 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
   // validate and run onValidate for all nodes
   for (const n of all) done(n);
 
-  return root.node;
+  return root;
 }
