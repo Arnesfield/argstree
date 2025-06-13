@@ -26,7 +26,7 @@ function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
-export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
+export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
   const all: Context<T>[] = [], // all node contexts
     bvAll: Context<T>[] = []; // all node contexts that have an onBeforeValidate callback option
 
@@ -44,7 +44,7 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     key: string | null,
     value: string | null = null,
     alias: string | null = null,
-    argv?: string[]
+    args?: string[]
   ) {
     // mark previous node as parsed before creating next node
     cCtx && ok(cCtx);
@@ -59,7 +59,7 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // prettier-ignore
     const { id = key, name = key, strict: s } = o;
     // prettier-ignore
-    cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o, argv, value), parent: p, children: [] };
+    cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o, args, value), parent: p, children: [] };
     p?.children.push(cNode);
 
     // run onCreate and get parse options
@@ -85,6 +85,12 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
     all.push((cCtx = { cfg: c, node: cNode, min, max, read, strict }));
     // save to before validate list if has onBeforeValidate callback
     o.onBeforeValidate && bvAll.push(cCtx);
+  }
+
+  function vNode(args: string[]) {
+    const p = pCtx.node;
+    // prettier-ignore
+    p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args, parent: p, children: [] });
   }
 
   function nOpts() {
@@ -150,20 +156,18 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
       return uerr(`argument: ${raw}`);
     }
 
-    const p = pCtx.node;
-    p.args.push(raw);
+    pCtx.node.args.push(raw);
 
     // if cCtx exists, it means cNode is not a value node yet
     if (cCtx) {
       ok(cCtx);
-      cNode = cCtx = null;
+      cCtx = null;
+      vNode([raw]);
     }
-
     // save to value node
-    if (cNode) cNode.args.push(raw);
+    else if (cNode) cNode.args.push(raw);
     // add value node if it doesn't exist
-    // prettier-ignore
-    else p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args: [raw], parent: p, children: [] });
+    else vNode([raw]);
   }
 
   // create root node
@@ -178,12 +182,12 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
   // NOTE: instead of saving `leaf` to multiple context objects,
   // get it once since the next parent node context will always be non-leaf
   // assume leaf is almost always false (unless the consumer says otherwise)
-  const leaf = opts.value || isLeaf(cfg);
+  opts.value ||= isLeaf(cfg);
 
-  for (let i = 0; i < args.length; i++) {
-    let raw = args[i];
+  for (let i = 0; i < argv.length; i++) {
+    let raw = argv[i];
 
-    if (opts.value || leaf) {
+    if (opts.value) {
       // if a value node exists and not strict mode for the current node,
       // capture all args up until the end is reached if it's not null
       // allow number and undefined for end value
@@ -191,7 +195,7 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
       // also note that `cNode` is expected to be a value node at this point
       let end: number | null | undefined;
       if (
-        cNode &&
+        pCtx.read &&
         !pCtx.strict &&
         (end =
           pCtx.max == null
@@ -200,16 +204,18 @@ export function parse<T>(args: readonly string[], cfg: ArgConfig<T>): Node<T> {
               ? i + (pCtx.max - end)
               : null) !== null
       ) {
-        // make sure to push args to child node
-        const argv = args.slice(i, end);
-        pCtx.node.args = pCtx.node.args.concat(argv);
-        cNode.args = cNode.args.concat(argv);
+        // assume that at this point, there is no existing cNode
+        // so always create a new child value node with the args
+        vNode(argv.slice(i, end));
+        // vNode() should create the cNode
+        __assertNotNull(cNode);
+        pCtx.node.args.push(...cNode.args);
 
         // stop here if capturing all args
-        if (end == null || end >= args.length) break;
+        if (end == null || end >= argv.length) break;
 
         // call setValue for next raw argument
-        raw = args[(i = end)];
+        raw = argv[(i = end)];
       }
 
       setValue(raw);

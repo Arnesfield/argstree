@@ -16,7 +16,7 @@ export interface Alias<T> extends Pick<Arg, 'key'> {
 
 export interface NormalizedOptions<T> {
   /** Determines if the node cannot actually have child nodes (value only). */
-  readonly value: boolean;
+  value: boolean;
   /** Safe config map object. */
   readonly map: Partial<Config<T>['map']>;
   /** Safe alias map object. */
