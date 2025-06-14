@@ -42,7 +42,7 @@ export function resolve<T>(
   raw: string,
   val?: string | null
 ): ResolvedArg<T> | undefined {
-  if (opts.value) return;
+  if (opts.pure) return;
 
   const arg = { raw, key: raw } as ResolvedArg<T>;
 

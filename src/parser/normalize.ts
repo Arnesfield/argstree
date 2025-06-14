@@ -15,8 +15,8 @@ export interface Alias<T> extends Pick<Arg, 'key'> {
 }
 
 export interface NormalizedOptions<T> {
-  /** Determines if the node cannot actually have child nodes (value only). */
-  value: boolean;
+  /** Determines if the node cannot actually have child nodes (value only or leaf node). */
+  readonly pure: boolean | undefined;
   /** Safe config map object. */
   readonly map: Partial<Config<T>['map']>;
   /** Safe alias map object. */
@@ -33,11 +33,12 @@ export function normalize<T>(cfg: ArgConfig<T>): NormalizedOptions<T> {
   const alias: NormalizedOptions<T>['alias'] = { __proto__: null! };
 
   // check if node is value only (no child nodes)
-  let value = !cfg.options.parser;
+  const { leaf, parser } = cfg.options;
+  let pure = !parser;
 
   // apply aliases from args
   for (const key in map) {
-    value = false;
+    pure = false;
 
     // NOTE: reuse `cfg` variable
     for (let arr of array((cfg = map[key]).options.alias)) {
@@ -60,5 +61,5 @@ export function normalize<T>(cfg: ArgConfig<T>): NormalizedOptions<T> {
   // sort by length desc for splitting later on
   keys.sort((a, b) => b.length - a.length);
 
-  return { value, map, alias, keys };
+  return { pure: pure || leaf, map, alias, keys };
 }

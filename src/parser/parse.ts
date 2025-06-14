@@ -179,15 +179,10 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
 
   const root = pCtx.node;
 
-  // NOTE: instead of saving `leaf` to multiple context objects,
-  // get it once since the next parent node context will always be non-leaf
-  // assume leaf is almost always false (unless the consumer says otherwise)
-  opts.value ||= isLeaf(cfg);
-
   for (let i = 0; i < argv.length; i++) {
     let raw = argv[i];
 
-    if (opts.value) {
+    if (opts.pure) {
       // if a value node exists and not strict mode for the current node,
       // capture all args up until the end is reached if it's not null
       // allow number and undefined for end value
