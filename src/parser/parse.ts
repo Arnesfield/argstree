@@ -53,13 +53,12 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // NOTE: creating the schema instance should mutate and initialize the config object
     !c.map && c.options.init && new Schema(c);
 
-    const { type, options: o } = c;
+    const o = c.options;
     const p = pCtx ? pCtx.node : null;
+    const { id = key, name = key, strict: s } = o;
 
     // prettier-ignore
-    const { id = key, name = key, strict: s } = o;
-    // prettier-ignore
-    cNode = { id, name, raw, key, alias, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o, args, value), parent: p, children: [] };
+    cNode = { id, name, raw, key, alias, value, type: c.type, depth: p ? p.depth + 1 : 0, args: getArgs(o, args, value), parent: p, children: [] };
     p?.children.push(cNode);
 
     // run onCreate and get parse options
@@ -119,14 +118,14 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   }
 
   /** Saves the unrecognized error to throw later during validation. */
-  function uerr(msg: string, code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR) {
+  function uErr(msg: string, code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR) {
     // skip if cached error is already set
     if (err) return;
 
     // always use parent node for unrecognized arguments
     const name = display(pCtx.node);
-    msg = (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg;
-    err = new ParseError(code, msg, pCtx.node, pCtx.cfg.options);
+    // prettier-ignore
+    err = new ParseError(code, (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg, pCtx.node, pCtx.cfg.options);
   }
 
   function setValue(raw: string, strict?: boolean) {
@@ -154,7 +153,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // unrecognized argument if parent cannot read or if strict mode
     // at this point, the value of `opt` is either true or undefined
     if (noRead(pCtx) || ((strict ?? pCtx.strict) && (opt ?? isOption(raw)))) {
-      return uerr(`argument: ${raw}`);
+      return uErr(`argument: ${raw}`);
     }
 
     pCtx.node.args.push(raw);
@@ -302,9 +301,9 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       let call: boolean | undefined;
       for (const r of res) {
         if ((r as Schema<T>).config) {
-          call = true;
           // no value since it is handler by parser
           node((r as Schema<T>).config(), raw, key);
+          call = true;
         } else for (const v of array((r as V).args)) setValue(v, (r as V).strict); // prettier-ignore
       }
 
@@ -321,7 +320,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       const msg =
         `alias${spl.remainders.length === 1 ? '' : 'es'}: -` +
         spl.items.map(v => (v.remainder ? `(${v.value})` : v.value)).join('');
-      uerr(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
+      uErr(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
     }
 
     // otherwise, set value
@@ -334,13 +333,13 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
   // run onBeforeValidate for all nodes per depth level incrementally
   // NOTE: expect onBeforeValidate to exist if part of `bvAll`
-  for (const n of bvAll) n.cfg.options.onBeforeValidate!(n.node);
+  for (const c of bvAll) c.cfg.options.onBeforeValidate!(c.node);
 
   // throw error before validation
   if (err) throw err;
 
   // validate and run onValidate for all nodes
-  for (const n of all) done(n);
+  for (const c of all) done(c);
 
   return root;
 }
