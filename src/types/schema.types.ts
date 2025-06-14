@@ -17,12 +17,8 @@ export interface Config<T = unknown> {
    * The list of configs for the options and commands.
    * Note that the config properties may change during parsing.
    */
-  readonly map: { [arg: string]: ArgConfig<T> };
+  readonly map?: { [arg: string]: Config<T> };
 }
-
-/** The config for options and commands. */
-export type ArgConfig<T = unknown> = Omit<Config<T>, 'map'> &
-  Partial<Pick<Config<T>, 'map'>>;
 
 /** The resolved options. */
 export interface ResolvedOptions<T = unknown> extends Options<T> {
@@ -77,7 +73,7 @@ export interface Schema<T = unknown> {
    * @param options The schema options to update.
    * @returns The schema config.
    */
-  config(options?: Options<T>): Config<T>;
+  config(options?: Options<T>): Required<Config<T>>;
   /**
    * Gets the configuration for the matched options and commands.
    * The {@linkcode key} is checked to have a value (e.g. `--option=value`)

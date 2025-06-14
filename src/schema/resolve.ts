@@ -2,7 +2,7 @@ import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
 import { canAssign, getArgs } from '../parser/node';
 import { Alias, NormalizedOptions } from '../parser/normalize';
-import { ArgConfig, ResolvedArg, ResolvedItem } from '../types/schema.types';
+import { Config, ResolvedArg, ResolvedItem } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
 import { __assertNotNull } from '../utils/assert';
 
@@ -21,7 +21,7 @@ function item<T>(
 function item<T>(
   value: string | null | undefined,
   arg: ParsedArg<T>,
-  cfg: ArgConfig<T>
+  cfg: Config<T>
 ): ResolvedItem<T>;
 
 function item<T>(
@@ -46,7 +46,7 @@ export function resolve<T>(
 
   const arg = { raw, key: raw } as ResolvedArg<T>;
 
-  let cfg: ArgConfig<T> | undefined,
+  let cfg: Config<T> | undefined,
     alias: Alias<T> | undefined,
     s: Split | undefined,
     last: SplitItem,

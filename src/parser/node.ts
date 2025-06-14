@@ -1,11 +1,11 @@
 import { ParseError } from '../lib/error';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { ArgConfig } from '../types/schema.types';
+import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
 
 export interface Context<T> {
-  cfg: ArgConfig<T>;
+  cfg: Config<T>;
   node: Node<T>;
   min: number | null;
   max: number | null;
@@ -31,7 +31,7 @@ export function getArgs<T>(
   return a;
 }
 
-export function isLeaf<T>(cfg: ArgConfig<T>): boolean {
+export function isLeaf<T>(cfg: Config<T>): boolean {
   let o: Options<T> | string = cfg.options;
   if (o.leaf != null) return o.leaf;
   if (o.parser) return false;
@@ -43,7 +43,7 @@ export function isLeaf<T>(cfg: ArgConfig<T>): boolean {
 }
 
 export function canAssign<T>(
-  cfg: ArgConfig<T>,
+  cfg: Config<T>,
   value: string | null | undefined
 ): boolean {
   return value == null || (cfg.options.assign ?? cfg.type === 'option');

@@ -1,6 +1,6 @@
 import { isOption } from '../lib/is-option';
 import { Arg } from '../types/arg.types';
-import { ArgConfig, Config } from '../types/schema.types';
+import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
 
 // NOTE: internal
@@ -11,14 +11,14 @@ export interface Alias<T> extends Readonly<Pick<Arg, 'key'>> {
   /** Alias arguments. */
   readonly args: string[];
   /** The schema config. */
-  readonly cfg: ArgConfig<T>;
+  readonly cfg: Config<T>;
 }
 
 export interface BaseNormalizedOptions<T> {
   /** Determines if the node cannot actually have child nodes (value only or leaf node). */
   readonly pure: boolean | undefined;
   /** Safe config map object. */
-  readonly map: Partial<Config<T>['map']>;
+  readonly map: Partial<Required<Config<T>>['map']>;
   /** Safe alias map object. */
   readonly alias: { [alias: string]: Alias<T> };
   /** A sorted list of splittable alias keys without the `-` prefix. */
@@ -29,7 +29,7 @@ export type NormalizedOptions<T> =
   | BaseNormalizedOptions<T>
   | ({ readonly pure: true } & Partial<Omit<BaseNormalizedOptions<T>, 'pure'>>);
 
-export function normalize<T>(cfg: ArgConfig<T>): NormalizedOptions<T> {
+export function normalize<T>(cfg: Config<T>): NormalizedOptions<T> {
   // if explicit leaf node, skip normalizing
   if (cfg.options.leaf) return { pure: true };
 

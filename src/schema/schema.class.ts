@@ -2,12 +2,7 @@ import { normalize, NormalizedOptions } from '../parser/normalize';
 import { parse } from '../parser/parse';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import {
-  ArgConfig,
-  Config,
-  Schema as ISchema,
-  ResolvedArg
-} from '../types/schema.types';
+import { Config, Schema as ISchema, ResolvedArg } from '../types/schema.types';
 import { Mutable, PartialPick } from '../types/util.types';
 import { resolve } from './resolve';
 
@@ -17,8 +12,8 @@ export class Schema<T> implements ISchema<T> {
   // make sure to clear cached options to re-evaluate it when needed
   private opts: NormalizedOptions<T> | null | undefined;
 
-  constructor(cfg: PartialPick<ArgConfig<T>, 'options'>);
-  constructor(private readonly cfg: Mutable<Config<T>>) {
+  constructor(cfg: PartialPick<Config<T>, 'options'>);
+  constructor(private readonly cfg: Mutable<Required<Config<T>>>) {
     // NOTE: intentional mutate cfg
     cfg.map = { __proto__: null! };
     // always create a new copy of options
@@ -39,7 +34,7 @@ export class Schema<T> implements ISchema<T> {
     return this;
   }
 
-  config(options?: Options<T>): Config<T> {
+  config(options?: Options<T>): Required<Config<T>> {
     if (options) {
       Object.assign(this.cfg.options, options);
       this.opts = null;

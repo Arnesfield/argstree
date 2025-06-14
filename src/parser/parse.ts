@@ -4,7 +4,7 @@ import { split, Split, SplitItem } from '../lib/split';
 import { Schema } from '../schema/schema.class';
 import { Node } from '../types/node.types';
 import { Value } from '../types/options.types';
-import { ArgConfig } from '../types/schema.types';
+import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import {
@@ -26,7 +26,7 @@ function number(n: number | null | undefined): number | null {
   return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
 }
 
-export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
+export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   const all: Context<T>[] = [], // all node contexts
     bvAll: Context<T>[] = []; // all node contexts that have an onBeforeValidate callback option
 
@@ -39,7 +39,7 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
     err: ParseError<T> | undefined; // error before validation
 
   function node(
-    c: ArgConfig<T>,
+    c: Config<T>,
     raw: string | null,
     key: string | null,
     value: string | null = null,
