@@ -5,13 +5,13 @@ import { array } from '../utils/array';
 
 // NOTE: internal
 
-export interface Alias<T> extends Pick<Arg, 'key'> {
+export interface Alias<T> extends Readonly<Pick<Arg, 'key'>> {
   /** Alias name. */
-  alias: string;
+  readonly alias: string;
   /** Alias arguments. */
-  args: string[];
+  readonly args: string[];
   /** The schema config. */
-  cfg: ArgConfig<T>;
+  readonly cfg: ArgConfig<T>;
 }
 
 export interface NormalizedOptions<T> {

@@ -21,9 +21,8 @@ export interface Config<T = unknown> {
 }
 
 /** The config for options and commands. */
-export interface ArgConfig<T = unknown>
-  extends Omit<Config<T>, 'map'>,
-    Partial<Pick<Config<T>, 'map'>> {}
+export type ArgConfig<T = unknown> = Omit<Config<T>, 'map'> &
+  Partial<Pick<Config<T>, 'map'>>;
 
 /** The resolved options. */
 export interface ResolvedOptions<T = unknown> extends Options<T> {
