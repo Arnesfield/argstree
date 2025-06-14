@@ -14,7 +14,7 @@ export interface Alias<T> extends Readonly<Pick<Arg, 'key'>> {
   readonly cfg: ArgConfig<T>;
 }
 
-export interface NormalizedOptions<T> {
+export interface BaseNormalizedOptions<T> {
   /** Determines if the node cannot actually have child nodes (value only or leaf node). */
   readonly pure: boolean | undefined;
   /** Safe config map object. */
@@ -25,7 +25,14 @@ export interface NormalizedOptions<T> {
   readonly keys: string[];
 }
 
+export type NormalizedOptions<T> =
+  | BaseNormalizedOptions<T>
+  | ({ readonly pure: true } & Partial<Omit<BaseNormalizedOptions<T>, 'pure'>>);
+
 export function normalize<T>(cfg: ArgConfig<T>): NormalizedOptions<T> {
+  // if explicit leaf node, skip normalizing
+  if (cfg.options.leaf) return { pure: true };
+
   const map: Config<T>['map'] = { __proto__: null!, ...cfg.map };
 
   // save splittable aliases to keys array
@@ -33,8 +40,7 @@ export function normalize<T>(cfg: ArgConfig<T>): NormalizedOptions<T> {
   const alias: NormalizedOptions<T>['alias'] = { __proto__: null! };
 
   // check if node is value only (no child nodes)
-  const { leaf, parser } = cfg.options;
-  let pure = !parser;
+  let pure = !cfg.options.parser;
 
   // apply aliases from args
   for (const key in map) {
@@ -61,5 +67,5 @@ export function normalize<T>(cfg: ArgConfig<T>): NormalizedOptions<T> {
   // sort by length desc for splitting later on
   keys.sort((a, b) => b.length - a.length);
 
-  return { pure: pure || leaf, map, alias, keys };
+  return { pure, map, alias, keys };
 }
