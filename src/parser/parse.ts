@@ -93,7 +93,8 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
     p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args, parent: p, children: [] });
   }
 
-  function nOpts() {
+  /** Sets `cCtx` as the next `pCtx` and normalizes its config. */
+  function next() {
     // set current child node context as new parent node context
     __assertNotNull(cCtx);
     pCtx = cCtx;
@@ -110,7 +111,7 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
     __assertNotNull(cCtx);
     if (!isLeaf(cCtx.cfg)) {
       ok(pCtx);
-      nOpts();
+      next();
     } else if (noRead(cCtx)) {
       ok(cCtx);
       cNode = cCtx = null;
@@ -172,8 +173,8 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
 
   // create root node
   node(cfg, null, null);
-  // calling nOpts() should set opts and pCtx
-  nOpts();
+  // calling next() should set opts and pCtx
+  next();
   __assertNotNull(opts!);
   __assertNotNull(pCtx!);
 
@@ -245,7 +246,7 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // handle split
     // condition 1 - check if can split and has split values
     // condition 2 - check if last split item is a value and is assignable
-    let rSplit: Split | undefined, s: Split | undefined, last: SplitItem;
+    let spl: Split | undefined, s: Split | undefined, last: SplitItem;
     if (
       !(
         opts.keys.length > 0 &&
@@ -262,7 +263,7 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
 
     // set split result for error later after parser
     else if (s.remainders.length > 0) {
-      rSplit = s;
+      spl = s;
     }
 
     // if no remainders, resolve all split values
@@ -283,8 +284,8 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // parse by parser
 
     // prettier-ignore
-    let parsed = pCtx.cfg.options.parser?.({ raw, key, value, split: rSplit }, pCtx.node);
-    if (parsed === false) {
+    let res = pCtx.cfg.options.parser?.({ raw, key, value, split: spl }, pCtx.node);
+    if (res === false) {
       // ignore raw argument
     }
 
@@ -292,19 +293,19 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // default behavior if empty array
     // otherwise, iterate through parsed
     else if (
-      parsed != null &&
-      parsed !== true &&
-      (parsed = Array.isArray(parsed) ? parsed : [parsed]).length > 0
+      res != null &&
+      res !== true &&
+      (res = Array.isArray(res) ? res : [res]).length > 0
     ) {
       type V = Value;
 
       let call: boolean | undefined;
-      for (const p of parsed) {
-        if ((p as Schema<T>).config) {
+      for (const r of res) {
+        if ((r as Schema<T>).config) {
           call = true;
           // no value since it is handler by parser
-          node((p as Schema<T>).config(), raw, key);
-        } else for (const v of array((p as V).args)) setValue(v, (p as V).strict); // prettier-ignore
+          node((r as Schema<T>).config(), raw, key);
+        } else for (const v of array((r as V).args)) setValue(v, (r as V).strict); // prettier-ignore
       }
 
       // if node() was called, call use() after
@@ -316,12 +317,10 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // parser done
 
     // handle split error
-    else if (rSplit) {
+    else if (spl) {
       const msg =
-        `alias${rSplit.remainders.length === 1 ? '' : 'es'}: -` +
-        rSplit.items
-          .map(v => (v.remainder ? `(${v.value})` : v.value))
-          .join('');
+        `alias${spl.remainders.length === 1 ? '' : 'es'}: -` +
+        spl.items.map(v => (v.remainder ? `(${v.value})` : v.value)).join('');
       uerr(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
     }
 
