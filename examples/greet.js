@@ -16,7 +16,7 @@ try {
   const args = process.argv.slice(2);
   args.length > 0 ? run(args) : help();
 } catch (error) {
-  console.error(error + '');
+  console.error(String(error));
   process.exitCode = 1;
 }
 

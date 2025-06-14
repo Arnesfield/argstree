@@ -10,7 +10,7 @@ function help() {
       '  -  subtract\n' +
       "  x  multiply (or '*' with noglob)\n" +
       '  /  divide\n' +
-      '  ^  exponent\n' +
+      "  ^  exponent (or '**' with noglob)\n" +
       '  %  remainder\n' +
       '\nNote: No MDAS rules apply for this example.'
   );
@@ -21,7 +21,7 @@ try {
   const args = process.argv.slice(2);
   args.length > 0 ? run(args) : help();
 } catch (error) {
-  console.error(error + '');
+  console.error(String(error));
   process.exitCode = 1;
 }
 
@@ -32,7 +32,7 @@ function run(args) {
 
   /** @type {import('../lib/index.js').Options} */
   const options = { min: 1, max: 1, assign: false };
-  for (const operation of ['+', '-', 'x', '*', '/', '^', '%']) {
+  for (const operation of ['+', '-', 'x', '*', '/', '^', '**', '%']) {
     cmd.option(operation, options);
   }
 
@@ -68,6 +68,7 @@ function run(args) {
         result /= n;
         break;
       case '^':
+      case '**':
         result **= n;
         break;
       case '%':
