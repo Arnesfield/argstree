@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import command, { Arg, Context, NodeType, option, SchemaMap } from '../src';
+import command, { Arg, Config, NodeType, option, Schema } from '../src';
 import { Schema as SchemaClass } from '../src/schema/schema.class';
 import { createNodes } from './utils/create-nodes';
 
@@ -160,13 +160,17 @@ describe('parse', () => {
       .command('bar', { id: 'BAR' })
       .command('bar', { alias: 'b' });
 
-    const map = schema.schemas();
-    const expectedMap: SchemaMap = {
-      '--foo': option({ id: 'FOO' }),
-      bar: command({ alias: 'b' })
+    const config = schema.config();
+    const expectedConfig: Config = {
+      type: 'command',
+      options: {},
+      map: {
+        '--foo': { type: 'option', options: { id: 'FOO' } },
+        bar: { type: 'command', options: { alias: 'b' } }
+      }
     };
-    expect(Object.getPrototypeOf(map)).to.be.null;
-    expect(map).to.deep.equal(expectedMap);
+    expect(Object.getPrototypeOf(config.map)).to.be.null;
+    expect(config).to.deep.equal(expectedConfig);
 
     const root = schema.parse(['--foo', 'bar']);
     const [expected] = createNodes({
@@ -222,6 +226,7 @@ describe('parse', () => {
   it('should not use options.args as node.args', () => {
     const cmd = command({ args: ['0'] }).option('--input', { args: ['src'] });
     const root = cmd.parse(['1', '2', '--input', 'test']);
+    const config = cmd.config();
     const [expected] = createNodes({
       type: 'command',
       args: ['0', '1', '2'],
@@ -237,8 +242,8 @@ describe('parse', () => {
       ]
     });
     expect(root).to.deep.equal(expected);
-    expect(cmd.options.args).to.deep.equal(['0']);
-    expect(cmd.schemas()['--input'].options.args).to.deep.equal(['src']);
+    expect(config.options.args).to.deep.equal(['0']);
+    expect(config.map['--input'].options.args).to.deep.equal(['src']);
   });
 
   it('should not split short options', () => {
@@ -583,18 +588,19 @@ describe('parse', () => {
     expect(root).to.deep.equal(expected);
   });
 
-  it("should run 'init' once when `schema.parse()` is called", () => {
+  it("should run 'init' once the schema is created", () => {
     const called: string[] = [];
     const expected: string[] = [];
+    let initSchema: Schema | undefined;
     const cmd = command({
       init(schema) {
         called.push('root');
-        expect(schema).to.equal(cmd);
+        initSchema = schema;
       }
     });
-    expect(called).to.deep.equal(expected);
 
-    cmd.parse([]);
+    expect(cmd).to.equal(initSchema);
+
     expected.push('root');
     expect(called).to.deep.equal(expected);
 
@@ -602,34 +608,15 @@ describe('parse', () => {
     expect(called).to.deep.equal(expected);
   });
 
-  it("should run 'init' once when `schema.schemas()` is called", () => {
+  it("should run 'init' once and only when the schemas are parsed", () => {
     const called: string[] = [];
     const expected: string[] = [];
     const cmd = command({
-      init(schema) {
+      init() {
         called.push('root');
-        expect(schema).to.equal(cmd);
       }
     });
-    expect(called).to.deep.equal(expected);
-
-    cmd.schemas();
     expected.push('root');
-    expect(called).to.deep.equal(expected);
-
-    cmd.schemas();
-    expect(called).to.deep.equal(expected);
-  });
-
-  it("should run 'init' once when schemas are added and only when they are parsed", () => {
-    const called: string[] = [];
-    const expected: string[] = [];
-    const cmd = command({
-      init(schema) {
-        called.push('root');
-        expect(schema).to.equal(cmd);
-      }
-    });
     expect(called).to.deep.equal(expected);
 
     cmd.option('--input', {
@@ -638,9 +625,6 @@ describe('parse', () => {
         expect(schema).to.be.an('object').that.is.an.instanceOf(SchemaClass);
       }
     });
-    expected.push('root');
-    expect(called).to.deep.equal(expected);
-
     cmd.option('--output', {
       init(schema) {
         called.push('--output');
@@ -685,7 +669,7 @@ describe('parse', () => {
   it("should run the 'parser' as fallback", () => {
     let called = 0;
     const cmd = command({
-      parser(arg, ctx) {
+      parser(arg, node) {
         called++;
 
         expect(arg).to.deep.equal({
@@ -709,14 +693,7 @@ describe('parse', () => {
           ]
         });
 
-        expect(ctx).to.deep.equal({
-          min: null,
-          max: null,
-          read: true,
-          strict: false,
-          schema: cmd,
-          node: expectedNode
-        } satisfies Context);
+        expect(node).to.deep.equal(expectedNode);
       }
     })
       .option('--input')
@@ -731,7 +708,7 @@ describe('parse', () => {
     expect(called).to.equal(1);
   });
 
-  it("should handle schemas and values from the 'parser' option", () => {
+  it("should handle schemas and values from the 'parser' callback option", () => {
     const cmd = command({
       parser(arg) {
         if (arg.key === '--input') {
@@ -790,23 +767,18 @@ describe('parse', () => {
     expect(root).to.deep.equal(expected);
   });
 
-  it('should allow updating the context object', () => {
-    // assume other callback options work the same way
-    // since they use the same context object
+  it("should allow updating the parse options for 'onCreate' callback option", () => {
     const cmd = command()
       .option('--input', {
-        onCreate(ctx) {
-          ctx.read = ctx.node.args.length === 0;
+        onCreate(node) {
+          return { read: node.args.length === 0 };
         }
       })
       .option('--output', {
         min: 3,
         max: 5,
-        onCreate(ctx) {
-          expect(ctx.min).to.equal(3);
-          expect(ctx.max).to.equal(5);
-          ctx.min = 1;
-          ctx.max = 2;
+        onCreate() {
+          return { min: 1, max: 2 };
         }
       });
 

@@ -1,33 +1,31 @@
 import { expect } from 'chai';
 import command, { Options } from '../src';
-import { NodeEvent } from '../src/parser/parse';
-import { expectContext } from './utils/expect-context';
 
-const events: NodeEvent<unknown>[] = [
+type NodeEvent<T = unknown> = keyof {
+  [K in keyof Options<T> as K extends `on${string}` ? K : never]: Options<T>[K];
+};
+
+const events: NodeEvent[] = [
   'onCreate',
-  'onArg',
   'onChild',
   'onData',
-  'onDepth',
   'onBeforeValidate',
   'onValidate'
 ];
 
 /** `[event, ...node.ids]` */
-type Call = [string, ...(string | null)[]];
+type Call<T = unknown> = [NodeEvent<T>, ...(string | null)[]];
 
-function createOptions(): [Options, Call[]] {
-  const calls: Call[] = [];
-  const options: Options = {};
+function createOptions<T>(): [Options<T>, Call<T>[]] {
+  const calls: Call<T>[] = [];
+  const options: Options<T> = {};
   for (const event of events) {
-    options[event] = ctx => {
-      expectContext(ctx);
-
+    options[event] = node => {
       const last = calls.at(-1);
       if (last && last[0] === event) {
-        last.push(ctx.node.id);
+        last.push(node.id);
       } else {
-        calls.push([event, ctx.node.id]);
+        calls.push([event, node.id]);
       }
     };
   }
@@ -41,21 +39,15 @@ describe('callback', () => {
       .option('--input', options)
       .parse(['--input', '0', '--input', '1', '2']);
     expect(calls).to.deep.equal([
-      ['onCreate', null],
-      ['onDepth', null],
-      ['onCreate', '--input'],
+      ['onCreate', null, '--input'],
       ['onChild', null],
-      ['onArg', '--input'],
       ['onData', '--input'],
       ['onCreate', '--input'],
       ['onChild', null],
-      ['onArg', '--input', '--input'],
-      ['onData', '--input'],
-      ['onDepth', '--input', '--input'],
-      ['onData', null],
+      ['onData', '--input', null],
       ['onBeforeValidate', null, '--input', '--input'],
       ['onValidate', null, '--input', '--input']
-    ]);
+    ] satisfies Call[]);
   });
 
   it('should handle nodes that cannot accept args', () => {
@@ -65,21 +57,15 @@ describe('callback', () => {
       .option('--output', { ...options, max: 0 })
       .parse(['--input', '1', '--output', '2']);
     expect(calls).to.deep.equal([
-      ['onCreate', null],
-      ['onDepth', null],
-      ['onCreate', '--input'],
+      ['onCreate', null, '--input'],
       ['onChild', null],
       ['onData', '--input'],
-      ['onArg', null],
       ['onCreate', '--output'],
       ['onChild', null],
-      ['onData', '--output'],
-      ['onArg', null],
-      ['onDepth', '--input', '--output'],
-      ['onData', null],
+      ['onData', '--output', null],
       ['onBeforeValidate', null, '--input', '--output'],
       ['onValidate', null, '--input', '--output']
-    ]);
+    ] satisfies Call[]);
   });
 
   it('should handle child nodes', () => {
@@ -95,24 +81,20 @@ describe('callback', () => {
       })
       .parse(['--input', 'run', '--output', 'subcmd']);
     expect(calls).to.deep.equal([
-      ['onCreate', null],
-      ['onDepth', null],
-      ['onCreate', '--input'],
+      ['onCreate', null, '--input'],
       ['onChild', null],
       ['onData', '--input'],
       ['onCreate', 'run'],
       ['onChild', null],
-      ['onDepth', '--input', 'run'],
       ['onData', null],
       ['onCreate', '--output'],
       ['onChild', 'run'],
       ['onData', '--output'],
       ['onCreate', 'subcmd'],
       ['onChild', 'run'],
-      ['onDepth', '--output', 'subcmd'],
       ['onData', 'run', 'subcmd'],
       ['onBeforeValidate', null, '--input', 'run', '--output', 'subcmd'],
       ['onValidate', null, '--input', 'run', '--output', 'subcmd']
-    ]);
+    ] satisfies Call[]);
   });
 });

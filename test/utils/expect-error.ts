@@ -1,11 +1,10 @@
 import { expect } from 'chai';
-import command, { Node, Options, ParseError, Schema } from '../../src';
+import command, { Options, ParseError } from '../../src';
 
 export function expectError<T>(opts: {
   code: string;
   options: Options<T>;
-  match?: Schema<T>;
-  node?: Node<T>;
+  match?: Options<T>;
   message: string;
   args?: string[];
 }): void {
@@ -28,12 +27,7 @@ export function expectError<T>(opts: {
     });
     expect(error).to.have.property('node').that.is.an('object');
     expect(error)
-      .to.have.property('schema')
-      .that.deep.equals(opts.match || cmd);
-
-    // TODO: match node?
-    if (opts.node) {
-      expect(error.node).to.deep.equal(opts.node);
-    }
+      .to.have.property('options')
+      .that.deep.equals(opts.match || cmd.config().options);
   }
 }

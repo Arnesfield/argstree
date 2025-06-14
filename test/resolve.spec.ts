@@ -41,7 +41,7 @@ describe('resolve', () => {
     } satisfies ResolvedArg);
   });
 
-  it('should return undefined if the argument cannot be resolved', () => {
+  it("should return 'undefined' if the argument cannot be resolved", () => {
     const cmd = command()
       .option('--all', { alias: '-a' })
       .option('--output', { alias: '-o', assign: false })
@@ -58,6 +58,11 @@ describe('resolve', () => {
     const resolved = command()
       .option('--all', { alias: '-a=' })
       .resolve('-a=2');
+    expect(resolved).to.be.undefined;
+  });
+
+  it("should return 'undefined' for 'leaf: true' option", () => {
+    const resolved = command({ leaf: true }).option('--foo').resolve('--foo');
     expect(resolved).to.be.undefined;
   });
 

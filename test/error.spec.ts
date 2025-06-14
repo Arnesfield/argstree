@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import command, { Arg, option, ParseError } from '../src';
+import { Arg, Options, ParseError } from '../src';
 import { createNodes } from './utils/create-nodes';
 import { createSplit } from './utils/create-split';
 import { expectError } from './utils/expect-error';
@@ -23,12 +23,12 @@ describe('error', () => {
   it('should contain class members', () => {
     const id = '--option';
     const [node] = createNodes({ id, name: id, raw: id, key: id, depth: 1 });
-    const schema = command();
+    const options: Options = {};
     const error = new ParseError(
       ParseError.UNRECOGNIZED_ARGUMENT_ERROR,
       'foo',
       node,
-      schema
+      options
     );
 
     expect(error).to.be.instanceOf(Error).and.instanceOf(ParseError);
@@ -37,8 +37,8 @@ describe('error', () => {
       .to.have.property('code')
       .that.equals(ParseError.UNRECOGNIZED_ARGUMENT_ERROR);
     expect(error).to.have.property('message').that.equals('foo');
-    expect(error).to.have.property('schema').that.equals(schema);
     expect(error).to.have.property('node').that.equals(node);
+    expect(error).to.have.property('options').that.equals(options);
   });
 
   describe('range error', () => {
@@ -59,8 +59,7 @@ describe('error', () => {
         options: { name: 'foo', min: 1 }
       });
 
-      const match = option({ min: 2 });
-      match.schemas();
+      const match: Options = { min: 2 };
       expectError({
         code,
         args: ['--foo', 'bar'],
@@ -68,7 +67,7 @@ describe('error', () => {
         match,
         options: {
           init(schema) {
-            schema.option('--foo', match.options);
+            schema.option('--foo', match);
           }
         }
       });
@@ -79,23 +78,15 @@ describe('error', () => {
 
       expectError({
         code,
-        args: ['baz'],
-        message: 'Expected up to 1 argument, but got 2.',
-        options: { max: 1, args: ['foo', 'bar'] }
-      });
-
-      expectError({
-        code,
         message: "Command 'foo' expected up to 2 arguments, but got 3.",
         options: { name: 'foo', max: 2, args: ['foo', 'bar', 'baz'] }
       });
 
-      const match = option({
+      const match: Options = {
         max: 2,
         leaf: false,
         args: ['foo', 'bar', 'baz']
-      });
-      match.schemas();
+      };
       expectError({
         code,
         args: ['--foo'],
@@ -103,7 +94,7 @@ describe('error', () => {
         match,
         options: {
           init(schema) {
-            schema.option('--foo', match.options);
+            schema.option('--foo', match);
           }
         }
       });
@@ -131,13 +122,12 @@ describe('error', () => {
         options: { name: 'foo', min: 2, max: 2 }
       });
 
-      const match = option({
+      const match: Options = {
         min: 2,
         max: 2,
         leaf: false,
         args: ['foo', 'bar', 'baz']
-      });
-      match.schemas();
+      };
       expectError({
         code,
         args: ['--foo'],
@@ -145,7 +135,7 @@ describe('error', () => {
         match,
         options: {
           init(schema) {
-            schema.option('--foo', match.options);
+            schema.option('--foo', match);
           }
         }
       });
@@ -156,20 +146,12 @@ describe('error', () => {
 
       expectError({
         code,
-        args: ['baz'],
-        message: 'Expected 0-1 arguments, but got 2.',
-        options: { min: 0, max: 1, args: ['foo', 'bar'] }
-      });
-
-      expectError({
-        code,
         args: ['foo'],
         message: "Command 'foo' expected 2-3 arguments, but got 1.",
         options: { name: 'foo', min: 2, max: 3 }
       });
 
-      const match = option({ min: 2, max: 3 });
-      match.schemas();
+      const match: Options = { min: 2, max: 3 };
       expectError({
         code,
         args: ['--foo', 'bar'],
@@ -177,7 +159,25 @@ describe('error', () => {
         match,
         options: {
           init(schema) {
-            schema.option('--foo', match.options);
+            schema.option('--foo', match);
+          }
+        }
+      });
+    });
+
+    it("should handle 'strict' option for child nodes", () => {
+      const code = ParseError.RANGE_ERROR;
+      const match: Options = { min: 1 };
+      expectError({
+        code,
+        args: ['-f', '--foo', 'bar', '--bar', '--baz'],
+        message: "Option '--bar' expected at least 1 argument, but got 0.",
+        match,
+        options: {
+          strict: 'descendants',
+          init(schema) {
+            schema.option('--foo', match);
+            schema.option('--bar', match);
           }
         }
       });
@@ -225,15 +225,14 @@ describe('error', () => {
         }
       });
 
-      const match = option({
+      const match: Options = {
         init(schema) {
           schema
             .option('--baz', { alias: '-ba' })
             .option('--bar', { alias: '-oob' })
             .option('--foo', { alias: '-foo' });
         }
-      });
-      match.schemas();
+      };
       expectError({
         code,
         args: ['--foo', '-foobarbaz'],
@@ -242,7 +241,7 @@ describe('error', () => {
         match,
         options: {
           init(schema) {
-            schema.option('--foo', match.options);
+            schema.option('--foo', match);
           }
         }
       });
@@ -285,6 +284,20 @@ describe('error', () => {
 
       expectError({
         code,
+        args: ['foo'],
+        message: 'Unrecognized argument: foo',
+        options: { max: 0 }
+      });
+
+      expectError({
+        code,
+        args: ['baz'],
+        message: 'Unrecognized argument: baz',
+        options: { max: 2, args: ['foo', 'bar'] }
+      });
+
+      expectError({
+        code,
         args: ['foo', '-bar', '--baz'],
         message: 'Unrecognized argument: -bar',
         options: { strict: 'self' }
@@ -303,8 +316,7 @@ describe('error', () => {
         }
       });
 
-      let match = command();
-      match.schemas();
+      let match: Options = {};
       expectError({
         code,
         args: ['--foo', 'foo', '--foo=--bar', 'bar', 'baz', '--bar', '--baz'],
@@ -314,30 +326,13 @@ describe('error', () => {
           strict: true,
           init(schema) {
             schema.option('--foo');
-            schema.command('bar', match.options);
-          }
-        }
-      });
-
-      // option with no child nodes
-      match = option({ strict: true });
-      match.schemas();
-      expectError({
-        code,
-        args: ['-f', '--foo', '--bar', '--baz'],
-        message: "Option '--foo' does not recognize the argument: --bar",
-        match,
-        options: {
-          strict: 'descendants',
-          init(schema) {
-            schema.option('--foo', match.options);
+            schema.command('bar', match);
           }
         }
       });
 
       // option with child nodes
-      match = option({ leaf: false });
-      match.schemas();
+      match = { leaf: false };
       expectError({
         code,
         args: ['-f', '--foo', '--bar=--foo', 'foo', '--bar', '--baz'],
@@ -346,7 +341,7 @@ describe('error', () => {
         options: {
           strict: 'descendants',
           init(schema) {
-            schema.option('--bar', match.options);
+            schema.option('--bar', match);
           }
         }
       });
@@ -374,8 +369,7 @@ describe('error', () => {
         }
       });
 
-      let match = command({ read: false });
-      match.schemas();
+      let match: Options = { read: false };
       expectError({
         code,
         args: ['--foo', 'bar', '--baz'],
@@ -385,19 +379,17 @@ describe('error', () => {
           strict: true,
           init(schema) {
             schema.option('--foo');
-            schema.command('bar', match.options);
+            schema.command('bar', match);
           }
         }
       });
 
-      match = option({
+      match = {
         read: false,
         init(schema) {
           schema.option('--baz', { read: false });
         }
-      });
-      const map = match.schemas();
-      map['--baz'].schemas();
+      };
       expectError({
         code,
         args: ['--foo', 'bar', '--baz', 'foo'],
@@ -407,7 +399,7 @@ describe('error', () => {
           strict: true,
           init(schema) {
             schema.option('--foo');
-            schema.option('bar', match.options);
+            schema.option('bar', match);
           }
         }
       });
@@ -446,7 +438,4 @@ describe('error', () => {
       });
     });
   });
-
-  // TODO: test ctx range error in node.done()
-  // TODO: test ctx strict error
 });
