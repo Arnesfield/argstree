@@ -14,6 +14,7 @@ import { resolve } from './resolve';
 // NOTE: internal
 
 export class Schema<T> implements ISchema<T> {
+  // make sure to clear cached options to re-evaluate it when needed
   private opts: NormalizedOptions<T> | null | undefined;
 
   constructor(cfg: PartialPick<ArgConfig<T>, 'options'>);
@@ -26,23 +27,23 @@ export class Schema<T> implements ISchema<T> {
     cfg.options.init?.(this);
   }
 
-  private add(arg: string, cfg: ArgConfig<T>) {
-    this.cfg.map[arg] = cfg;
-    // clear cached options to re-evaluate it when needed
+  option(arg: string, options: Options<T> = {}): this {
+    this.cfg.map[arg] = { type: 'option', options };
     this.opts = null;
     return this;
   }
 
-  option(arg: string, options: Options<T> = {}): this {
-    return this.add(arg, { type: 'option', options });
-  }
-
   command(arg: string, options: Options<T> = {}): this {
-    return this.add(arg, { type: 'command', options });
+    this.cfg.map[arg] = { type: 'command', options };
+    this.opts = null;
+    return this;
   }
 
   config(options?: Options<T>): Config<T> {
-    options && Object.assign(this.cfg.options, options);
+    if (options) {
+      Object.assign(this.cfg.options, options);
+      this.opts = null;
+    }
     return this.cfg;
   }
 
