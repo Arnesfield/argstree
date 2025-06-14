@@ -269,12 +269,12 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
     // if no remainders, resolve all split values
     else {
       // NOTE: reuse `j` variable
-      j = 0;
-      for (const v of s.values) {
-        alias = opts.alias['-' + v];
+      for (j = 0; j < s.values.length; j++) {
+        // NOTE: reuse `alias` variable
+        alias = opts.alias['-' + s.values[j]];
 
         // prettier-ignore
-        node(alias.cfg, raw, alias.key, j++ === s.values.length - 1 ? value : null, alias.alias, alias.args);
+        node(alias.cfg, raw, alias.key, j === s.values.length - 1 ? value : null, alias.alias, alias.args);
       }
 
       use();

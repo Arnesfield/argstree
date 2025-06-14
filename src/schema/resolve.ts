@@ -94,12 +94,13 @@ export function resolve<T>(
 
   // if no remainders, resolve all split values
   else {
-    // NOTE: reuse `i` variable
-    i = 0;
     arg.items = [] as unknown as NonEmptyArray<ResolvedItem<T>>;
-    for (const v of s.values) {
-      alias = opts.alias['-' + v];
-      arg.items.push(item(i++ === s.values.length - 1 ? value : null, alias));
+
+    // NOTE: reuse `i` variable
+    for (i = 0; i < s.values.length; i++) {
+      // NOTE: reuse `alias` variable
+      alias = opts.alias['-' + s.values[i]];
+      arg.items.push(item(i === s.values.length - 1 ? value : null, alias));
     }
   }
 
