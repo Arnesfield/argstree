@@ -301,7 +301,7 @@ Called only once when the schema is created and is used to gain a reference to t
 
 #### options.parser()
 
-Type: `(arg: Arg, ctx: Context) => XOR<Schema, Value> | XOR<Schema, Value>[] | boolean | void`
+Type: `(arg: Arg, node: Node) => XOR<Schema, Value> | XOR<Schema, Value>[] | boolean | void`
 
 Serves as a fallback for parsed arguments that cannot be recognized using the list of configured options and commands. Can have the following return values:
 
@@ -340,13 +340,15 @@ for (const node of root.children) {
 
 ### Callback Options
 
-Type: `(ctx: Context) => void`
+Type: `(node: Node) => void`
 
-Callback options are fired at specific events during parsing. Some options for the node can be overridden by modifying the properties of the [`Context`](src/types/options.types.ts) object.
+Callback options are fired at specific events during parsing.
 
 #### options.onCreate()
 
-Called when the node is created with its initial arguments.
+Type: `(node: Node) => ParseOptions | void`
+
+Called when the node is created with its initial arguments. Some options for the node can be overridden by returning a [`ParseOptions`](src/types/options.types.ts) object.
 
 #### options.onChild()
 
@@ -391,11 +393,11 @@ cmd.option('--version', {
 cmd.option('--log-level', {
   min: 1,
   max: 1,
-  onValidate(ctx) {
-    const value = ctx.node.args[0];
+  onValidate(node) {
+    const value = node.args[0];
     if (!logLevels.includes(value)) {
       throw new Error(
-        `Option '${ctx.node.id}' argument '${value}' is invalid. ` +
+        `Option '${node.id}' argument '${value}' is invalid. ` +
           `Allowed choices are: ${logLevels.join(', ')}`
       );
     }
@@ -442,8 +444,8 @@ const cmd = command<Metadata>({
     return option({
       id,
       args: arg.value,
-      onCreate(ctx) {
-        ctx.node.meta = { key };
+      onCreate(node) {
+        node.meta = { key };
       }
     });
   }
