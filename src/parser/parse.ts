@@ -197,7 +197,7 @@ export function parse<T>(argv: readonly string[], cfg: ArgConfig<T>): Node<T> {
           pCtx.max == null
             ? undefined
             : pCtx.max > (end = pCtx.node.args.length)
-              ? i + (pCtx.max - end)
+              ? i + pCtx.max - end
               : null) !== null
       ) {
         // assume that at this point, there is no existing cNode
