@@ -22,7 +22,7 @@ try {
 
 /** @param {string[]} args */
 function run(args) {
-  const start = performance.now();
+  performance.mark('start');
   const root = command({ read: false, strict: true })
     .option('--name', { id: 'name', min: 1, max: 1, alias: '-n' })
     .option('--message', { id: 'message', min: 1, max: 1, alias: '-m' })
@@ -46,7 +46,10 @@ function run(args) {
   }
 
   const greeting = `${opts.message} ${opts.name}!`;
-  const end = performance.now();
+
+  performance.mark('end');
   console.log(greeting);
-  console.log('\nDone in %o ms (no logging)', end - start);
+
+  const measure = performance.measure('time', 'start', 'end');
+  console.log('\nDone in %o ms (no logging)', measure.duration);
 }

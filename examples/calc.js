@@ -27,7 +27,7 @@ try {
 
 /** @param {string[]} args */
 function run(args) {
-  const start = performance.now();
+  performance.mark('start');
   const cmd = command();
 
   /** @type {import('../lib/index.js').Options} */
@@ -77,7 +77,9 @@ function run(args) {
     }
   }
 
-  const end = performance.now();
+  performance.mark('end');
   console.log(result);
-  console.log('\nDone in %o ms (no logging)', end - start);
+
+  const measure = performance.measure('time', 'start', 'end');
+  console.log('\nDone in %o ms (no logging)', measure.duration);
 }

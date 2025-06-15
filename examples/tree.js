@@ -25,7 +25,7 @@ function run(args) {
    * @property {boolean} [tree] Determines if the node args should be parsed.
    */
 
-  const start = performance.now();
+  performance.mark('start');
 
   /**
    * @param {import('../lib/index.js').Schema<Metadata>} schema
@@ -88,7 +88,7 @@ function run(args) {
     nodes.push(...node.children);
   }
 
-  const end = performance.now();
+  performance.mark('end');
 
   for (const node of flatten(root)) {
     console.log(
@@ -100,5 +100,6 @@ function run(args) {
     );
   }
 
-  console.log('\nDone in %o ms (no logging)', end - start);
+  const measure = performance.measure('time', 'start', 'end');
+  console.log('\nDone in %o ms (no logging)', measure.duration);
 }

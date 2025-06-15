@@ -25,7 +25,7 @@ function run(args) {
    * @property {boolean} [dot] Allow dot notation for the node.
    */
 
-  const start = performance.now();
+  performance.mark('start');
   const prefix = { cmd: 'cmd:', no: 'no-' };
 
   /** @type {import('../lib/index.js').Options<Metadata>['init']} */
@@ -189,7 +189,9 @@ function run(args) {
   // mutate result object
   resetPrototype(result);
 
-  const end = performance.now();
+  performance.mark('end');
   console.dir(result, { depth: null });
-  console.log('\nDone in %o ms (no logging)', end - start);
+
+  const measure = performance.measure('time', 'start', 'end');
+  console.log('\nDone in %o ms (no logging)', measure.duration);
 }

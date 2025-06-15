@@ -19,7 +19,7 @@ try {
 
 /** @param {string[]} args */
 function run(args) {
-  const start = performance.now();
+  performance.mark('start');
   // use 'init' and 'parser' for root command and subcommands
   const prefix = 'cmd:';
 
@@ -51,7 +51,7 @@ function run(args) {
 
   const cmd = command({ id: 'root', init, parser });
   const root = cmd.parse(args);
-  const end = performance.now();
+  performance.mark('end');
 
   for (const node of flatten(root)) {
     console.log(
@@ -63,5 +63,6 @@ function run(args) {
     );
   }
 
-  console.log('\nDone in %o ms (no logging)', end - start);
+  const measure = performance.measure('time', 'start', 'end');
+  console.log('\nDone in %o ms (no logging)', measure.duration);
 }
