@@ -49,9 +49,8 @@ export interface Options<T = unknown> {
   /**
    * The maximum number of arguments to read before the next parsed option or command.
    * Arguments over the maximum limit are saved to the parent option or command instead.
-   *
    * {@link assign Assigned values} are always treated as arguments
-   * for the option or command regardless of the {@linkcode max} option.
+   * for the option or command regardless of this option.
    *
    * A {@linkcode ParseError} is thrown if the option or command does not
    * satisfy this condition or if the parent option or command cannot accept
@@ -78,14 +77,14 @@ export interface Options<T = unknown> {
    * (except for {@link assign assigned values}) and are instead saved to
    * the parent option or command if it can accept arguments. Otherwise,
    * a {@linkcode ParseError} is thrown and the argument is treated as an
-   * unrecognized option or command.
+   * unrecognized argument.
    * @default true
    */
   read?: boolean;
   /**
    * Determines if the option or command can have an assigned value using the
    * equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option
-   * or command will not be matched and the argument is treated like a normal value.
+   * or command will not be matched.
    *
    * The default value is `true` for `option` types and `false` for `command` types.
    */
@@ -93,12 +92,13 @@ export interface Options<T = unknown> {
   /**
    * When enabled, a {@linkcode ParseError} is thrown for
    * unrecognized arguments that look like an option (e.g. `-o`, `--option`).
-   * Can be one of the following values:
+   * When enabled for a child node, unrecognized arguments are saved
+   * to the parent node instead. Can be one of the following values:
    *
-   * - `true` - Enable strict mode for both self and descendants.
-   * - `false` - Disable strict mode for both self and descendants.
-   * - `self` - Enable strict mode for self but disable it for descendants.
-   * - `descendants` - Disable strict mode for self but enable it for descendants.
+   * - `true` - Enables strict mode for both self and descendants.
+   * - `false` - Disables strict mode for both self and descendants.
+   * - `self` - Enables strict mode for self but disable it for descendants.
+   * - `descendants` - Disables strict mode for self but enable it for descendants.
    * @default false
    */
   strict?: boolean | 'self' | 'descendants';

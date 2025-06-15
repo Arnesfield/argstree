@@ -272,6 +272,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         // NOTE: reuse `alias` variable
         alias = opts.alias['-' + s.values[j]];
 
+        // assign value to the last node
         // prettier-ignore
         node(alias.cfg, raw, alias.key, j === s.values.length - 1 ? value : null, alias.alias, alias.args);
       }

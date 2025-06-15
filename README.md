@@ -12,11 +12,12 @@ Parse arguments into a tree structure.
 
 ## Features
 
-- **argstree** is meant to be a minimal and less opinionated argument parser.
-- Pure vanilla JavaScript with no external dependencies ([ESM only](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c)).
+**argstree** is meant to be a minimal and less opinionated argument parser.
+
+- Pure vanilla JavaScript. No external dependencies. [ESM only](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c).
 - Preserves the order and structure of the provided arguments using a [tree structure](#tree-structure).
 - Variadic arguments by default unless [range](#optionsmin) options are specified.
-- Includes a [strict mode](#optionsstrict) for unrecognized options.
+- Includes a [strict mode](#optionsstrict) for unrecognized arguments.
 - Can recognize and split combined [aliases](#optionsalias) (e.g. from `-abcd` to `-a`, `-bc`, `-d`).
 - Can recognize [assigned values](#optionsassign) for options and commands (e.g. `--option=value`, `command=value`).
 - Allows [dynamic parsing](#optionsparser) of values, options, and commands.
@@ -61,12 +62,6 @@ Adds an option. The argument is overwritten if it already exists.
 Type: `(arg: string, options?: Options) => this`
 
 Adds a command. The argument is overwritten if it already exists.
-
-#### schema.resolve()
-
-Type: `(key: string, value?: string | null) => ResolvedArg | undefined`
-
-Gets the [configuration](src/types/schema.types.ts) for the matched options and commands. The `key` is checked to have a value (e.g. `--option=value`) unless `value` is provided and not `undefined`. If the argument cannot be resolved, this returns either `undefined` or the [`Split`](#split) result if the argument is a short option.
 
 #### schema.parse()
 
@@ -167,9 +162,7 @@ A [`ParseError`](#parseerror) is thrown if the option or command does not satisf
 
 Type: `number`
 
-The maximum number of arguments to read before the next parsed option or command. Arguments over the maximum limit are saved to the parent option or command instead.
-
-[Assigned values](#optionsassign) are always treated as arguments for the option or command regardless of the [`max`](#optionsmax) option.
+The maximum number of arguments to read before the next parsed option or command. Arguments over the maximum limit are saved to the parent option or command instead. [Assigned values](#optionsassign) are always treated as arguments for the option or command regardless of this option.
 
 A [`ParseError`](#parseerror) is thrown if the option or command does not satisfy this condition or if the parent option or command cannot accept any more arguments.
 
@@ -234,14 +227,14 @@ input -i [ 'src', 'index.js' ]
 Type: `boolean`\
 Default: `true`
 
-When disabled, the option or command will not accept any arguments (except for [assigned values](#optionsassign)) and are instead saved to the parent option or command if it can accept arguments. Otherwise, a [`ParseError`](#parseerror) is thrown and the argument is treated as an unrecognized option or command.
+When disabled, the option or command will not accept any arguments (except for [assigned values](#optionsassign)) and are instead saved to the parent option or command if it can accept arguments. Otherwise, a [`ParseError`](#parseerror) is thrown and the argument is treated as an unrecognized argument.
 
 #### options.assign
 
 Type: `boolean`\
 Default: `true` for `option` types and `false` for `command` types
 
-Determines if the option or command can have an assigned value using the equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option or command will not be matched and the argument is treated like a normal value.
+Determines if the option or command can have an assigned value using the equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option or command will not be matched.
 
 ```js
 // root schema cannot assigned values
@@ -256,7 +249,7 @@ cmd.option('--output', { assign: false });
 // cannot read arguments nor assign a value
 cmd.option('--quiet', { read: false, assign: false, alias: '-q' });
 
-const args = '-i=index.js src --output dist lib --quiet=0 -q=0 --quiet yes';
+const args = '-i=index.js src --output dist lib --quiet=0 -q=0 --quiet true';
 const root = cmd.parse(args.split(' '));
 
 for (const node of [root].concat(root.children)) {
@@ -265,12 +258,12 @@ for (const node of [root].concat(root.children)) {
 ```
 
 ```text
-null command [ 'src', 'yes' ]
+null command [ 'src', 'true' ]
 --input option [ 'index.js' ]
 null value [ 'src' ]
 --output option [ 'dist', 'lib', '--quiet=0', '-q=0' ]
 --quiet option []
-null value [ 'yes' ]
+null value [ 'true' ]
 ```
 
 #### options.strict
@@ -278,12 +271,12 @@ null value [ 'yes' ]
 Type: `boolean`\
 Default: `false`
 
-When enabled, a [`ParseError`](#parseerror) is thrown for unrecognized arguments that look like an option (e.g. `-o`, `--option`). Can be one of the following values:
+When enabled, a [`ParseError`](#parseerror) is thrown for unrecognized arguments that look like an option (e.g. `-o`, `--option`). When enabled for a child node, unrecognized arguments are saved to the parent node instead. Can be one of the following values:
 
-- `true` - Enable strict mode for both self and descendants.
-- `false` - Disable strict mode for both self and descendants.
-- `self` - Enable strict mode for self but disable it for descendants.
-- `descendants` - Disable strict mode for self but enable it for descendants.
+- `true` - Enables strict mode for both self and descendants.
+- `false` - Disables strict mode for both self and descendants.
+- `self` - Enables strict mode for self but disable it for descendants.
+- `descendants` - Disables strict mode for self but enable it for descendants.
 
 #### options.leaf
 
@@ -397,8 +390,7 @@ cmd.option('--log-level', {
     const value = node.args[0];
     if (!logLevels.includes(value)) {
       throw new Error(
-        `Option '${node.id}' argument '${value}' is invalid. ` +
-          `Allowed choices are: ${logLevels.join(', ')}`
+        `Option '${node.id}' argument '${value}' is invalid. Allowed choices are: ${logLevels.join(', ')}`
       );
     }
   }
@@ -501,12 +493,12 @@ for (const args of argsList) {
 ```
 
 ```text
-UNRECOGNIZED_ARGUMENT null Unrecognized option: --output
+UNRECOGNIZED_ARGUMENT null Unrecognized argument: --output
 UNRECOGNIZED_ALIAS null Unrecognized aliases: -(e)f(gh)i
 RANGE null Expected 1 argument, but got 0.
 RANGE --input Option '--input' expected 1 argument, but got 0.
 RANGE --force Option 'FORCE' expected 0 arguments, but got 1.
-UNRECOGNIZED_ARGUMENT start Command 'start' expected no arguments, but got: index.js
+UNRECOGNIZED_ARGUMENT start Command 'start' does not recognize the argument: index.js
 ```
 
 ### Utilities

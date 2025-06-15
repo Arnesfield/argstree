@@ -100,6 +100,7 @@ export function resolve<T>(
     for (i = 0; i < s.values.length; i++) {
       // NOTE: reuse `alias` variable
       alias = opts.alias['-' + s.values[i]];
+      // assign value to the last item
       arg.items.push(item(i === s.values.length - 1 ? value : null, alias));
     }
   }
