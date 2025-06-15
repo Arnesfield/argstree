@@ -1,8 +1,7 @@
 // @ts-check
 module.exports = {
   require: 'tsx',
-  spec: ['**/*.spec.ts'],
-  ignore: ['node_modules/**/*'],
+  spec: ['test/**/*.spec.ts'],
   watchFiles: ['src', 'test'],
   watchIgnore: ['test/fixtures']
 };
