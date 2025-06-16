@@ -53,8 +53,9 @@ export function ok<T>(ctx: Context<T>): void {
   ctx.cfg.options.onData?.(ctx.node);
 }
 
-export function noRead<T>(ctx: Context<T>): boolean {
-  return !ctx.read || (ctx.max != null && ctx.max <= ctx.node.args.length);
+/** Checks if {@linkcode Node.args} has reached the {@linkcode Context.max} length. */
+export function full<T>(ctx: Context<T>): boolean {
+  return ctx.max != null && ctx.max <= ctx.node.args.length;
 }
 
 export function done<T>(ctx: Context<T>): void {

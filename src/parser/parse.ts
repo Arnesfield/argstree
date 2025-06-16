@@ -12,9 +12,9 @@ import {
   Context,
   display,
   done,
+  full,
   getArgs,
   isLeaf,
-  noRead,
   ok
 } from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
@@ -111,7 +111,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     if (!isLeaf(cCtx.cfg)) {
       ok(pCtx);
       next();
-    } else if (noRead(cCtx)) {
+    } else if (!cCtx.read || full(cCtx)) {
       ok(cCtx);
       cNode = cCtx = null;
     }
@@ -142,7 +142,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
       cNode.args.push(raw);
 
-      if (cCtx.max != null && cCtx.max <= cNode.args.length) {
+      if (full(cCtx)) {
         ok(cCtx);
         cNode = cCtx = null;
       }
@@ -152,7 +152,11 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // save value to parent node
     // unrecognized argument if parent cannot read or if strict mode
     // at this point, the value of `opt` is either true or undefined
-    if (noRead(pCtx) || ((strict ?? pCtx.strict) && (opt ?? isOption(raw)))) {
+    if (
+      !pCtx.read ||
+      full(pCtx) ||
+      ((strict ?? pCtx.strict) && (opt ?? isOption(raw)))
+    ) {
       return uErr(`argument: ${raw}`);
     }
 
