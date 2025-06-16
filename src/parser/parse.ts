@@ -177,8 +177,6 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   __assertNotNull(opts!);
   __assertNotNull(pCtx!);
 
-  const root = pCtx.node;
-
   for (let i = 0; i < argv.length; i++) {
     let raw = argv[i];
 
@@ -342,5 +340,6 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   // validate and run onValidate for all nodes
   for (const c of all) done(c);
 
-  return root;
+  // return the root node
+  return all[0].node;
 }
