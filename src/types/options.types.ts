@@ -131,8 +131,8 @@ export interface Options<T = unknown> {
    * Can have the following return values:
    *
    * - `Schema`s - Treated as options or commands.
-   * If the option or command (or for arrays, the last option or command)
-   * is a non-leaf node, the next arguments will be parsed using that node.
+   * If the option or command (or for arrays, the last item) is a non-leaf node,
+   * then the next arguments will be parsed using that node.
    * - `Value`s - Treated as value arguments and will be saved to either the
    * current parent or child option or command depending on their provided options.
    * - `false` - The argument is ignored as if it was never parsed.

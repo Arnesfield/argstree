@@ -298,7 +298,7 @@ Type: `(arg: Arg, node: Node) => XOR<Schema, Value> | XOR<Schema, Value>[] | boo
 
 Serves as a fallback for parsed arguments that cannot be recognized using the list of configured options and commands. Can have the following return values:
 
-- `Schema`s - Treated as options or commands. If the option or command (or for arrays, the last option or command) is a non-leaf node, the next arguments will be parsed using that node.
+- `Schema`s - Treated as options or commands. If the option or command (or for arrays, the last item) is a non-leaf node, then the next arguments will be parsed using that node.
 - `Value`s - Treated as value arguments and will be saved to either the current parent or child option or command depending on their provided options.
 - `false` - The argument is ignored as if it was never parsed.
 - Empty array, `true`, `undefined` - Fallback to the default behavior where the parsed argument may be treated either as a value or an unrecognized argument depending on the provided options.

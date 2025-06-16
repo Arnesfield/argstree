@@ -301,17 +301,23 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     ) {
       type V = Value;
 
+      // NOTE: setValue calls will use the current node
+      // which can change when a new node is created within the same loop
+      // both `cCtx` and `cNode` can be unset after this loop
       let call: boolean | undefined;
       for (const r of res) {
         if ((r as Schema<T>).config) {
-          // no value since it is handler by parser
+          // create nodes without value since we assume that it is handled by the parser
           node((r as Schema<T>).config(), raw, key);
           call = true;
-        } else for (const v of array((r as V).args)) setValue(v, (r as V).strict); // prettier-ignore
+        }
+        // handle parsed values (will set it to the current node)
+        else for (const v of array((r as V).args)) setValue(v, (r as V).strict);
       }
 
-      // if node() was called, call use() after
-      call && use();
+      // call use() if node() was called
+      // also make sure that `cCtx` exists since it can be unset by setValue
+      call && cCtx && use();
 
       // always skip after successful parser call (parsed.length > 0)
     }
