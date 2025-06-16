@@ -673,6 +673,21 @@ describe('parse', () => {
     expect(called).to.deep.equal(expected);
   });
 
+  it("should allow recursive 'init'", () => {
+    let called = 0;
+    const init: Options['init'] = schema => {
+      expect(schema.config().options).to.deep.equal(opts[called]);
+      schema.command('cmd', opts[++called]);
+    };
+    const opts: Options[] = [
+      { min: 0, init },
+      { max: 1, init },
+      { alias: 'alias', init }
+    ];
+    command(opts[0]).parse(['cmd', 'cmd']);
+    expect(called).to.equal(3);
+  });
+
   it("should run the 'parser' as fallback", () => {
     let called = 0;
     const cmd = command({
@@ -713,21 +728,6 @@ describe('parse', () => {
 
     cmd.parse(['--input=1', '--fallback=0', 'run', '--fallback']);
     expect(called).to.equal(1);
-  });
-
-  it("should allow recursive 'init'", () => {
-    let called = 0;
-    const init: Options['init'] = schema => {
-      expect(schema.config().options).to.deep.equal(opts[called]);
-      schema.command('cmd', opts[++called]);
-    };
-    const opts: Options[] = [
-      { min: 0, init },
-      { max: 1, init },
-      { alias: 'alias', init }
-    ];
-    command(opts[0]).parse(['cmd', 'cmd']);
-    expect(called).to.equal(3);
   });
 
   it("should handle schemas and values from 'parser'", () => {
@@ -781,6 +781,84 @@ describe('parse', () => {
               raw: '--output',
               key: '--output',
               args: ['input', '--input-value', 'value']
+            }
+          ]
+        }
+      ]
+    });
+    expect(root).to.deep.equal(expected);
+  });
+
+  it("should handle array of schemas and values from 'parser'", () => {
+    const root = command({
+      parser(arg) {
+        return [
+          { args: arg.raw === 'arg' ? ['0', '1'] : [] },
+          option({ id: '--output' }),
+          { args: '2' },
+          command({ id: 'cmd', max: 1 }),
+          { args: ['3', '4'] }
+        ];
+      }
+    })
+      .option('--input', { max: 1 })
+      .parse(['--input', 'arg']);
+    const [expected] = createNodes({
+      type: 'command',
+      args: ['1', '4'],
+      children: [
+        {
+          id: '--input',
+          name: '--input',
+          raw: '--input',
+          key: '--input',
+          args: ['0']
+        },
+        { type: 'value', args: ['1'] },
+        { id: '--output', name: 'arg', raw: 'arg', key: 'arg', args: ['2'] },
+        {
+          id: 'cmd',
+          name: 'arg',
+          raw: 'arg',
+          key: 'arg',
+          type: 'command',
+          args: ['3']
+        },
+        { type: 'value', args: ['4'] }
+      ]
+    });
+    expect(root).to.deep.equal(expected);
+  });
+
+  it("should handle last item that is non-leaf node for 'parser'", () => {
+    const root = command({
+      parser() {
+        return [
+          { args: ['foo', 'bar', 'baz'] },
+          command({ id: 'cmd', name: 'cmd', max: 1 })
+        ];
+      }
+    }).parse(['arg', 'value']);
+    const [expected] = createNodes({
+      type: 'command',
+      args: ['foo', 'bar', 'baz'],
+      children: [
+        { type: 'value', args: ['foo', 'bar', 'baz'] },
+        {
+          id: 'cmd',
+          name: 'cmd',
+          raw: 'arg',
+          key: 'arg',
+          type: 'command',
+          args: ['value'],
+          children: [
+            {
+              id: 'cmd',
+              name: 'cmd',
+              raw: 'arg',
+              key: 'arg',
+              type: 'value',
+              args: ['value']
             }
           ]
         }
