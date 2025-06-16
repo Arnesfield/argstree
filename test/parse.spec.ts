@@ -1,5 +1,12 @@
 import { expect } from 'chai';
-import command, { Arg, Config, NodeType, option, Schema } from '../src';
+import command, {
+  Arg,
+  Config,
+  NodeType,
+  option,
+  Options,
+  Schema
+} from '../src';
 import { Schema as SchemaClass } from '../src/schema/schema.class';
 import { createNodes } from './utils/create-nodes';
 
@@ -708,7 +715,22 @@ describe('parse', () => {
     expect(called).to.equal(1);
   });
 
-  it("should handle schemas and values from the 'parser' callback option", () => {
+  it("should allow recursive 'init'", () => {
+    let called = 0;
+    const init: Options['init'] = schema => {
+      expect(schema.config().options).to.deep.equal(opts[called]);
+      schema.command('cmd', opts[++called]);
+    };
+    const opts: Options[] = [
+      { min: 0, init },
+      { max: 1, init },
+      { alias: 'alias', init }
+    ];
+    command(opts[0]).parse(['cmd', 'cmd']);
+    expect(called).to.equal(3);
+  });
+
+  it("should handle schemas and values from 'parser'", () => {
     const cmd = command({
       parser(arg) {
         if (arg.key === '--input') {
@@ -759,6 +781,69 @@ describe('parse', () => {
               raw: '--output',
               key: '--output',
               args: ['input', '--input-value', 'value']
+            }
+          ]
+        }
+      ]
+    });
+    expect(root).to.deep.equal(expected);
+  });
+
+  it("should allow recursive 'parser'", () => {
+    let called = 0;
+    const parser: Options['parser'] = arg => {
+      if (arg.key === 'cmd') {
+        called++;
+        return command({ parser });
+      }
+    };
+    const root = command({ parser }).parse(['cmd', '1', 'cmd', 'cmd', '2']);
+    expect(called).to.equal(3);
+    const [expected] = createNodes({
+      type: 'command',
+      children: [
+        {
+          id: 'cmd',
+          name: 'cmd',
+          raw: 'cmd',
+          key: 'cmd',
+          type: 'command',
+          args: ['1'],
+          children: [
+            {
+              id: 'cmd',
+              name: 'cmd',
+              raw: 'cmd',
+              key: 'cmd',
+              type: 'value',
+              args: ['1']
+            },
+            {
+              id: 'cmd',
+              name: 'cmd',
+              raw: 'cmd',
+              key: 'cmd',
+              type: 'command',
+              children: [
+                {
+                  id: 'cmd',
+                  name: 'cmd',
+                  raw: 'cmd',
+                  key: 'cmd',
+                  type: 'command',
+                  args: ['2'],
+                  children: [
+                    {
+                      id: 'cmd',
+                      name: 'cmd',
+                      raw: 'cmd',
+                      key: 'cmd',
+                      type: 'value',
+                      args: ['2']
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
@@ -830,6 +915,52 @@ describe('parse', () => {
           args: ['index.cjs', 'index.mjs']
         },
         { type: 'value', args: ['index.d.ts'] }
+      ]
+    });
+    expect(root).to.deep.equal(expected);
+  });
+
+  it("should handle invalid ranges and prioritize 'min' range option", () => {
+    const args = ['foo', 'bar', 'baz'];
+    const root = command({ min: 3, max: 1 }).parse(args);
+    expect(root.args).to.deep.equal(args);
+  });
+
+  it("should handle invalid ranges and prioritize 'min' range option for 'onCreate' callback option", () => {
+    const args = ['foo', 'bar', 'baz'];
+    const root = command({
+      min: 1,
+      max: 1,
+      onCreate() {
+        return { min: 3 };
+      }
+    }).parse(args);
+    expect(root.args).to.deep.equal(args);
+  });
+
+  it('should handle inherited properties as options or commands', () => {
+    const root = command()
+      .option('prototype')
+      .option('constructor')
+      .parse(['__proto__', 'prototype', 'constructor', 'toString']);
+    const [expected] = createNodes({
+      type: 'command',
+      args: ['__proto__'],
+      children: [
+        { type: 'value', args: ['__proto__'] },
+        {
+          id: 'prototype',
+          name: 'prototype',
+          raw: 'prototype',
+          key: 'prototype'
+        },
+        {
+          id: 'constructor',
+          name: 'constructor',
+          raw: 'constructor',
+          key: 'constructor',
+          args: ['toString']
+        }
       ]
     });
     expect(root).to.deep.equal(expected);
