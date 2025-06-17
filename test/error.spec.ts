@@ -249,11 +249,25 @@ describe('error', () => {
 
     it("should throw unrecognized alias error after 'parser' option", () => {
       const code = ParseError.UNRECOGNIZED_ALIAS_ERROR;
+      const expectedArgs: Arg[] = [
+        {
+          raw: '-efghi=value',
+          key: '-efghi',
+          value: 'value',
+          split: createSplit([':e', 'f', ':gh', 'i'])
+        },
+        {
+          raw: '-ifh',
+          key: '-ifh',
+          value: undefined,
+          split: createSplit(['i', 'f', ':h'])
+        }
+      ];
 
       let called = 0;
       expectError({
         code,
-        args: ['-efghi=value'],
+        args: ['-efghi=value', '-ifh'],
         message: 'Unrecognized aliases: -(e)f(gh)i',
         options: {
           init(schema) {
@@ -263,18 +277,12 @@ describe('error', () => {
               .command('help', { alias: 'h' });
           },
           parser(arg) {
-            called++;
-            expect(arg).to.deep.equal({
-              raw: '-efghi=value',
-              key: '-efghi',
-              value: 'value',
-              split: createSplit([':e', 'f', ':gh', 'i'])
-            } satisfies Arg);
+            expect(arg).to.deep.equal(expectedArgs[called++]);
           }
         }
       });
 
-      expect(called).to.equal(1);
+      expect(called).to.equal(expectedArgs.length);
     });
   });
 

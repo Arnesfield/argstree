@@ -57,6 +57,18 @@ export function full<T>(ctx: Context<T>): boolean {
   return ctx.max != null && ctx.max <= ctx.node.args.length;
 }
 
+/** Creates an unrecognized error to throw later before validation. */
+export function uErr<T>(
+  ctx: Context<T>,
+  msg: string,
+  code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
+): ParseError<T> {
+  // always use parent node for unrecognized arguments
+  const name = display(ctx.node);
+  // prettier-ignore
+  return new ParseError(code, (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg, ctx.node, ctx.cfg.options);
+}
+
 export function done<T>(ctx: Context<T>): void {
   // validate node
   const { min, max, node, cfg } = ctx;

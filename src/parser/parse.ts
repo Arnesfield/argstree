@@ -7,16 +7,7 @@ import { Value } from '../types/options.types';
 import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
-import {
-  assign,
-  Context,
-  display,
-  done,
-  full,
-  getArgs,
-  leaf,
-  ok
-} from './node';
+import { assign, Context, done, full, getArgs, leaf, ok, uErr } from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
 
 // NOTE: internal
@@ -117,17 +108,6 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     }
   }
 
-  /** Saves the unrecognized error to throw later during validation. */
-  function uErr(msg: string, code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR) {
-    // skip if cached error is already set
-    if (err) return;
-
-    // always use parent node for unrecognized arguments
-    const name = display(pCtx.node);
-    // prettier-ignore
-    err = new ParseError(code, (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg, pCtx.node, pCtx.cfg.options);
-  }
-
   function setValue(raw: string, strict?: boolean) {
     // if child is strict, pass it over to parent
     // if parent is non-strict, child is marked as parsed and accept arg
@@ -157,7 +137,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       full(pCtx) ||
       ((strict ?? pCtx.strict) && (opt ?? isOption(raw)))
     ) {
-      return uErr(`argument: ${raw}`);
+      return (err ||= uErr(pCtx, `argument: ${raw}`));
     }
 
     pCtx.node.args.push(raw);
@@ -328,10 +308,12 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
     // handle split error
     else if (spl) {
-      const msg =
+      err ||= uErr(
+        pCtx,
         `alias${spl.remainders.length === 1 ? '' : 'es'}: -` +
-        spl.items.map(v => (v.remainder ? `(${v.value})` : v.value)).join('');
-      uErr(msg, ParseError.UNRECOGNIZED_ALIAS_ERROR);
+          spl.items.map(v => (v.remainder ? `(${v.value})` : v.value)).join(''),
+        ParseError.UNRECOGNIZED_ALIAS_ERROR
+      );
     }
 
     // otherwise, set value
