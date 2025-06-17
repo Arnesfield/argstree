@@ -5,11 +5,13 @@
   "keywords": [
     "args",
     "argv",
+    "argument",
     "parser",
+    "parsing",
     "tree",
     "cli",
-    "command",
-    "options"
+    "option",
+    "command"
   ],
   "homepage": "https://github.com/Arnesfield/argstree#readme",
   "bugs": {
