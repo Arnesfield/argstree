@@ -5,11 +5,11 @@ import cleanup from 'rollup-plugin-cleanup';
 import dts from 'rollup-plugin-dts';
 import esbuild from 'rollup-plugin-esbuild';
 import outputSize from 'rollup-plugin-output-size';
-import pkg from './package.json' with { type: 'json' };
 
 // const PROD = process.env.NODE_ENV !== 'development';
 const WATCH = process.env.ROLLUP_WATCH === 'true';
 const input = 'src/index.ts';
+const dir = 'lib'; // input file must be named 'index'
 
 function defineConfig(options: (false | RollupOptions)[]) {
   return options.filter((options): options is RollupOptions => !!options);
@@ -18,7 +18,7 @@ function defineConfig(options: (false | RollupOptions)[]) {
 export default defineConfig([
   {
     input,
-    output: { file: pkg.module, format: 'esm', exports: 'named' },
+    output: { dir, format: 'esm', exports: 'named' },
     plugins: [
       esbuild({
         target: 'esnext',
@@ -34,7 +34,7 @@ export default defineConfig([
   },
   {
     input,
-    output: { file: pkg.types, format: 'esm' },
+    output: { dir, format: 'esm' },
     plugins: [dts(), outputSize({ bytes: true })]
   },
   WATCH && {
