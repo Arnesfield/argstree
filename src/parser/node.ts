@@ -31,7 +31,8 @@ export function getArgs<T>(
   return a;
 }
 
-export function isLeaf<T>(cfg: Config<T>): boolean {
+/** Checks whether the config is a leaf node. */
+export function leaf<T>(cfg: Config<T>): boolean {
   let o: Options<T> | string = cfg.options;
   if (o.leaf != null) return o.leaf;
   if (o.parser) return false;

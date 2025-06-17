@@ -14,7 +14,7 @@ import {
   done,
   full,
   getArgs,
-  isLeaf,
+  leaf,
   ok
 } from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
@@ -108,7 +108,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
   function use() {
     __assertNotNull(cCtx);
-    if (!isLeaf(cCtx.cfg)) {
+    if (!leaf(cCtx.cfg)) {
       ok(pCtx);
       next();
     } else if (!cCtx.read || full(cCtx)) {
