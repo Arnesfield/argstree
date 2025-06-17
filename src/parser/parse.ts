@@ -8,7 +8,7 @@ import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import {
-  canAssign,
+  assign,
   Context,
   display,
   done,
@@ -222,23 +222,25 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     let key = raw,
       value: string | undefined,
       alias: Alias<T> | undefined,
-      j = raw.indexOf('=');
+      j = raw.indexOf('='),
+      // eslint-disable-next-line prefer-const
+      noVal = j === -1; // implies `value == null` after setting value
 
-    if (j > -1) {
+    if (!noVal) {
       key = raw.slice(0, j);
       value = raw.slice(j + 1);
     }
 
     // NOTE: reuse `cfg` variable
     // get node by map
-    if ((cfg = opts.map[key]!) && canAssign(cfg, value)) {
+    if ((cfg = opts.map[key]!) && (noVal || assign(cfg))) {
       node(cfg, raw, key, value);
       use();
       continue;
     }
 
     // get node by alias
-    if ((alias = opts.alias[key]) && canAssign(alias.cfg, value)) {
+    if ((alias = opts.alias[key]) && (noVal || assign(alias.cfg))) {
       node(alias.cfg, raw, alias.key, value, alias.alias, alias.args);
       use();
       continue;
@@ -252,14 +254,14 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       !(
         opts.keys.length > 0 &&
         isOption(key, 'short') &&
-        (s = split(key.slice(1), opts.keys)).values.length > 0
-      ) ||
-      (value != null &&
-        !(last = s.items.at(-1)!).remainder &&
-        !canAssign(opts.alias['-' + last.value].cfg, value))
+        (s = split(key.slice(1), opts.keys)).values.length > 0 &&
+        (noVal ||
+          (last = s.items.at(-1)!).remainder ||
+          assign(opts.alias['-' + last.value].cfg))
+      )
     ) {
-      // parse by parser or treat as value if no split items
-      // or if last split item value is not assignable
+      // parse by parser or treat as value
+      // if no split items or if last split item value is not assignable
     }
 
     // set split result for error later after parser

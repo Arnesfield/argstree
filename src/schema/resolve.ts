@@ -1,6 +1,6 @@
 import { isOption } from '../lib/is-option';
 import { split, Split, SplitItem } from '../lib/split';
-import { canAssign, getArgs } from '../parser/node';
+import { assign, getArgs } from '../parser/node';
 import { Alias, NormalizedOptions } from '../parser/normalize';
 import { Config, ResolvedArg, ResolvedItem } from '../types/schema.types';
 import { NonEmptyArray } from '../types/util.types';
@@ -50,23 +50,23 @@ export function resolve<T>(
     alias: Alias<T> | undefined,
     s: Split | undefined,
     last: SplitItem,
-    i: number;
+    i: number,
+    noVal: boolean | undefined; // implies `arg.value == null` after setting arg.value
 
   if (val === undefined && (i = raw.indexOf('=')) > -1) {
     arg.key = raw.slice(0, i);
     arg.value = raw.slice(i + 1);
   } else if (val != null) arg.value = val;
-
-  const { key, value } = arg;
+  else noVal = true;
 
   // get item by map
-  if ((cfg = opts.map[key]) && canAssign(cfg, value)) {
-    arg.items = [item(value, arg, cfg)];
+  if ((cfg = opts.map[arg.key]) && (noVal || assign(cfg))) {
+    arg.items = [item(arg.value, arg, cfg)];
   }
 
   // get item by alias
-  else if ((alias = opts.alias[key]) && canAssign(alias.cfg, value)) {
-    arg.items = [item(value, alias)];
+  else if ((alias = opts.alias[arg.key]) && (noVal || assign(alias.cfg))) {
+    arg.items = [item(arg.value, alias)];
   }
 
   // handle split
@@ -75,15 +75,15 @@ export function resolve<T>(
   else if (
     !(
       opts.keys.length > 0 &&
-      isOption(key, 'short') &&
-      (s = split(key.slice(1), opts.keys)).values.length > 0
-    ) ||
-    (value != null &&
-      !(last = s.items.at(-1)!).remainder &&
-      !canAssign(opts.alias['-' + last.value].cfg, value))
+      isOption(arg.key, 'short') &&
+      (s = split(arg.key.slice(1), opts.keys)).values.length > 0 &&
+      (noVal ||
+        (last = s.items.at(-1)!).remainder ||
+        assign(opts.alias['-' + last.value].cfg))
+    )
   ) {
-    // treat as value if no split items
-    // or if last split item value is not assignable
+    // treat as value
+    // if no split items or if last split item value is not assignable
     return;
   }
 
@@ -101,7 +101,7 @@ export function resolve<T>(
       // NOTE: reuse `alias` variable
       alias = opts.alias['-' + s.values[i]];
       // assign value to the last item
-      arg.items.push(item(i === s.values.length - 1 ? value : null, alias));
+      arg.items.push(item(i === s.values.length - 1 ? arg.value : null, alias));
     }
   }
 

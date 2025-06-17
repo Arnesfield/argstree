@@ -42,11 +42,9 @@ export function isLeaf<T>(cfg: Config<T>): boolean {
   return cfg.type === 'option';
 }
 
-export function canAssign<T>(
-  cfg: Config<T>,
-  value: string | null | undefined
-): boolean {
-  return value == null || (cfg.options.assign ?? cfg.type === 'option');
+/** Checks whether the config is assignable. */
+export function assign<T>(cfg: Config<T>): boolean {
+  return cfg.options.assign ?? cfg.type === 'option';
 }
 
 export function ok<T>(ctx: Context<T>): void {
