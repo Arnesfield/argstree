@@ -13,13 +13,6 @@ export interface Context<T> {
   strict: boolean | undefined;
 }
 
-export function display<T>(node: Node<T>): string | false {
-  return (
-    node.name != null &&
-    `${node.type === 'option' ? 'Option' : 'Command'} '${node.name}' `
-  );
-}
-
 export function getArgs<T>(
   opts: Options<T>,
   args?: string[],
@@ -55,6 +48,13 @@ export function ok<T>(ctx: Context<T>): void {
 /** Checks if {@linkcode Node.args} has reached the {@linkcode Context.max} length. */
 export function full<T>(ctx: Context<T>): boolean {
   return ctx.max != null && ctx.max <= ctx.node.args.length;
+}
+
+function display<T>(node: Node<T>): string | false {
+  return (
+    node.name != null &&
+    `${node.type === 'option' ? 'Option' : 'Command'} '${node.name}' `
+  );
 }
 
 /** Creates an unrecognized error to throw later before validation. */
