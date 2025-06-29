@@ -3,6 +3,7 @@ import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
+import { number } from '../utils/number';
 
 export interface Context<T> {
   cfg: Config<T>;
@@ -39,6 +40,13 @@ export function leaf<T>(cfg: Config<T>): boolean {
 /** Checks whether the config is assignable. */
 export function assign<T>(cfg: Config<T>): boolean {
   return cfg.options.assign ?? cfg.type === 'option';
+}
+
+/** Checks whether the config can be assigned an argument. */
+export function read<T>(cfg: Config<T>): boolean {
+  return (
+    (cfg.options.read ?? true) && number(cfg.options.max) !== 0 && assign(cfg)
+  );
 }
 
 export function ok<T>(ctx: Context<T>): void {

@@ -1,7 +1,6 @@
 export * from './lib/error';
 export * from './lib/flatten';
 export * from './lib/is-option';
-export * from './lib/split';
 export * from './schema/schema';
 export { command as default } from './schema/schema';
 export * from './types/arg.types';

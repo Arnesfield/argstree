@@ -1,21 +1,26 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { split, Split, SplitItem } from '../lib/split';
 import { Schema } from '../schema/schema.class';
 import { Node } from '../types/node.types';
 import { Value } from '../types/options.types';
 import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
-import { assign, Context, done, full, getArgs, leaf, ok, uErr } from './node';
+import { number } from '../utils/number';
+import {
+  assign,
+  Context,
+  done,
+  full,
+  getArgs,
+  leaf,
+  ok,
+  read,
+  uErr
+} from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
 
 // NOTE: internal
-
-// ensure non-negative number
-function number(n: number | null | undefined): number | null {
-  return typeof n === 'number' && isFinite(n) && n >= 0 ? n : null;
-}
 
 export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   const all: Context<T>[] = [], // all node contexts
@@ -201,7 +206,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
     let key = raw,
       value: string | undefined,
-      alias: Alias<T> | undefined,
+      alias: Alias<T> | null | undefined,
       j = raw.indexOf('='),
       // eslint-disable-next-line prefer-const
       noVal = j === -1; // implies `value == null` after setting value
@@ -226,49 +231,54 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       continue;
     }
 
+    const aliases: Alias<T>[] = [];
+    let noParse: boolean | undefined, // skip parser callback
+      aVal: string | undefined, // alias value
+      rem: string | undefined; // remainder
+
     // handle split
-    // condition 1 - check if can split and has split values
-    // condition 2 - check if last split item is a value and is assignable
-    let spl: Split | undefined, s: Split | undefined, last: SplitItem;
-    if (
-      !(
-        opts.keys.length > 0 &&
-        isOption(key, 'short') &&
-        (s = split(key.slice(1), opts.keys)).values.length > 0 &&
-        (noVal ||
-          (last = s.items.at(-1)!).remainder ||
-          assign(opts.alias['-' + last.value].cfg))
-      )
-    ) {
-      // parse by parser or treat as value
-      // if no split items or if last split item value is not assignable
-    }
+    // - if unrecognized and no parsed alias, continue to parser
+    // - if unrecognized and has parsed alias,
+    // check if alias can accept a value (max, read, assign)
+    // if it can, use current and rest as value and parse all aliases, no parser
+    // otherwise, continue to parser
+    // - if has parsed alias and it requires a value (min)
+    // if it's the last alias, check noVal and parsed value
+    // if not, check if alias can accept a value (max, read, assign)
+    // if it can, use the rest as value and parse all aliases, no parser
+    // otherwise, continue to parser
+    // - if no parser result, process aliases normally
 
-    // set split result for error later after parser
-    else if (s.remainders.length > 0) {
-      spl = s;
-    }
+    if (isOption(key, 'short')) {
+      // if an alias exists, stop loop if it requires a value
+      for (
+        j = 1, alias = null;
+        j < key.length && !(alias && number(alias.cfg.options.min));
+        j++
+      ) {
+        const curr = opts.short[key.charCodeAt(j)];
+        if (!curr) break;
 
-    // if no remainders, resolve all split values
-    else {
-      // NOTE: reuse `j` variable
-      for (j = 0; j < s.values.length; j++) {
-        // NOTE: reuse `alias` variable
-        alias = opts.alias['-' + s.values[j]];
-
-        // assign value to the last node
-        // prettier-ignore
-        node(alias.cfg, raw, alias.key, j === s.values.length - 1 ? value : null, alias.alias, alias.args);
+        alias && aliases.push(alias);
+        alias = curr;
       }
 
-      use();
-      continue;
+      if (!alias) {
+        // continue to parser if no alias was parsed
+      } else if (
+        j < key.length
+          ? read(alias.cfg)
+          : (noParse = noVal || assign(alias.cfg))
+      ) {
+        aliases.push(alias);
+        aVal = noParse ? value : raw.slice(j);
+      } else rem = key.slice(j - 1);
     }
 
     // parse by parser
 
     // prettier-ignore
-    let res = pCtx.cfg.options.parser?.({ raw, key, value, split: spl }, pCtx.node);
+    let res = noParse ? null : pCtx.cfg.options.parser?.({ raw, key, value, remainder: rem ?? key.slice(j) }, pCtx.node);
     if (res === false) {
       // ignore raw argument
     }
@@ -302,22 +312,27 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       call && cCtx && use();
 
       // always skip after successful parser call (parsed.length > 0)
+      continue;
     }
 
     // parser done
 
-    // handle split error
-    else if (spl) {
-      err ||= uErr(
-        pCtx,
-        `alias${spl.remainders.length === 1 ? '' : 'es'}: -` +
-          spl.items.map(v => (v.remainder ? `(${v.value})` : v.value)).join(''),
-        ParseError.UNRECOGNIZED_ALIAS_ERROR
-      );
+    if (rem) {
+      err ||= uErr(pCtx, `alias: -${rem}`, ParseError.UNRECOGNIZED_ALIAS_ERROR);
+    } else if (aliases.length === 0) {
+      setValue(raw);
+      continue;
     }
 
-    // otherwise, set value
-    else setValue(raw);
+    // process aliases (even partial)
+    // NOTE: reuse `j` variable
+    for (j = 0; j < aliases.length; j++) {
+      // NOTE: reuse `alias` variable
+      // prettier-ignore
+      node((alias = aliases[j]).cfg, raw, alias.key, j === aliases.length - 1 ? aVal : null, alias.alias, alias.args);
+    }
+
+    j > 0 && use();
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes

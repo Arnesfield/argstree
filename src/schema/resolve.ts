@@ -1,10 +1,9 @@
 import { isOption } from '../lib/is-option';
-import { split, Split, SplitItem } from '../lib/split';
-import { assign, getArgs } from '../parser/node';
+import { assign, getArgs, read } from '../parser/node';
 import { Alias, NormalizedOptions } from '../parser/normalize';
 import { Config, ResolvedArg, ResolvedItem } from '../types/schema.types';
-import { NonEmptyArray } from '../types/util.types';
 import { __assertNotNull } from '../utils/assert';
+import { number } from '../utils/number';
 
 // make props optional except 'key' and make 'alias' nullable
 interface ParsedArg<T>
@@ -47,9 +46,7 @@ export function resolve<T>(
   const arg = { raw, key: raw } as ResolvedArg<T>;
 
   let cfg: Config<T> | undefined,
-    alias: Alias<T> | undefined,
-    s: Split | undefined,
-    last: SplitItem,
+    alias: Alias<T> | null | undefined,
     i: number,
     noVal: boolean | undefined; // implies `arg.value == null` after setting arg.value
 
@@ -70,39 +67,34 @@ export function resolve<T>(
   }
 
   // handle split
-  // condition 1 - check if can split and has split values
-  // condition 2 - check if last split item is a value and is assignable
-  else if (
-    !(
-      opts.keys.length > 0 &&
-      isOption(arg.key, 'short') &&
-      (s = split(arg.key.slice(1), opts.keys)).values.length > 0 &&
-      (noVal ||
-        (last = s.items.at(-1)!).remainder ||
-        assign(opts.alias['-' + last.value].cfg))
-    )
-  ) {
-    // treat as value
-    // if no split items or if last split item value is not assignable
-    return;
-  }
+  else if (isOption(arg.key, 'short')) {
+    arg.items = [];
 
-  // set split result and skip setting items
-  else if (s.remainders.length > 0) {
-    arg.split = s;
-  }
+    // if an alias exists, stop loop if it requires a value
+    for (
+      i = 1, alias = null;
+      i < arg.key.length && !(alias && number(alias.cfg.options.min));
+      i++
+    ) {
+      const curr = opts.short[arg.key.charCodeAt(i)];
+      if (!curr) break;
 
-  // if no remainders, resolve all split values
-  else {
-    arg.items = [] as unknown as NonEmptyArray<ResolvedItem<T>>;
-
-    // NOTE: reuse `i` variable
-    for (i = 0; i < s.values.length; i++) {
-      // NOTE: reuse `alias` variable
-      alias = opts.alias['-' + s.values[i]];
-      // assign value to the last item
-      arg.items.push(item(i === s.values.length - 1 ? arg.value : null, alias));
+      alias && arg.items.push(item(null, alias));
+      alias = curr;
     }
+
+    // if no alias was parsed, then assume that it's an invalid argument
+    if (!alias) return;
+
+    // incomplete aliases parsed
+    const inc = i < arg.key.length;
+
+    if (inc && val !== undefined) {
+      arg.items.push(item(null, alias));
+      arg.remainder = arg.key.slice(i);
+    } else if (inc ? read(alias.cfg) : noVal || assign(alias.cfg)) {
+      arg.items.push(item(inc ? raw.slice(i) : arg.value, alias));
+    } else arg.remainder = arg.key.slice(i - 1);
   }
 
   return arg;

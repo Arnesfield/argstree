@@ -1,5 +1,4 @@
 import { ParseError } from '../lib/error';
-import { Split } from '../lib/split';
 import { Arg } from './arg.types';
 import { Node } from './node.types';
 import { Options } from './options.types';
@@ -42,15 +41,10 @@ export interface ResolvedItem<T = unknown> {
 }
 
 /** The resolved argument. */
-export type ResolvedArg<T = unknown> = Arg &
-  (
-    | { split: Split; items?: never }
-    | {
-        split?: never;
-        /** The resolved items. */
-        items: ResolvedItem<T>[];
-      }
-  );
+export interface ResolvedArg<T = unknown> extends Arg {
+  /** The resolved items. */
+  items?: ResolvedItem<T>[];
+}
 
 /** The schema object. */
 export interface Schema<T = unknown> {
@@ -78,8 +72,6 @@ export interface Schema<T = unknown> {
    * Gets the configuration for the matched options and commands.
    * The {@linkcode key} is checked to have a value (e.g. `--option=value`)
    * unless {@linkcode value} is provided and not `undefined`.
-   * If the argument cannot be resolved, this returns either `undefined`
-   * or the {@linkcode Split} result if the argument is a short option.
    * @param key The argument or parsed key.
    * @param value The parsed value if any.
    * @returns The resolved argument.

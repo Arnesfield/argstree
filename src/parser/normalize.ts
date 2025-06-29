@@ -1,4 +1,3 @@
-import { isOption } from '../lib/is-option';
 import { Arg } from '../types/arg.types';
 import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
@@ -21,8 +20,8 @@ export interface BaseNormalizedOptions<T> {
   readonly map: Partial<Required<Config<T>>['map']>;
   /** Safe alias map object. */
   readonly alias: { [alias: string]: Alias<T> };
-  /** A sorted list of splittable alias keys without the `-` prefix. */
-  readonly keys: string[];
+  /** Safe alias map object for short options. */
+  readonly short: { [aliasCharCode: number]: Alias<T> };
 }
 
 export type NormalizedOptions<T> =
@@ -34,10 +33,8 @@ export function normalize<T>(cfg: Config<T>): NormalizedOptions<T> {
   if (cfg.options.leaf) return { pure: true };
 
   const map: Config<T>['map'] = { __proto__: null!, ...cfg.map };
-
-  // save splittable aliases to keys array
-  const keys: string[] = [];
-  const alias: NormalizedOptions<T>['alias'] = { __proto__: null! };
+  const alias: BaseNormalizedOptions<T>['alias'] = { __proto__: null! };
+  const short = { __proto__: null } as BaseNormalizedOptions<T>['short'];
 
   // check if node is value only (no child nodes)
   let pure = !cfg.options.parser;
@@ -49,23 +46,25 @@ export function normalize<T>(cfg: Config<T>): NormalizedOptions<T> {
     // NOTE: reuse `cfg` variable
     for (let arr of array((cfg = map[key]).options.alias)) {
       // each array item is an alias
-      // if item is an array, item[0] is an alias
+      // if `arr` is an array, then `arr[0]` is an alias
       if ((arr = array(arr)).length === 0) continue;
 
-      // use `alias[0]` as alias id and `arg` as arg
-      const a = arr[0];
-
-      // only add key if it doesn't exist in alias map yet
-      // accept short options only for splitting and remove `-` prefix
-      !alias[a] && isOption(a, 'short') && keys.push(a.slice(1));
-
       // override existing alias
+      const a = arr[0];
       alias[a] = { key, alias: a, args: arr.slice(1), cfg };
+
+      // check if single character short option
+      // 45: '-'
+      let c: number;
+      if (
+        a.length === 2 &&
+        a.charCodeAt(0) === 45 &&
+        (c = a.charCodeAt(1)) !== 45
+      ) {
+        short[c] = alias[a];
+      }
     }
   }
 
-  // sort by length desc for splitting later on
-  keys.sort((a, b) => b.length - a.length);
-
-  return { pure, map, alias, keys };
+  return { pure, map, alias, short };
 }
