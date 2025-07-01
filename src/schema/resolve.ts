@@ -13,19 +13,8 @@ interface ParsedArg<T>
 }
 
 function item<T>(
-  value: string | null | undefined,
-  alias: Alias<T>
-): ResolvedItem<T>;
-
-function item<T>(
-  value: string | null | undefined,
-  arg: ParsedArg<T>,
-  cfg: Config<T>
-): ResolvedItem<T>;
-
-function item<T>(
-  value: string | null | undefined,
   { key, alias = null, args, cfg }: ParsedArg<T>,
+  value?: string,
   c = cfg
 ): ResolvedItem<T> {
   // assume that config will always be provided
@@ -58,12 +47,12 @@ export function resolve<T>(
 
   // get item by map
   if ((cfg = opts.map[arg.key]) && (noVal || assign(cfg))) {
-    arg.items = [item(arg.value, arg, cfg)];
+    arg.items = [item(arg, arg.value, cfg)];
   }
 
   // get item by alias
   else if ((alias = opts.alias[arg.key]) && (noVal || assign(alias.cfg))) {
-    arg.items = [item(arg.value, alias)];
+    arg.items = [item(alias, arg.value)];
   }
 
   // handle split
@@ -79,7 +68,7 @@ export function resolve<T>(
       const curr = opts.short[arg.key.charCodeAt(i)];
       if (!curr) break;
 
-      alias && arg.items.push(item(null, alias));
+      alias && arg.items.push(item(alias));
       alias = curr;
     }
 
@@ -90,10 +79,10 @@ export function resolve<T>(
     const inc = i < arg.key.length;
 
     if (inc && val !== undefined) {
-      arg.items.push(item(null, alias));
+      arg.items.push(item(alias));
       arg.remainder = arg.key.slice(i);
     } else if (inc ? read(alias.cfg) : noVal || assign(alias.cfg)) {
-      arg.items.push(item(inc ? raw.slice(i) : arg.value, alias));
+      arg.items.push(item(alias, inc ? raw.slice(i) : arg.value));
     } else arg.remainder = arg.key.slice(i - 1);
   }
 
