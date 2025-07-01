@@ -278,13 +278,14 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // parse by parser
 
     // prettier-ignore
-    let res = noParse ? null : pCtx.cfg.options.parser?.({ raw, key, value, remainder: rem ?? key.slice(j) }, pCtx.node);
+    let res = noParse ? null : pCtx.cfg.options.parser?.({ raw, key, value, remainder: rem }, pCtx.node);
     // ignore raw argument
     if (res === false) continue;
+
     // default behavior if no parsed or true
     // default behavior if empty array
     // otherwise, iterate through parsed
-    else if (
+    if (
       res != null &&
       res !== true &&
       (res = Array.isArray(res) ? res : [res]).length > 0
