@@ -22,6 +22,8 @@ export interface BaseNormalizedOptions<T> {
   readonly alias: { [alias: string]: Alias<T> };
   /** Safe alias map object for short options. */
   readonly short: { [aliasCharCode: number]: Alias<T> };
+  /** Determines if short options can be split. */
+  readonly split: boolean | undefined;
 }
 
 export type NormalizedOptions<T> =
@@ -37,7 +39,8 @@ export function normalize<T>(cfg: Config<T>): NormalizedOptions<T> {
   const short = { __proto__: null } as BaseNormalizedOptions<T>['short'];
 
   // check if node is value only (no child nodes)
-  let pure = !cfg.options.parser;
+  let pure = !cfg.options.parser,
+    split: boolean | undefined;
 
   // apply aliases from args
   for (const key in map) {
@@ -61,10 +64,11 @@ export function normalize<T>(cfg: Config<T>): NormalizedOptions<T> {
         a.charCodeAt(0) === 45 &&
         (c = a.charCodeAt(1)) !== 45
       ) {
+        split = true;
         short[c] = alias[a];
       }
     }
   }
 
-  return { pure, map, alias, short };
+  return { pure, map, alias, short, split };
 }

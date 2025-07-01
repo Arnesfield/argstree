@@ -249,7 +249,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // otherwise, continue to parser
     // - if no parser result, process aliases normally
 
-    if (isOption(key, 'short')) {
+    if (opts.split && isOption(key, 'short')) {
       // if an alias exists, stop loop if it requires a value
       for (
         j = 1, alias = null;
@@ -279,10 +279,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
     // prettier-ignore
     let res = noParse ? null : pCtx.cfg.options.parser?.({ raw, key, value, remainder: rem ?? key.slice(j) }, pCtx.node);
-    if (res === false) {
-      // ignore raw argument
-    }
-
+    // ignore raw argument
+    if (res === false) continue;
     // default behavior if no parsed or true
     // default behavior if empty array
     // otherwise, iterate through parsed
@@ -317,22 +315,17 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
     // parser done
 
-    if (rem) {
-      err ||= uErr(pCtx, `alias: -${rem}`, ParseError.UNRECOGNIZED_ALIAS_ERROR);
-    } else if (aliases.length === 0) {
-      setValue(raw);
-      continue;
-    }
+    // prettier-ignore
+    if (rem) err ||= uErr(pCtx, `alias: -${rem}`, ParseError.UNRECOGNIZED_ALIAS_ERROR);
 
-    // process aliases (even partial)
-    // NOTE: reuse `j` variable
-    for (j = 0; j < aliases.length; j++) {
-      // NOTE: reuse `alias` variable
-      // prettier-ignore
-      node((alias = aliases[j]).cfg, raw, alias.key, j === aliases.length - 1 ? aVal : null, alias.alias, alias.args);
-    }
-
-    j > 0 && use();
+    if (aliases.length > 0) {
+      // process aliases (even partial)
+      for (j = 0; j < aliases.length; j++) {
+        // prettier-ignore
+        node((alias = aliases[j]).cfg, raw, alias.key, j === aliases.length - 1 ? aVal : null, alias.alias, alias.args);
+      }
+      use();
+    } else if (!rem) setValue(raw);
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes

@@ -56,7 +56,7 @@ export function resolve<T>(
   }
 
   // handle split
-  else if (isOption(arg.key, 'short')) {
+  else if (opts.split && isOption(arg.key, 'short')) {
     arg.items = [];
 
     // if an alias exists, stop loop if it requires a value
@@ -85,6 +85,9 @@ export function resolve<T>(
       arg.items.push(item(alias, inc ? raw.slice(i) : arg.value));
     } else arg.remainder = arg.key.slice(i - 1);
   }
+
+  // if cannot be split, treat as value
+  else return;
 
   return arg;
 }
