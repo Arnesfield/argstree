@@ -9,7 +9,6 @@ export function flatten<T>(node: Node<T>): Node<T>[] {
   const nodes: Node<T>[] = [];
   const stack = [node];
 
-  // NOTE: reuse `node` variable
   while ((node = stack.pop()!)) {
     nodes.push(node);
     for (let i = node.children.length; i-- > 0; ) stack.push(node.children[i]);

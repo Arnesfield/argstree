@@ -46,7 +46,6 @@ export function normalize<T>(cfg: Config<T>): NormalizedOptions<T> {
   for (const key in map) {
     pure = false;
 
-    // NOTE: reuse `cfg` variable
     for (let arr of array((cfg = map[key]).options.alias)) {
       // each array item is an alias
       // if `arr` is an array, then `arr[0]` is an alias

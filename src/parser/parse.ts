@@ -14,7 +14,7 @@ import { Alias, normalize, NormalizedOptions } from './normalize';
 
 export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   const all: Context<T>[] = [], // all node contexts
-    bvAll: Context<T>[] = []; // all node contexts that have an onBeforeValidate callback option
+    bvAll: Context<T>[] = []; // all with an onBeforeValidate callback option
 
   let opts: NormalizedOptions<T>, // parent normalized options
     pCtx: Context<T>, // parent node context
@@ -36,7 +36,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     cCtx && ok(cCtx);
 
     // make sure to initialize config before accessing options
-    // NOTE: creating the schema instance should mutate and initialize the config object
+    // creating the schema instance should mutate and initialize
+    // the config object
     !c.map && c.options.init && new Schema(c);
 
     const o = c.options;
@@ -163,7 +164,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       // if a value node exists and not strict mode for the current node,
       // capture all args up until the end is reached if it's not null
       // allow number and undefined for end value
-      // note that `end` is used twice (to get length of args and for the end index)
+      // note that `end` is used twice:
+      // once to get length of args and another for the end index
       // also note that `cNode` is expected to be a value node at this point
       let end: number | null | undefined;
       if (
@@ -199,14 +201,13 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       alias: Alias<T> | null | undefined,
       j = raw.indexOf('='),
       // eslint-disable-next-line prefer-const
-      noVal = j === -1; // implies `value == null` after setting value
+      noVal = j === -1; // would imply `value == null`
 
     if (!noVal) {
       key = raw.slice(0, j);
       value = raw.slice(j + 1);
     }
 
-    // NOTE: reuse `cfg` variable
     // get node by map
     if ((cfg = opts.map[key]!) && (noVal || assign(cfg))) {
       node(cfg, raw, key, value);
@@ -227,18 +228,6 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       rem: string | undefined; // remainder
 
     // handle split
-    // - if unrecognized and no parsed alias, continue to parser
-    // - if unrecognized and has parsed alias,
-    // check if alias can accept a value (max, read, assign)
-    // if it can, use current and rest as value and parse all aliases, no parser
-    // otherwise, continue to parser
-    // - if has parsed alias and it requires a value (min)
-    // if it's the last alias, check noVal and parsed value
-    // if not, check if alias can accept a value (max, read, assign)
-    // if it can, use the rest as value and parse all aliases, no parser
-    // otherwise, continue to parser
-    // - if no parser result, process aliases normally
-
     if (opts.split && isOption(key, 'short')) {
       // if an alias exists, stop loop if it requires a value
       for (
@@ -246,6 +235,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         j < key.length && !(alias && number(alias.cfg.options.min));
         j++
       ) {
+        // delay pushing the last alias to the next iteration instead
+        // so that the last alias is pushed outside only after condition checks
         const curr = opts.short[key.charCodeAt(j)];
         if (!curr) break;
 
@@ -255,14 +246,22 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
       if (!alias) {
         // continue to parser if no alias was parsed
-      } else if (
+      }
+
+      // if incomplete aliases parsed, check if the rest of the argument
+      // can be assigned and also go through the parser function (!noParse)
+      // otherwise, use the parsed value if it can be assigned
+      else if (
         j < key.length
           ? number(alias.cfg.options.max) !== 0 && assign(alias.cfg)
           : (noParse = noVal || assign(alias.cfg))
       ) {
         aliases.push(alias);
         aVal = noParse ? value : raw.slice(j);
-      } else rem = key.slice(j - 1);
+      }
+
+      // set the remaining argument for error
+      else rem = key.slice(j - 1);
     }
 
     // parse by parser
@@ -288,7 +287,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       let call: boolean | undefined;
       for (const r of res) {
         if ((r as Schema<T>).config) {
-          // create nodes without value since we assume that it is handled by the parser
+          // create nodes without value since we can assume that
+          // it is handled by the parser
           node((r as Schema<T>).config(), raw, key);
           call = true;
         }

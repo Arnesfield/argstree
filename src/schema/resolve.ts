@@ -37,7 +37,7 @@ export function resolve<T>(
   let cfg: Config<T> | undefined,
     alias: Alias<T> | null | undefined,
     i: number,
-    noVal: boolean | undefined; // implies `arg.value == null` after setting arg.value
+    noVal: boolean | undefined; // would imply `arg.value == null`
 
   if (val === undefined && (i = raw.indexOf('=')) > -1) {
     arg.key = raw.slice(0, i);

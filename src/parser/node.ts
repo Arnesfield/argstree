@@ -29,9 +29,9 @@ export function leaf<T>(cfg: Config<T>): boolean {
   let o: Options<T> | string = cfg.options;
   if (o.leaf != null) return o.leaf;
   if (o.parser) return false;
-  // WARNING:
-  // side effect: this would initialize the schema if options aren't satisfied
-  // and might be unsafe if consumer decides to implement their own schema object
+  // WARNING: possible side effect: this would initialize the schema if the
+  // checks above aren't satisfied and might be unsafe if consumer decides to
+  // implement their own schema object
   for (o in cfg.map) return false;
   return cfg.type === 'option';
 }
@@ -45,7 +45,10 @@ export function ok<T>(ctx: Context<T>): void {
   ctx.cfg.options.onData?.(ctx.node);
 }
 
-/** Checks if {@linkcode Node.args} has reached the {@linkcode Context.max} length. */
+/**
+ * Checks if {@linkcode Node.args} has reached the
+ * {@linkcode Context.max} length.
+ */
 export function full<T>(ctx: Context<T>): boolean {
   return ctx.max != null && ctx.max <= ctx.node.args.length;
 }
