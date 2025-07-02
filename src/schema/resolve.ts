@@ -1,5 +1,5 @@
 import { isOption } from '../lib/is-option';
-import { assign, getArgs, read } from '../parser/node';
+import { assign, getArgs } from '../parser/node';
 import { Alias, NormalizedOptions } from '../parser/normalize';
 import { Config, ResolvedArg, ResolvedItem } from '../types/schema.types';
 import { __assertNotNull } from '../utils/assert';
@@ -81,7 +81,11 @@ export function resolve<T>(
     if (inc && val !== undefined) {
       arg.items.push(item(alias));
       arg.remainder = arg.key.slice(i);
-    } else if (inc ? read(alias.cfg) : noVal || assign(alias.cfg)) {
+    } else if (
+      inc
+        ? number(alias.cfg.options.max) !== 0 && assign(alias.cfg)
+        : noVal || assign(alias.cfg)
+    ) {
       arg.items.push(item(alias, inc ? raw.slice(i) : arg.value));
     } else arg.remainder = arg.key.slice(i - 1);
   }

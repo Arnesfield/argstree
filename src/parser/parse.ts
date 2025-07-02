@@ -7,17 +7,7 @@ import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { number } from '../utils/number';
-import {
-  assign,
-  Context,
-  done,
-  full,
-  getArgs,
-  leaf,
-  ok,
-  read,
-  uErr
-} from './node';
+import { assign, Context, done, full, getArgs, leaf, ok, uErr } from './node';
 import { Alias, normalize, NormalizedOptions } from './normalize';
 
 // NOTE: internal
@@ -267,7 +257,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         // continue to parser if no alias was parsed
       } else if (
         j < key.length
-          ? read(alias.cfg)
+          ? number(alias.cfg.options.max) !== 0 && assign(alias.cfg)
           : (noParse = noVal || assign(alias.cfg))
       ) {
         aliases.push(alias);
