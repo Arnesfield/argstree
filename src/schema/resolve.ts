@@ -57,12 +57,13 @@ export function resolve<T>(
 
   // handle split
   else if (opts.split && isOption(arg.key, 'short')) {
-    arg.items = [];
+    // incomplete aliases parsed
+    let inc: boolean;
 
     // if an alias exists, stop loop if it requires a value
     for (
-      i = 1, alias = null;
-      i < arg.key.length && !(alias && number(alias.cfg.options.min));
+      i = 1, alias = null, arg.items = [];
+      (inc = i < arg.key.length) && !(alias && number(alias.cfg.options.min));
       i++
     ) {
       const curr = opts.short[arg.key.charCodeAt(i)];
@@ -75,17 +76,11 @@ export function resolve<T>(
     // if no alias was parsed, then assume that it's an invalid argument
     if (!alias) return;
 
-    // incomplete aliases parsed
-    const inc = i < arg.key.length;
-
-    if (inc && val !== undefined) {
+    if (inc && (val !== undefined || number(alias.cfg.options.max) === 0)) {
+      // if the config accepts no arguments, treat the rest as remainder
       arg.items.push(item(alias));
       arg.remainder = arg.key.slice(i);
-    } else if (
-      inc
-        ? number(alias.cfg.options.max) !== 0 && assign(alias.cfg)
-        : noVal || assign(alias.cfg)
-    ) {
+    } else if ((!inc && noVal) || assign(alias.cfg)) {
       arg.items.push(item(alias, inc ? raw.slice(i) : arg.value));
     } else arg.remainder = arg.key.slice(i - 1);
   }

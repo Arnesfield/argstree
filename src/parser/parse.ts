@@ -229,10 +229,13 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
     // handle split
     if (opts.split && isOption(key, 'short')) {
+      // incomplete aliases parsed
+      let inc: boolean;
+
       // if an alias exists, stop loop if it requires a value
       for (
         j = 1, alias = null;
-        j < key.length && !(alias && number(alias.cfg.options.min));
+        (inc = j < key.length) && !(alias && number(alias.cfg.options.min));
         j++
       ) {
         // delay pushing the last alias to the next iteration instead
@@ -244,24 +247,20 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         alias = curr;
       }
 
-      if (!alias) {
-        // continue to parser if no alias was parsed
-      }
-
       // if incomplete aliases parsed, check if the rest of the argument
       // can be assigned and also go through the parser function (!noParse)
       // otherwise, use the parsed value if it can be assigned
-      else if (
-        j < key.length
-          ? number(alias.cfg.options.max) !== 0 && assign(alias.cfg)
-          : (noParse = noVal || assign(alias.cfg))
-      ) {
-        aliases.push(alias);
-        aVal = noParse ? value : raw.slice(j);
-      }
 
-      // set the remaining argument for error
-      else rem = key.slice(j - 1);
+      if (!alias) {
+        // continue to parser if no alias was parsed
+      } else if (inc && number(alias.cfg.options.max) === 0) {
+        // if the config accepts no arguments, treat the rest as remainder
+        aliases.push(alias);
+        rem = key.slice(j);
+      } else if ((!inc && noVal) || assign(alias.cfg)) {
+        aliases.push(alias);
+        aVal = inc ? raw.slice(j) : value;
+      } else rem = key.slice(j - 1);
     }
 
     // parse by parser
