@@ -79,7 +79,7 @@ function run(args) {
         read,
         onCreate(node) {
           // only allow dot notation for long options so that short options
-          // are not split (e.g. `-x.y` will not be treated like `--x.y`)
+          // are not split (e.g., `-x.y` will not be treated like `--x.y`)
           node.meta = { dot: true };
         }
       });

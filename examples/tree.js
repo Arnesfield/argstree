@@ -35,7 +35,7 @@ function run(args) {
     // create subtree for :1, :2, etc.
     schema.option(`:${depth}`, {
       onCreate(node) {
-        // remove and use the assigned value as name, e.g. :1=subtree
+        // remove and use the assigned value as name, e.g., :1=subtree
         node.name = node.args.pop() ?? `tree:depth(${depth})`;
         // parse the args of this node later
         node.meta = { tree: true };

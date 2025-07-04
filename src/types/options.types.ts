@@ -61,7 +61,7 @@ export interface Options<T = unknown> {
    * The alias, list of aliases, or list of aliases with arguments for the option or command.
    *
    * Aliases that start with a single dash (`-`) can be grouped together after
-   * a single dash (e.g. aliases `-a`, `-b`, and `-c` can be written as `-abc`).
+   * a single dash (e.g., aliases `-a`, `-b`, and `-c` can be written as `-abc`).
    *
    * If the option or command requires a value, it must be the last option when its alias
    * is grouped together with other aliases, otherwise a {@linkcode ParseError} is thrown.
@@ -83,7 +83,7 @@ export interface Options<T = unknown> {
   read?: boolean;
   /**
    * Determines if the option or command can have an assigned value using the
-   * equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option
+   * equal sign (e.g., `--option=value`, `command=value`). Otherwise, the option
    * or command will not be matched.
    *
    * The default value is `true` for `option` types and `false` for `command` types.
@@ -91,7 +91,7 @@ export interface Options<T = unknown> {
   assign?: boolean;
   /**
    * When enabled, a {@linkcode ParseError} is thrown for
-   * unrecognized arguments that look like an option (e.g. `-o`, `--option`).
+   * unrecognized arguments that look like an option (e.g., `-o`, `--option`).
    * When enabled for a child node, unrecognized arguments are saved
    * to the parent node instead. Can be one of the following values:
    *

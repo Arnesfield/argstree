@@ -70,7 +70,7 @@ export interface Schema<T = unknown> {
   config(options?: Options<T>): Required<Config<T>>;
   /**
    * Gets the configuration for the matched options and commands.
-   * The {@linkcode key} is checked to have a value (e.g. `--option=value`)
+   * The {@linkcode key} is checked to have a value (e.g., `--option=value`)
    * unless {@linkcode value} is provided and not `undefined`.
    * @param key The argument or parsed key.
    * @param value The parsed value if any.

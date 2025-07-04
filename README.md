@@ -18,8 +18,8 @@ Parse arguments into a tree structure.
 - Preserves the order and structure of the provided arguments using a [tree structure](#tree-structure).
 - Variadic arguments by default unless [range](#optionsmin) options are specified.
 - Includes a [strict mode](#optionsstrict) for unrecognized arguments.
-- Can recognize and split combined [aliases](#optionsalias) (e.g. from `-abcd` to `-a`, `-bc`, `-d`).
-- Can recognize [assigned values](#optionsassign) for options and commands (e.g. `--option=value`, `command=value`).
+- Can recognize and split combined [aliases](#optionsalias) (e.g., from `-abc` to `-a`, `-b`, `-c`).
+- Can recognize [assigned values](#optionsassign) for options and commands (e.g., `--option=value`, `command=value`).
 - Allows [dynamic parsing](#optionsparser) of values, options, and commands.
 - Double-dash (`--`) is not treated as anything special but can be configured to be a non-strict subcommand.
 
@@ -28,7 +28,7 @@ Parse arguments into a tree structure.
 - No other value data types other than strings.
 - No automated help message generation.
 - No asynchronous parsing.
-- Expects shell commands as arguments (like [`process.argv.slice(2)`](https://nodejs.org/docs/latest/api/process.html#processargv)) and does not parse quoted strings (e.g. `schema.parse(['--option="Hello World"'])`). For parsing strings into command-line arguments, you can use packages like [shell-quote](https://www.npmjs.com/package/shell-quote) and [shlex](https://www.npmjs.com/package/shlex).
+- Expects shell commands as arguments (like [`process.argv.slice(2)`](https://nodejs.org/docs/latest/api/process.html#processargv)) and does not parse quoted strings (e.g., `schema.parse(['--option="Hello World"'])`). For parsing strings into command-line arguments, you can use packages like [shell-quote](https://www.npmjs.com/package/shell-quote) and [shlex](https://www.npmjs.com/package/shlex).
 - Only parses and transforms arguments into a tree structure. It is still up to the consuming program to read and decide how to use the parsed arguments. This means more code to write and maintain just for arguments parsing and may not be worth the time and effort if you really only need a straightforward object of parsed options.
 
 If you're looking to loop through arguments for more control, then **argstree** might be for you. Otherwise, you can check out more popular packages like [commander](https://www.npmjs.com/package/commander), [yargs](https://www.npmjs.com/package/yargs), [minimist](https://www.npmjs.com/package/minimist), [cac](https://www.npmjs.com/package/cac), and [many more](https://www.npmjs.com/search?q=keywords%3Aargs%2Cargv).
@@ -200,7 +200,7 @@ null null []
 run-script run [ 'build' ]
 ```
 
-Aliases that start with a single dash (`-`) can be grouped together after a single dash (e.g. aliases `-a`, `-b`, and `-c` can be written as `-abc`).
+Aliases that start with a single dash (`-`) can be grouped together after a single dash (e.g., aliases `-a`, `-b`, and `-c` can be written as `-abc`).
 
 If the option or command requires a value, it must be the last option when its alias is grouped together with other aliases, otherwise a [`ParseError`](#parseerror) is thrown.
 
@@ -234,7 +234,7 @@ When disabled, the option or command will not accept any arguments (except for [
 Type: `boolean`\
 Default: `true` for `option` types and `false` for `command` types
 
-Determines if the option or command can have an assigned value using the equal sign (e.g. `--option=value`, `command=value`). Otherwise, the option or command will not be matched.
+Determines if the option or command can have an assigned value using the equal sign (e.g., `--option=value`, `command=value`). Otherwise, the option or command will not be matched.
 
 ```js
 // root schema cannot assigned values
@@ -271,7 +271,7 @@ null value [ 'true' ]
 Type: `boolean`\
 Default: `false`
 
-When enabled, a [`ParseError`](#parseerror) is thrown for unrecognized arguments that look like an option (e.g. `-o`, `--option`). When enabled for a child node, unrecognized arguments are saved to the parent node instead. Can be one of the following values:
+When enabled, a [`ParseError`](#parseerror) is thrown for unrecognized arguments that look like an option (e.g., `-o`, `--option`). When enabled for a child node, unrecognized arguments are saved to the parent node instead. Can be one of the following values:
 
 - `true` - Enables strict mode for both self and descendants.
 - `false` - Disables strict mode for both self and descendants.
@@ -515,33 +515,7 @@ Flattens the node tree structure into an array of nodes.
 
 Type: `(arg: string, type?: 'long' | 'short') => boolean`
 
-Determines if the argument looks like an option. By default, both `long` (e.g. `--option`) and `short` (e.g. `-a`, `-abc`) options are valid unless the specific type of option is provided.
-
-#### split
-
-Type: `(value: string, matches: string[]) => Split`
-
-Splits the string based on the provided matches in order.
-
-```js
-import { split } from 'argstree';
-
-console.log(split('foobarbaz', ['ba', 'foo']));
-```
-
-```text
-{
-  items: [
-    { value: 'foo', remainder: false },
-    { value: 'ba', remainder: false },
-    { value: 'r', remainder: true },
-    { value: 'ba', remainder: false },
-    { value: 'z', remainder: true }
-  ],
-  values: [ 'foo', 'ba', 'ba' ],
-  remainders: [ 'r', 'z' ]
-}
-```
+Determines if the argument looks like an option. By default, both `long` (e.g., `--option`) and `short` (e.g., `-a`, `-abc`) options are valid unless the specific type of option is provided.
 
 ## License
 
