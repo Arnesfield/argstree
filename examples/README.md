@@ -1,6 +1,6 @@
 # Examples
 
-Some examples using **argstree**.
+Some examples for **argstree** using [Node.js](https://nodejs.org).
 
 ## Setup
 

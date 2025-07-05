@@ -12,14 +12,14 @@ Parse arguments into a tree structure.
 
 ## Features
 
-**argstree** is meant to be a minimal and less opinionated argument parser.
+**argstree** is meant to be a minimal, runtime-agnostic, and less opinionated argument parser.
 
 - Pure vanilla JavaScript. No external dependencies. [ESM only](https://gist.github.com/sindresorhus/a39789f98801d908bbc7ff3ecc99d99c).
 - Preserves the order and structure of the provided arguments using a [tree structure](#tree-structure).
 - Variadic arguments by default unless [range](#optionsmin) options are specified.
 - Includes a [strict mode](#optionsstrict) for unrecognized arguments.
 - Can recognize and split combined [aliases](#optionsalias) (e.g., from `-abc` to `-a`, `-b`, `-c`).
-- Can recognize [assigned values](#optionsassign) for options and commands (e.g., `--option=value`, `command=value`).
+- Can recognize [assigned values](#optionsassign) for options and commands (e.g., `-ovalue`, `--option=value`, `command=value`).
 - Allows [dynamic parsing](#optionsparser) of values, options, and commands.
 - Double-dash (`--`) is not treated as anything special but can be configured to be a non-strict subcommand.
 
