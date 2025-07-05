@@ -222,13 +222,16 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       continue;
     }
 
-    const aliases: Alias<T>[] = [];
-    let noParse: boolean | undefined, // skip parser callback
+    // eslint-disable-next-line prefer-const
+    let aliases: Alias<T>[] = [],
+      noParse: boolean | undefined, // skip parser callback
       aVal: string | undefined, // alias value
       rem: string | undefined; // remainder
 
     // handle split
-    if (opts.split && isOption(key, 'short')) {
+    // require length of at least 3 since keys with length of 2
+    // should have been matched by the alias check before this
+    if (opts.split && key.length > 2 && isOption(key, 'short')) {
       // incomplete aliases parsed
       let inc: boolean;
 
@@ -259,8 +262,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         rem = key.slice(j);
       } else if ((!inc && noVal) || assign(alias.cfg)) {
         aliases.push(alias);
-        aVal = inc ? raw.slice(j) : value;
-        noParse = !inc;
+        // eslint-disable-next-line no-cond-assign
+        aVal = (noParse = !inc) ? value : raw.slice(j);
       } else rem = key.slice(j - 1);
     }
 

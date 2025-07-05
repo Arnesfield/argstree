@@ -58,7 +58,9 @@ export function resolve<T>(
   }
 
   // handle split
-  else if (opts.split && isOption(key, 'short')) {
+  // require length of at least 3 since keys with length of 2
+  // should have been matched by the alias check before this
+  else if (opts.split && key.length > 2 && isOption(key, 'short')) {
     // incomplete aliases parsed
     let inc: boolean;
 
