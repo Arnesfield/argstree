@@ -8,6 +8,7 @@
     "noEmit": true,
     "noImplicitAny": true,
     "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
