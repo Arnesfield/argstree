@@ -45,28 +45,30 @@ export function resolve<T>(
   } else if (val != null) arg.value = val;
   else noVal = true;
 
+  const { key, value } = arg;
+
   // get item by map
-  if ((cfg = opts.map[arg.key]) && (noVal || assign(cfg))) {
-    arg.items = [item(arg, arg.value, cfg)];
+  if ((cfg = opts.map[key]) && (noVal || assign(cfg))) {
+    arg.items = [item(arg, value, cfg)];
   }
 
   // get item by alias
-  else if ((alias = opts.alias[arg.key]) && (noVal || assign(alias.cfg))) {
-    arg.items = [item(alias, arg.value)];
+  else if ((alias = opts.alias[key]) && (noVal || assign(alias.cfg))) {
+    arg.items = [item(alias, value)];
   }
 
   // handle split
-  else if (opts.split && isOption(arg.key, 'short')) {
+  else if (opts.split && isOption(key, 'short')) {
     // incomplete aliases parsed
     let inc: boolean;
 
     // if an alias exists, stop loop if it requires a value
     for (
       i = 1, alias = null, arg.items = [];
-      (inc = i < arg.key.length) && !(alias && number(alias.cfg.options.min));
+      (inc = i < key.length) && !(alias && number(alias.cfg.options.min));
       i++
     ) {
-      const curr = opts.short[arg.key.charCodeAt(i)];
+      const curr = opts.short[key.charCodeAt(i)];
       if (!curr) break;
 
       alias && arg.items.push(item(alias));
@@ -79,10 +81,10 @@ export function resolve<T>(
     if (inc && (val !== undefined || number(alias.cfg.options.max) === 0)) {
       // if the config accepts no arguments, treat the rest as remainder
       arg.items.push(item(alias));
-      arg.remainder = arg.key.slice(i);
+      arg.remainder = key.slice(i);
     } else if ((!inc && noVal) || assign(alias.cfg)) {
-      arg.items.push(item(alias, inc ? raw.slice(i) : arg.value));
-    } else arg.remainder = arg.key.slice(i - 1);
+      arg.items.push(item(alias, inc ? raw.slice(i) : value));
+    } else arg.remainder = key.slice(i - 1);
   }
 
   // if cannot be split, treat as value
