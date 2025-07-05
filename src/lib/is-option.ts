@@ -8,7 +8,7 @@
  */
 export function isOption(arg: string, type?: 'long' | 'short'): boolean {
   // for short options, stop checking at length 2
-  const max = type === 'short' ? Math.min(2, arg.length) : arg.length;
+  const max = arg.length < 2 || type !== 'short' ? arg.length : 2;
 
   for (let i = 0; i < max; i++) {
     // before min, dashes must exist
