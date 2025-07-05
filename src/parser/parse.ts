@@ -260,6 +260,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       } else if ((!inc && noVal) || assign(alias.cfg)) {
         aliases.push(alias);
         aVal = inc ? raw.slice(j) : value;
+        noParse = !inc;
       } else rem = key.slice(j - 1);
     }
 
