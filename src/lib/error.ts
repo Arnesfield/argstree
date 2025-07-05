@@ -5,7 +5,7 @@ import { Options } from '../types/options.types';
 export class ParseError<T = unknown> extends Error {
   /** The option or command did not satisfy the required number of arguments. */
   static readonly RANGE_ERROR = 'RANGE';
-  /** The parsed alias cannot be recognized. */
+  /** The remaining alias argument cannot be recognized. */
   static readonly UNRECOGNIZED_ALIAS_ERROR = 'UNRECOGNIZED_ALIAS';
   /** The option or command cannot be recognized. */
   static readonly UNRECOGNIZED_ARGUMENT_ERROR = 'UNRECOGNIZED_ARGUMENT';

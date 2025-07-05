@@ -315,7 +315,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     } else if (!rem) setValue(raw);
 
     // prettier-ignore
-    if (rem) err ||= uErr(pCtx, `alias: -${rem}`, ParseError.UNRECOGNIZED_ALIAS_ERROR);
+    if (rem) err ||= uErr(pCtx, `argument: -${rem}`, ParseError.UNRECOGNIZED_ALIAS_ERROR);
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
