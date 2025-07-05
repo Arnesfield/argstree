@@ -104,7 +104,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     }
   }
 
-  function setValue(raw: string, strict?: boolean) {
+  function setArg(raw: string, strict?: boolean) {
     // if child is strict, pass it over to parent
     // if parent is non-strict, child is marked as parsed and accept arg
 
@@ -192,7 +192,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         raw = argv[(i = end)];
       }
 
-      setValue(raw);
+      setArg(raw);
       continue;
     }
 
@@ -292,7 +292,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
           call = true;
         }
         // handle parsed values (will set it to the current node)
-        else for (const v of array((r as V).args)) setValue(v, (r as V).strict);
+        else for (const v of array((r as V).args)) setArg(v, (r as V).strict);
       }
 
       // call use() if node() was called
@@ -312,7 +312,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         node((alias = aliases[j]).cfg, raw, alias.key, j === aliases.length - 1 ? aVal : null, alias.alias, alias.args);
       }
       use();
-    } else if (!rem) setValue(raw);
+    } else if (!rem) setArg(raw);
 
     // prettier-ignore
     if (rem) err ||= uErr(pCtx, `argument: -${rem}`, ParseError.UNRECOGNIZED_ALIAS_ERROR);
