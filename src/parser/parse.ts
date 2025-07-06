@@ -132,7 +132,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       full(pCtx) ||
       ((strict ?? pCtx.strict) && (opt ?? isOption(raw)))
     ) {
-      return (err ||= uErr(pCtx, `argument: ${raw}`));
+      return (err ||= uErr(pCtx, raw));
     }
 
     pCtx.node.args.push(raw);
@@ -317,8 +317,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       use();
     } else if (!rem) setArg(raw);
 
-    // prettier-ignore
-    if (rem) err ||= uErr(pCtx, `argument: -${rem}`, ParseError.UNRECOGNIZED_ALIAS_ERROR);
+    if (rem) err ||= uErr(pCtx, `-${rem}`, ParseError.UNRECOGNIZED_ALIAS_ERROR);
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes

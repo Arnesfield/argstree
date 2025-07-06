@@ -63,13 +63,13 @@ function display<T>(node: Node<T>): string | false {
 /** Creates an unrecognized error to throw later before validation. */
 export function uErr<T>(
   ctx: Context<T>,
-  msg: string,
+  raw: string,
   code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
 ): ParseError<T> {
   // always use parent node for unrecognized arguments
   const name = display(ctx.node);
   // prettier-ignore
-  return new ParseError(code, (name ? name + 'does not recognize the ' : 'Unrecognized ') + msg, ctx.node, ctx.cfg.options);
+  return new ParseError(code, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, ctx.node, ctx.cfg.options);
 }
 
 export function done<T>(ctx: Context<T>): void {
