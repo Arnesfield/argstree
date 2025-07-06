@@ -83,11 +83,10 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   function next() {
     // set current child node context as new parent node context
     __assertNotNull(cCtx);
-    pCtx = cCtx;
+    opts = normalize((pCtx = cCtx).cfg);
 
     // set dstrict and normalized options for parent node context
     pdstrict = dstrict;
-    opts = normalize(pCtx.cfg);
 
     // clear child node context since it's now the parent node
     cNode = cCtx = null;
