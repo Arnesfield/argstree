@@ -32,20 +32,20 @@ export function resolve<T>(
 ): ResolvedArg<T> | undefined {
   if (opts.pure) return;
 
-  const arg = { raw, key: raw } as ResolvedArg<T>;
-
-  let cfg: Config<T> | undefined,
+  let key = raw,
+    value: string | undefined,
+    cfg: Config<T> | undefined,
     alias: Alias<T> | null | undefined,
     i: number,
     noVal: boolean | undefined; // would imply `arg.value == null`
 
   if (val === undefined && (i = raw.indexOf('=')) > -1) {
-    arg.key = raw.slice(0, i);
-    arg.value = raw.slice(i + 1);
-  } else if (val != null) arg.value = val;
+    key = raw.slice(0, i);
+    value = raw.slice(i + 1);
+  } else if (val != null) value = val;
   else noVal = true;
 
-  const { key, value } = arg;
+  const arg: ResolvedArg<T> = { raw, key: raw, value };
 
   // get item by map
   if ((cfg = opts.map[key]) && (noVal || assign(cfg))) {
