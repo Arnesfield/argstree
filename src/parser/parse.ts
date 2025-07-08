@@ -289,9 +289,13 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       let call: boolean | undefined;
       for (const r of res) {
         if ((r as Schema<T>).config) {
-          // create nodes without value since we can assume that
-          // it is handled by the parser
+          // set node value but not for args
+          // since we leave it to the parser to set the value as an argument
           node((r as Schema<T>).config(), raw, key);
+
+          __assertNotNull(cNode);
+          cNode.value = value ?? null;
+
           call = true;
         }
         // handle parsed values (will set it to the current node)
