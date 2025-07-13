@@ -49,6 +49,7 @@ export default tseslint.config(
       'object-shorthand': 'warn',
       'prefer-const': 'warn',
       quotes: ['warn', 'single', 'avoid-escape'],
+      'require-await': 'warn',
       semi: 'warn'
     }
   },
