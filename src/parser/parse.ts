@@ -2,7 +2,7 @@ import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
 import { Schema } from '../schema/schema.class';
 import { Node } from '../types/node.types';
-import { Value } from '../types/options.types';
+import { Options, Value } from '../types/options.types';
 import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
@@ -156,8 +156,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   __assertNotNull(opts!);
   __assertNotNull(pCtx!);
 
-  for (let i = 0; i < argv.length; i++) {
-    let raw = argv[i];
+  for (let a = 0; a < argv.length; a++) {
+    let raw = argv[a];
 
     if (opts.pure) {
       // if a value node exists and not strict mode for the current node,
@@ -174,12 +174,12 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
           pCtx.max == null
             ? undefined
             : pCtx.max > (end = pCtx.node.args.length)
-              ? i + pCtx.max - end
+              ? a + pCtx.max - end
               : null) !== null
       ) {
         // assume that at this point, there is no existing cNode
         // so always create a new child value node with the args
-        vNode(argv.slice(i, end));
+        vNode(argv.slice(a, end));
         // vNode() should create the cNode
         __assertNotNull(cNode);
         pCtx.node.args.push(...cNode.args);
@@ -188,7 +188,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         if (end == null || end >= argv.length) break;
 
         // call setValue for next raw argument
-        raw = argv[(i = end)];
+        raw = argv[(a = end)];
       }
 
       setArg(raw);
@@ -198,13 +198,13 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     let key = raw,
       value: string | undefined,
       alias: Alias<T> | null | undefined,
-      j = raw.indexOf('='),
+      i = raw.indexOf('='),
       // eslint-disable-next-line prefer-const
-      noVal = j === -1; // would imply `value == null`
+      noVal = i === -1; // would imply `value == null`
 
     if (!noVal) {
-      key = raw.slice(0, j);
-      value = raw.slice(j + 1);
+      key = raw.slice(0, i);
+      value = raw.slice(i + 1);
     }
 
     // get node by map
@@ -232,19 +232,24 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // should have been matched by the alias check before this
     if (opts.split && key.length > 2 && isOption(key, 'short')) {
       // incomplete aliases parsed
-      let inc: boolean;
+      let inc: boolean, m: number | null, o: Options<T>;
+      i = 1;
+      alias = null;
 
       // if an alias exists, stop loop if it requires a value
       for (
-        j = 1, alias = null;
-        (inc = j < key.length) && !(alias && number(alias.cfg.options.min));
-        j++
+        let curr: Alias<T> | undefined;
+        (inc = i < key.length) &&
+        !(
+          alias &&
+          (m = number((o = alias.cfg.options).min)) != null &&
+          m - array(o.args).length > 0
+        ) &&
+        (curr = opts.short[key.charCodeAt(i)]);
+        i++
       ) {
         // delay pushing the last alias to the next iteration instead
         // so that the last alias is pushed outside only after condition checks
-        const curr = opts.short[key.charCodeAt(j)];
-        if (!curr) break;
-
         alias && aliases.push(alias);
         alias = curr;
       }
@@ -255,15 +260,19 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
       if (!alias) {
         // continue to parser if no alias was parsed
-      } else if (inc && number(alias.cfg.options.max) === 0) {
+      } else if (
+        inc &&
+        (m = number((o = alias.cfg.options).max)) != null &&
+        m - array(o.args).length < 1
+      ) {
         // if the config accepts no arguments, treat the rest as remainder
         aliases.push(alias);
-        rem = key.slice(j);
+        rem = key.slice(i);
       } else if ((!inc && noVal) || assign(alias.cfg)) {
         aliases.push(alias);
         // eslint-disable-next-line no-cond-assign
-        aVal = (noParse = !inc) ? value : raw.slice(j);
-      } else rem = key.slice(j - 1);
+        aVal = (noParse = !inc) ? value : raw.slice(i);
+      } else rem = key.slice(i - 1);
     }
 
     // parse by parser
@@ -314,9 +323,9 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
     if (aliases.length > 0) {
       // process aliases (even partial)
-      for (j = 0; j < aliases.length; j++) {
+      for (i = 0; i < aliases.length; i++) {
         // prettier-ignore
-        node((alias = aliases[j]).cfg, raw, alias.key, j === aliases.length - 1 ? aVal : null, alias.alias, alias.args);
+        node((alias = aliases[i]).cfg, raw, alias.key, i === aliases.length - 1 ? aVal : null, alias.alias, alias.args);
       }
       use();
     } else if (!rem) setArg(raw);

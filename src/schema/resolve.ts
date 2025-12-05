@@ -1,7 +1,9 @@
 import { isOption } from '../lib/is-option';
 import { assign, getArgs } from '../parser/node';
 import { Alias, NormalizedOptions } from '../parser/normalize';
+import { Options } from '../types/options.types';
 import { Config, ResolvedArg, ResolvedItem } from '../types/schema.types';
+import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { number } from '../utils/number';
 
@@ -62,17 +64,23 @@ export function resolve<T>(
   // should have been matched by the alias check before this
   else if (opts.split && key.length > 2 && isOption(key, 'short')) {
     // incomplete aliases parsed
-    let inc: boolean;
+    let inc: boolean, m: number | null, o: Options<T>;
+    i = 1;
+    alias = null;
+    arg.items = [];
 
     // if an alias exists, stop loop if it requires a value
     for (
-      i = 1, alias = null, arg.items = [];
-      (inc = i < key.length) && !(alias && number(alias.cfg.options.min));
+      let curr: Alias<T> | undefined;
+      (inc = i < key.length) &&
+      !(
+        alias &&
+        (m = number((o = alias.cfg.options).min)) != null &&
+        m - array(o.args).length > 0
+      ) &&
+      (curr = opts.short[key.charCodeAt(i)]);
       i++
     ) {
-      const curr = opts.short[key.charCodeAt(i)];
-      if (!curr) break;
-
       alias && arg.items.push(item(alias));
       alias = curr;
     }
@@ -80,7 +88,12 @@ export function resolve<T>(
     // if no alias was parsed, then assume that it's an invalid argument
     if (!alias) return;
 
-    if (inc && (val !== undefined || number(alias.cfg.options.max) === 0)) {
+    if (
+      inc &&
+      (val !== undefined ||
+        ((m = number((o = alias.cfg.options).max)) != null &&
+          m - array(o.args).length < 1))
+    ) {
       // if the config accepts no arguments, treat the rest as remainder
       arg.items.push(item(alias));
       arg.remainder = key.slice(i);
