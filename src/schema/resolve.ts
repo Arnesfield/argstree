@@ -44,8 +44,7 @@ export function resolve<T>(
   if (val === undefined && (i = raw.indexOf('=')) > -1) {
     key = raw.slice(0, i);
     value = raw.slice(i + 1);
-  } else if (val != null) value = val;
-  else noVal = true;
+  } else if (!(noVal = val == null)) value = val;
 
   const arg: ResolvedArg<T> = { raw, key: raw, value };
 
