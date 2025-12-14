@@ -2,11 +2,12 @@
 import eslint from '@eslint/js';
 // @ts-expect-error: package has no type declarations
 import pluginChaiFriendly from 'eslint-plugin-chai-friendly';
-import jsdoc from 'eslint-plugin-jsdoc';
+import { jsdoc } from 'eslint-plugin-jsdoc';
+import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
+export default defineConfig(
   eslint.configs.recommended,
   tseslint.configs.recommended,
   { linterOptions: { reportUnusedDisableDirectives: 'warn' } },
@@ -53,11 +54,12 @@ export default tseslint.config(
       semi: 'warn'
     }
   },
-  {
-    // for imported types used only in jsdoc comments
-    plugins: { jsdoc },
-    rules: { 'jsdoc/no-undefined-types': ['warn', { disableReporting: true }] }
-  },
+  jsdoc({
+    rules: {
+      // for imported types used only in jsdoc comments
+      'jsdoc/no-undefined-types': ['warn', { disableReporting: true }]
+    }
+  }),
   {
     // for tests only, override no-unused-expressions
     files: ['**/*.spec.ts'],
