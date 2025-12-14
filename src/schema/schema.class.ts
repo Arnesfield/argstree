@@ -3,7 +3,7 @@ import { parse } from '../parser/parse';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { Config, Schema as ISchema, ResolvedArg } from '../types/schema.types';
-import { Mutable, PartialPick } from '../types/util.types';
+import { DeepMutable, PartialPick } from '../types/util.types';
 import { resolve } from './resolve';
 
 // NOTE: internal
@@ -12,14 +12,15 @@ export class Schema<T> implements ISchema<T> {
   // make sure to clear cached options to re-evaluate it when needed
   private opts: NormalizedOptions<T> | null | undefined;
 
+  // NOTE: using partial config type, but keep member property required
   constructor(cfg: PartialPick<Config<T>, 'options'>);
-  constructor(private readonly cfg: Mutable<Required<Config<T>>>) {
+  constructor(private readonly cfg: DeepMutable<Required<Config<T>>>) {
     // NOTE: intentional mutate cfg
     cfg.map = { __proto__: null! };
+
     // always create a new copy of options
     // since it can be updated in config(options), possibly through init()
-    cfg.options = { ...cfg.options };
-    cfg.options.init?.(this);
+    cfg.options = { ...cfg.options, ...cfg.options?.init?.(this) };
   }
 
   option(arg: string, options: Options<T> = {}): this {
@@ -34,11 +35,7 @@ export class Schema<T> implements ISchema<T> {
     return this;
   }
 
-  config(options?: Options<T>): Required<Config<T>> {
-    if (options) {
-      Object.assign(this.cfg.options, options);
-      this.opts = null;
-    }
+  config(): Required<Config<T>> {
     return this.cfg;
   }
 

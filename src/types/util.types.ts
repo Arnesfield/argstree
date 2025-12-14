@@ -7,7 +7,9 @@ export type Prettify<T> = { [K in keyof T]: T[K] } & {};
 export type NonEmptyArray<T> = Prettify<[T, ...T[]]>;
 
 /** Removes the `readonly` modifier. */
-export type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+export type DeepMutable<T> = {
+  -readonly [P in keyof T]: T[P] extends object ? DeepMutable<T[P]> : T[P];
+};
 
 export type PartialPick<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;

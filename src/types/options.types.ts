@@ -115,6 +115,7 @@ export interface Options<T = unknown> {
    * Called only once when the schema is created and is used to gain
    * a reference to the schema object to add options and/or commands.
    * @param schema The schema object.
+   * @returns Options to override for the schema.
    * @example
    * const cmd = command()
    *   .option('--help')
@@ -124,7 +125,7 @@ export interface Options<T = unknown> {
    *     }
    *   });
    */
-  init?(schema: Schema<T>): void;
+  init?(schema: Schema<T>): Options<T> | void;
   /**
    * Serves as a fallback for parsed arguments that cannot be
    * recognized using the list of configured options and commands.

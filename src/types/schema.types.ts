@@ -16,7 +16,7 @@ export interface Config<T = unknown> {
    * The list of configs for the options and commands.
    * Note that the config properties may change during parsing.
    */
-  readonly map?: { [arg: string]: Config<T> };
+  readonly map?: { readonly [arg: string]: Config<T> };
 }
 
 /** The resolved options. */
@@ -63,11 +63,10 @@ export interface Schema<T = unknown> {
    */
   command(arg: string, options?: Options<T>): this;
   /**
-   * Gets the schema config and can also update the existing schema options.
-   * @param options The schema options to update.
+   * Gets the schema config.
    * @returns The schema config.
    */
-  config(options?: Options<T>): Required<Config<T>>;
+  config(): Required<Config<T>>;
   /**
    * Gets the configuration for the matched options and commands.
    * The {@linkcode key} is checked to have a value (e.g., `--option=value`)
