@@ -75,10 +75,5 @@
   },
   "engines": {
     "node": ">=16.6"
-  },
-  "overrides": {
-    "@rollup/plugin-eslint": {
-      "eslint": "$eslint"
-    }
   }
 }
