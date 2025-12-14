@@ -48,7 +48,7 @@ export default defineConfig(
       'no-useless-rename': 'warn',
       'no-var': 'warn',
       'object-shorthand': 'warn',
-      'prefer-const': 'warn',
+      'prefer-const': ['warn', { destructuring: 'all' }],
       quotes: ['warn', 'single', 'avoid-escape'],
       'require-await': 'warn',
       semi: 'warn'

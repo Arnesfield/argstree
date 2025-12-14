@@ -50,7 +50,6 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
     // run onCreate and get parse options
     // prettier-ignore
-    // eslint-disable-next-line prefer-const
     let { min = o.min, max = o.max, read = o.read ?? true } = o.onCreate?.(cNode) || o;
     // run onChild for parent node
     p && pCtx!.cfg.options.onChild?.(p);
