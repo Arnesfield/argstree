@@ -9,8 +9,7 @@ import { number } from '../utils/number';
 
 // make props optional except 'key' and make 'alias' nullable
 interface ParsedArg<T>
-  extends Pick<Alias<T>, 'key'>,
-    Partial<Omit<Alias<T>, 'key' | 'alias'>> {
+  extends Pick<Alias<T>, 'key'>, Partial<Omit<Alias<T>, 'key' | 'alias'>> {
   alias?: string | null;
 }
 

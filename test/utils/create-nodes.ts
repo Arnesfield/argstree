@@ -1,7 +1,8 @@
 import { Node } from '../../src';
 
-export interface PartialNode
-  extends Partial<Omit<Node, 'parent' | 'children'>> {
+export interface PartialNode extends Partial<
+  Omit<Node, 'parent' | 'children'>
+> {
   children?: PartialNode[];
 }
 
