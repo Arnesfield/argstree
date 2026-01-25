@@ -7,15 +7,16 @@
  * @returns `true` if the argument looks like an option.
  */
 export function isOption(arg: string, type?: 'long' | 'short'): boolean {
-  // for short options, stop checking at length 2
-  const max = arg.length < 2 || type !== 'short' ? arg.length : 2;
-
-  for (let i = 0; i < max; i++) {
-    // before min, dashes must exist
-    // after min, a non-dash should exist before reaching max
-    // condition can be read as: i >= min
-    // 45: '-'
-    if (arg.charCodeAt(i) !== 45) return i > (type === 'long' ? 1 : 0);
+  // options have minimum length of 2
+  if (arg.length > 1) {
+    // for short options, stop checking at length 2
+    for (let i = 0, n = type === 'short' ? 2 : arg.length; i < n; i++) {
+      // before min, dashes must exist
+      // after min, a non-dash should exist before reaching max
+      // condition can be read as: i >= min
+      // 45: '-'
+      if (arg.charCodeAt(i) !== 45) return i > (type === 'long' ? 1 : 0);
+    }
   }
 
   return false;
