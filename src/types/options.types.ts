@@ -142,7 +142,7 @@ export interface Options<T = unknown> {
    * an unrecognized argument depending on the provided options.
    * @param arg The parsed argument.
    * @param node The node object.
-   * @returns The schemas or values if any.
+   * @returns The schemas or values, if any.
    * @example
    * import command, { isOption, option } from 'argstree';
    *

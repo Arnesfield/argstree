@@ -1,14 +1,23 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
 import { Schema } from '../schema/schema.class';
+import { Alias, Config } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options, Value } from '../types/options.types';
-import { Config } from '../types/schema.types';
+import { DeepMutable } from '../types/util.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { number } from '../utils/number';
-import { assign, Context, done, full, getArgs, leaf, ok, uErr } from './node';
-import { Alias, normalize, NormalizedOptions } from './normalize';
+import {
+  assign,
+  Context,
+  display,
+  full,
+  getArgs,
+  leaf,
+  ok,
+  uErr
+} from './node';
 
 // NOTE: internal
 
@@ -16,8 +25,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   const all: Context<T>[] = [], // all node contexts
     bvAll: Context<T>[] = []; // all with an onBeforeValidate callback option
 
-  let opts: NormalizedOptions<T>, // parent normalized options
-    pCtx: Context<T>, // parent node context
+  let pCtx: Context<T>, // parent node context
     cNode: Node<T> | null | undefined, // child node (can be value node)
     cCtx: Context<T> | null | undefined, // child node context
     pdstrict: boolean | undefined, // parent node strict descendants
@@ -38,6 +46,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // make sure to initialize config before accessing options
     // creating the schema instance should mutate and initialize
     // the config object
+    // also note that this is a partial initialization check
     !c.map && c.options.init && new Schema(c);
 
     const o = c.options;
@@ -68,6 +77,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
           : !(dstrict = s !== 'self');
 
     all.push((cCtx = { cfg: c, node: cNode, min, max, read, strict }));
+
     // save to before validate list if has onBeforeValidate callback
     o.onBeforeValidate && bvAll.push(cCtx);
   }
@@ -78,11 +88,14 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args, parent: p, children: [] });
   }
 
-  /** Sets `cCtx` as the next `pCtx` and normalizes its config. */
+  /** Sets `cCtx` as the next `pCtx`. */
   function next() {
     // set current child node context as new parent node context
     __assertNotNull(cCtx);
-    opts = normalize((pCtx = cCtx).cfg);
+    pCtx = cCtx;
+
+    // set cfg.pure just in case it was not set before
+    (pCtx.cfg as DeepMutable<Config<T>>).pure ??= !pCtx.cfg.options.parser;
 
     // set dstrict and normalized options for parent node context
     pdstrict = dstrict;
@@ -152,13 +165,13 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   node(cfg, null, null);
   // calling next() should set opts and pCtx
   next();
-  __assertNotNull(opts!);
+  // __assertNotNull(opts!);
   __assertNotNull(pCtx!);
 
   for (let a = 0; a < argv.length; a++) {
     let raw = argv[a];
 
-    if (opts.pure) {
+    if (pCtx.cfg.pure) {
       // if a value node exists and not strict mode for the current node,
       // capture all args up until the end is reached if it's not null
       // allow number and undefined for end value
@@ -207,14 +220,15 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     }
 
     // get node by map
-    if ((cfg = opts.map[key]!) && (noVal || assign(cfg))) {
+    // @ts-expect-error allow undefined config
+    if ((cfg = pCtx.cfg.map?.[key]) && (noVal || assign(cfg))) {
       node(cfg, raw, key, value);
       use();
       continue;
     }
 
     // get node by alias
-    if ((alias = opts.alias[key]) && (noVal || assign(alias.cfg))) {
+    if ((alias = pCtx.cfg.alias?.[key]) && (noVal || assign(alias.cfg))) {
       node(alias.cfg, raw, alias.key, value, alias.alias, alias.args);
       use();
       continue;
@@ -229,7 +243,12 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // handle split
     // require length of at least 3 since keys with length of 2
     // should have been matched by the alias check before this
-    if (opts.split && key.length > 2 && isOption(key, 'short')) {
+    if (
+      pCtx.cfg.split &&
+      pCtx.cfg.short &&
+      key.length > 2 &&
+      isOption(key, 'short')
+    ) {
       // incomplete aliases parsed
       let inc: boolean, m: number | null, o: Options<T>;
       i = 1;
@@ -244,7 +263,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
           (m = number((o = alias.cfg.options).min)) != null &&
           m - array(o.args).length > 0
         ) &&
-        (curr = opts.short[key.charCodeAt(i)]);
+        (curr = pCtx.cfg.short[key.charCodeAt(i)]);
         i++
       ) {
         // delay pushing the last alias to the next iteration instead
@@ -267,7 +286,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         // if the config accepts no arguments, treat the rest as remainder
         aliases.push(alias);
         rem = key.slice(i);
-      } else if ((!inc && noVal) || assign(alias.cfg)) {
+      } else if ((noVal && !inc) || assign(alias.cfg)) {
         aliases.push(alias);
         // eslint-disable-next-line no-cond-assign
         aVal = (noParse = !inc) ? value : raw.slice(i);
@@ -296,10 +315,10 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       // both `cCtx` and `cNode` can be unset after this loop
       let call: boolean | undefined;
       for (const r of res) {
-        if ((r as Schema<T>).config) {
+        if ((r as Schema<T>).cfg) {
           // set node value but not for args
           // since we leave it to the parser to set the value as an argument
-          node((r as Schema<T>).config(), raw, key);
+          node((r as Schema<T>).cfg, raw, key);
 
           __assertNotNull(cNode);
           cNode.value = value ?? null;
@@ -344,7 +363,30 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   if (err) throw err;
 
   // validate and run onValidate for all nodes
-  for (const c of all) done(c);
+  for (const c of all) {
+    // validate node
+    const { min, max } = c;
+    const len = c.node.args.length;
+    const m: [string | number, number] | null =
+      min != null && max != null && (len < min || len > max)
+        ? min === max
+          ? [min, min]
+          : [`${min}-${max}`, 0]
+        : min != null && len < min
+          ? [`at least ${min}`, min]
+          : max != null && len > max
+            ? [max && `up to ${max}`, max]
+            : null;
+
+    if (m) {
+      const name = display(c.node);
+      const msg = `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
+      throw new ParseError(ParseError.RANGE_ERROR, msg, c.node, c.cfg.options);
+    }
+
+    // run onValidate if no errors
+    c.cfg.options.onValidate?.(c.node);
+  }
 
   // return the root node
   return all[0].node;

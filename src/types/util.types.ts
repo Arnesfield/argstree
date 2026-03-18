@@ -14,6 +14,9 @@ export type DeepMutable<T> = {
 export type PartialPick<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;
 
+export type RequiredPick<T, K extends keyof T> = Omit<T, K> &
+  Required<Pick<T, K>>;
+
 // NOTE: taken from https://github.com/microsoft/TypeScript/issues/14094#issuecomment-373782604
 export type Without<T, U> = { [P in Exclude<keyof T, keyof U>]?: never };
 export type XOR<T, U> = T | U extends object

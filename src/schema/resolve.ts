@@ -1,8 +1,8 @@
 import { isOption } from '../lib/is-option';
 import { assign, getArgs } from '../parser/node';
-import { Alias, NormalizedOptions } from '../parser/normalize';
+import { Alias, Config, SchemaConfig } from '../types/config.types';
 import { Options } from '../types/options.types';
-import { Config, ResolvedArg, ResolvedItem } from '../types/schema.types';
+import { ResolvedArg, ResolvedItem } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { number } from '../utils/number';
@@ -12,6 +12,14 @@ interface ParsedArg<T>
   extends Pick<Alias<T>, 'key'>, Partial<Omit<Alias<T>, 'key' | 'alias'>> {
   alias?: string | null;
 }
+
+function item<T>(
+  arg: ResolvedArg<T>,
+  value: string | undefined,
+  cfg: Config<T>
+): ResolvedItem<T>;
+
+function item<T>(alias: Alias<T>, value?: string): ResolvedItem<T>;
 
 function item<T>(
   { key, alias = null, args, cfg }: ParsedArg<T>,
@@ -27,7 +35,7 @@ function item<T>(
 }
 
 export function resolve<T>(
-  opts: NormalizedOptions<T>,
+  opts: SchemaConfig<T>,
   raw: string,
   val?: string | null
 ): ResolvedArg<T> | undefined {
@@ -95,7 +103,7 @@ export function resolve<T>(
       // if the config accepts no arguments, treat the rest as remainder
       arg.items.push(item(alias));
       arg.remainder = key.slice(i);
-    } else if ((!inc && noVal) || assign(alias.cfg)) {
+    } else if ((noVal && !inc) || assign(alias.cfg)) {
       arg.items.push(item(alias, inc ? raw.slice(i) : value));
     } else arg.remainder = key.slice(i - 1);
   }

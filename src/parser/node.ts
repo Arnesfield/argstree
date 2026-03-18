@@ -1,7 +1,7 @@
 import { ParseError } from '../lib/error';
+import { Config } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { Config } from '../types/schema.types';
 import { array } from '../utils/array';
 
 export interface Context<T> {
@@ -53,7 +53,7 @@ export function full<T>(ctx: Context<T>): boolean {
   return ctx.max != null && ctx.max <= ctx.node.args.length;
 }
 
-function display<T>(node: Node<T>): string | false {
+export function display<T>(node: Node<T>): string | false {
   return (
     node.name != null &&
     `${node.type === 'option' ? 'Option' : 'Command'} '${node.name}' `
@@ -70,29 +70,4 @@ export function uErr<T>(
   const name = display(ctx.node);
   // prettier-ignore
   return new ParseError(code, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, ctx.node, ctx.cfg.options);
-}
-
-export function done<T>(ctx: Context<T>): void {
-  // validate node
-  const { min, max, node, cfg } = ctx;
-  const len = node.args.length;
-  const m: [string | number, number] | null =
-    min != null && max != null && (len < min || len > max)
-      ? min === max
-        ? [min, min]
-        : [`${min}-${max}`, 0]
-      : min != null && len < min
-        ? [`at least ${min}`, min]
-        : max != null && len > max
-          ? [max && `up to ${max}`, max]
-          : null;
-
-  if (m) {
-    const name = display(node);
-    const msg = `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
-    throw new ParseError(ParseError.RANGE_ERROR, msg, node, cfg.options);
-  }
-
-  // run onValidate if no errors
-  cfg.options.onValidate?.(node);
 }
