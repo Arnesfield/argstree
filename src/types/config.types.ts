@@ -28,5 +28,5 @@ export interface Config<T> {
 
 export type SchemaConfig<T> = RequiredPick<
   Config<T>,
-  'map' | 'alias' | 'short'
+  'pure' | 'map' | 'alias' | 'short'
 >;

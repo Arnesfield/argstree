@@ -24,18 +24,6 @@ export function getArgs<T>(
   return a;
 }
 
-/** Checks whether the config is a leaf node. */
-export function leaf<T>(cfg: Config<T>): boolean {
-  let o: Options<T> | string = cfg.options;
-  if (o.leaf != null) return o.leaf;
-  if (o.parser) return false;
-  // WARNING: possible side effect: this would initialize the schema if the
-  // checks above aren't satisfied and might be unsafe if consumer decides to
-  // implement their own schema object
-  for (o in cfg.map) return false;
-  return cfg.type === 'option';
-}
-
 /** Checks whether the config is assignable. */
 export function assign<T>(cfg: Config<T>): boolean {
   return cfg.options.assign ?? cfg.type === 'option';

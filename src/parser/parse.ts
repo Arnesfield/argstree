@@ -8,16 +8,7 @@ import { DeepMutable } from '../types/util.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { number } from '../utils/number';
-import {
-  assign,
-  Context,
-  display,
-  full,
-  getArgs,
-  leaf,
-  ok,
-  uErr
-} from './node';
+import { assign, Context, display, full, getArgs, ok, uErr } from './node';
 
 // NOTE: internal
 
@@ -49,6 +40,9 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // also note that this is a partial initialization check
     !c.map && c.options.init && new Schema(c);
 
+    // set cfg.pure just in case it was not set beforehand
+    (c as DeepMutable<Config<T>>).pure ??= !c.options.parser;
+
     const o = c.options;
     const p = pCtx ? pCtx.node : null;
     const { id = key, name = key, strict: s } = o;
@@ -61,7 +55,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // prettier-ignore
     let { min = o.min, max = o.max, read = o.read ?? true } = o.onCreate?.(cNode) || o;
     // run onChild for parent node
-    p && pCtx!.cfg.options.onChild?.(p);
+    pCtx?.cfg.options.onChild?.(p!);
 
     // validate range: if min is greater than max,
     // prioritize the min value instead of throwing an error
@@ -94,9 +88,6 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     __assertNotNull(cCtx);
     pCtx = cCtx;
 
-    // set cfg.pure just in case it was not set before
-    (pCtx.cfg as DeepMutable<Config<T>>).pure ??= !pCtx.cfg.options.parser;
-
     // set dstrict and normalized options for parent node context
     pdstrict = dstrict;
 
@@ -106,7 +97,11 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
   function use() {
     __assertNotNull(cCtx);
-    if (!leaf(cCtx.cfg)) {
+
+    // check if not leaf node
+    if (
+      !(cCtx.cfg.options.leaf ?? (cCtx.cfg.pure && cCtx.cfg.type === 'option'))
+    ) {
       ok(pCtx);
       next();
     } else if (!cCtx.read || full(cCtx)) {
@@ -243,12 +238,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // handle split
     // require length of at least 3 since keys with length of 2
     // should have been matched by the alias check before this
-    if (
-      pCtx.cfg.split &&
-      pCtx.cfg.short &&
-      key.length > 2 &&
-      isOption(key, 'short')
-    ) {
+    // also assume cfg.short is available if cfg.split is set
+    if (pCtx.cfg.split && key.length > 2 && isOption(key, 'short')) {
       // incomplete aliases parsed
       let inc: boolean, m: number | null, o: Options<T>;
       i = 1;
@@ -263,7 +254,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
           (m = number((o = alias.cfg.options).min)) != null &&
           m - array(o.args).length > 0
         ) &&
-        (curr = pCtx.cfg.short[key.charCodeAt(i)]);
+        (curr = pCtx.cfg.short![key.charCodeAt(i)]);
         i++
       ) {
         // delay pushing the last alias to the next iteration instead
