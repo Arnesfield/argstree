@@ -13,7 +13,7 @@ import { assign, Context, display, full, getArgs, ok, uErr } from './node';
 
 export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   const all: Context<T>[] = [], // all node contexts
-    bvAll: Context<T>[] = []; // all with an onBeforeValidate callback option
+    bAll: Context<T>[] = []; // all with an onBeforeValidate callback option
 
   let pCtx: Context<T>, // parent node context
     cNode: Node<T> | null | undefined, // child node (can be value node)
@@ -66,10 +66,13 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
           ? (dstrict = s)
           : !(dstrict = s !== 'self');
 
-    all.push((cCtx = { cfg: c, node: cNode, min, max, read, strict }));
+    cCtx = { cfg: c, node: cNode, min, max, read, strict };
+
+    // save to list if node can be validated
+    (min != null || max != null || o.onValidate) && all.push(cCtx);
 
     // save to before validate list if has onBeforeValidate callback
-    o.onBeforeValidate && bvAll.push(cCtx);
+    o.onBeforeValidate && bAll.push(cCtx);
   }
 
   function vNode(args: string[]) {
@@ -161,6 +164,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   // calling next() should set pCtx
   next();
   __assertNotNull(pCtx!);
+  const root = pCtx.node;
 
   for (let a = 0; a < argv.length; a++) {
     let raw = argv[a];
@@ -346,8 +350,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   ok(pCtx);
 
   // run onBeforeValidate for all nodes per depth level incrementally
-  // NOTE: expect onBeforeValidate to exist if part of `bvAll`
-  for (const c of bvAll) c.cfg.options.onBeforeValidate!(c.node);
+  // NOTE: expect onBeforeValidate to exist if part of `bAll`
+  for (const c of bAll) c.cfg.options.onBeforeValidate!(c.node);
 
   // throw error before validation
   if (err) throw err;
@@ -379,5 +383,5 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   }
 
   // return the root node
-  return all[0].node;
+  return root;
 }
