@@ -39,8 +39,6 @@ export function resolve<T>(
   raw: string,
   val?: string | null
 ): ResolvedArg<T> | undefined {
-  if (opts.pure) return;
-
   let key = raw,
     value: string | undefined,
     cfg: Config<T> | undefined,

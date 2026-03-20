@@ -24,9 +24,6 @@ export class Schema<T> implements ISchema<T> {
 
     // always create a new copy of options
     cfg.options = { ...cfg.options, ...cfg.options?.init?.(this) };
-
-    // check if node is value only (no child nodes)
-    cfg.pure ??= !cfg.options.parser;
   }
 
   option(arg: string, options?: Options<T>): this {
@@ -40,7 +37,7 @@ export class Schema<T> implements ISchema<T> {
   }
 
   resolve(key: string, value?: string | null): ResolvedArg<T> | undefined {
-    return resolve(this.cfg, key, value);
+    if (this.cfg.mapc) return resolve(this.cfg, key, value);
   }
 
   parse(args: readonly string[]): Node<T> {
@@ -55,7 +52,7 @@ function use<T>(
   key: string,
   options: Options<T> = {}
 ) {
-  opts.pure = false;
+  opts.mapc = true;
 
   const cfg = (opts.map[key] = { type, options });
 

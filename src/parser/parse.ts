@@ -4,7 +4,6 @@ import { Schema } from '../schema/schema.class';
 import { Alias, Config } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options, Value } from '../types/options.types';
-import { DeepMutable } from '../types/util.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { number } from '../utils/number';
@@ -39,9 +38,6 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // the config object
     // also note that this is a partial initialization check
     !c.map && c.options.init && new Schema(c);
-
-    // set cfg.pure just in case it was not set beforehand
-    (c as DeepMutable<Config<T>>).pure ??= !c.options.parser;
 
     const o = c.options;
     const p = pCtx ? pCtx.node : null;
@@ -100,7 +96,11 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
     // check if not leaf node
     if (
-      !(cCtx.cfg.options.leaf ?? (cCtx.cfg.pure && cCtx.cfg.type === 'option'))
+      !(
+        cCtx.cfg.options.leaf ??
+        (!(cCtx.cfg.mapc || cCtx.cfg.options.parser) &&
+          cCtx.cfg.type === 'option')
+      )
     ) {
       ok(pCtx);
       next();
@@ -158,15 +158,14 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
   // create root node
   node(cfg, null, null);
-  // calling next() should set opts and pCtx
+  // calling next() should set pCtx
   next();
-  // __assertNotNull(opts!);
   __assertNotNull(pCtx!);
 
   for (let a = 0; a < argv.length; a++) {
     let raw = argv[a];
 
-    if (pCtx.cfg.pure) {
+    if (!(pCtx.cfg.mapc || pCtx.cfg.options.parser)) {
       // if a value node exists and not strict mode for the current node,
       // capture all args up until the end is reached if it's not null
       // allow number and undefined for end value
@@ -194,7 +193,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
         // stop here if capturing all args
         if (end == null || end >= argv.length) break;
 
-        // call setValue for next raw argument
+        // call setArg for next raw argument
         raw = argv[(a = end)];
       }
 
@@ -301,7 +300,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     ) {
       type V = Value;
 
-      // NOTE: setValue calls will use the current node
+      // NOTE: setArg calls will use the current node
       // which can change when a new node is created within the same loop
       // both `cCtx` and `cNode` can be unset after this loop
       let call: boolean | undefined;
@@ -321,10 +320,10 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
       }
 
       // call use() if node() was called
-      // also make sure that `cCtx` exists since it can be unset by setValue
+      // also make sure that `cCtx` exists since it can be unset by setArg
       call && cCtx && use();
 
-      // always skip after successful parser call (parsed.length > 0)
+      // always skip after successful parser call
       continue;
     }
 

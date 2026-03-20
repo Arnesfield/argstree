@@ -17,8 +17,8 @@ export interface Alias<T> extends Readonly<Pick<Arg, 'key'>> {
 export interface Config<T> {
   readonly type: SchemaType;
   readonly options: Options<T>;
-  /** Determines if the node cannot actually have child nodes (value only or leaf node). */
-  readonly pure?: boolean;
+  /** Determines if there are options and commands in {@linkcode map}. */
+  readonly mapc?: boolean;
   /** Determines if short options can be split. */
   readonly split?: boolean;
   readonly map?: { readonly [arg: string]: Config<T> };
@@ -28,5 +28,5 @@ export interface Config<T> {
 
 export type SchemaConfig<T> = RequiredPick<
   Config<T>,
-  'pure' | 'map' | 'alias' | 'short'
+  'map' | 'alias' | 'short'
 >;
