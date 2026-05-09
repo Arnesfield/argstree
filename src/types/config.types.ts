@@ -17,9 +17,9 @@ export interface Alias<T> extends Readonly<Pick<Arg, 'key'>> {
 export interface Config<T> {
   readonly type: SchemaType;
   readonly options: Options<T>;
-  readonly map?: { readonly [arg: string]: Config<T> };
-  readonly alias?: { readonly [alias: string]: Alias<T> };
-  readonly short?: { readonly [code: number]: Alias<T> };
+  readonly map?: { readonly [arg: string]: Config<T> | null | undefined };
+  readonly alias?: { readonly [alias: string]: Alias<T> | null | undefined };
+  readonly short?: { readonly [code: number]: Alias<T> | null | undefined };
 }
 
 export type SchemaConfig<T> = RequiredPick<

@@ -251,7 +251,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
       // if an alias exists, stop loop if it requires a value
       for (
-        let curr: Alias<T> | undefined;
+        let curr: Alias<T> | null | undefined;
         (inc = i < key.length) &&
         !(
           alias &&

@@ -42,7 +42,7 @@ export function resolve<T>(
 ): ResolvedArg<T> | undefined {
   let key = raw,
     value: string | undefined,
-    cfg: Config<T> | undefined,
+    cfg: Config<T> | null | undefined,
     alias: Alias<T> | null | undefined,
     i: number,
     noVal: boolean | undefined; // would imply `arg.value == null`
@@ -76,7 +76,7 @@ export function resolve<T>(
 
     // if an alias exists, stop loop if it requires a value
     for (
-      let curr: Alias<T> | undefined;
+      let curr: Alias<T> | null | undefined;
       (inc = i < key.length) &&
       !(
         alias &&

@@ -27,13 +27,13 @@ export class Schema<T> implements ISchema<T> {
     cfg.options = { ...cfg.options, ...cfg.options?.init?.(this) };
   }
 
-  option(arg: string, options?: Options<T>): this {
-    use(this.cfg, 'option', arg, options);
+  option(arg: string, options?: Options<T> | null): this {
+    use(this.cfg, arg, 'option', options);
     return this;
   }
 
-  command(arg: string, options?: Options<T>): this {
-    use(this.cfg, 'command', arg, options);
+  command(arg: string, options?: Options<T> | null): this {
+    use(this.cfg, arg, 'command', options);
     return this;
   }
 
@@ -48,31 +48,50 @@ export class Schema<T> implements ISchema<T> {
 }
 
 function use<T>(
-  opts: DeepMutable<SchemaConfig<T>>,
-  type: SchemaType,
+  sc: DeepMutable<SchemaConfig<T>>,
   key: string,
-  options: Options<T> = {}
+  type: SchemaType,
+  options: Options<T> | null = {}
 ) {
-  // TODO: properly unset aliases on override
-  const cfg = (opts.map[key] = { type, options });
+  const old = sc.map[key];
 
-  for (let arr of array(options.alias)) {
-    // each array item is an alias
-    // if `arr` is an array, then `arr[0]` is an alias
+  // set/unset the new config and apply aliases
+  (sc.map[key] = options && { type, options }) &&
+    set(sc, key, sc.map[key], true);
+
+  // unset old config, if any
+  old && set(sc, key, old);
+}
+
+/**
+ * @param ok When not `true`, {@linkcode cfg} is unset instead.
+ */
+function set<T>(
+  sc: DeepMutable<SchemaConfig<T>>,
+  key: string,
+  cfg: Config<T>,
+  ok?: boolean
+) {
+  // note that when removing the alias, they're removed based on
+  // the existing aliases only and other aliases are not checked
+  for (let arr of array(cfg.options.alias)) {
     if ((arr = array(arr)).length === 0) continue;
 
-    // override existing alias, if any
     // eslint-disable-next-line prefer-const
     let a = arr[0],
       c: number;
-    opts.alias[a] = { key, alias: a, args: arr.slice(1), cfg };
 
-    // prettier-ignore
+    if (ok) sc.alias[a] = { key, alias: a, args: arr.slice(1), cfg };
+    else if (sc.alias[a]?.cfg === cfg) sc.alias[a] = null;
+
     // check if single character short option, 45: '-'
     if (
-      a.length === 2 &&
-      a.charCodeAt(0) === 45 &&
-      (c = a.charCodeAt(1)) !== 45
-    ) opts.short[c] = opts.alias[a];
+      a.length !== 2 ||
+      a.charCodeAt(0) !== 45 ||
+      (c = a.charCodeAt(1)) === 45
+    ) {
+      // skip if not a valid short option
+    } else if (ok) sc.short[c] = sc.alias[a];
+    else if (sc.short[c]?.cfg === cfg) sc.short[c] = null;
   }
 }

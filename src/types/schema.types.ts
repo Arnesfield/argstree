@@ -36,19 +36,19 @@ export interface ResolvedArg<T = unknown> extends Arg {
 /** The schema object. */
 export interface Schema<T = unknown> {
   /**
-   * Adds an option. The argument is overwritten if it already exists.
+   * Adds or removes an option. The argument is overwritten if it already exists.
    * @param arg The argument to match.
-   * @param options The schema options.
+   * @param options The schema options or `null` to remove.
    * @returns `this` for chaining.
    */
-  option(arg: string, options?: Options<T>): this;
+  option(arg: string, options?: Options<T> | null): this;
   /**
-   * Adds a command. The argument is overwritten if it already exists.
+   * Adds or removes a command. The argument is overwritten if it already exists.
    * @param arg The argument to match.
-   * @param options The schema options.
+   * @param options The schema options or `null` to remove.
    * @returns `this` for chaining.
    */
-  command(arg: string, options?: Options<T>): this;
+  command(arg: string, options?: Options<T> | null): this;
   /**
    * Gets the configuration for the matched options and commands.
    * The {@linkcode key} is checked to have a value (e.g., `--option=value`)
