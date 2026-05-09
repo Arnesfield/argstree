@@ -6,6 +6,7 @@ import { Node } from '../types/node.types';
 import { Options, Value } from '../types/options.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
+import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
 import { assign, Context, display, full, getArgs, ok, uErr } from './node';
 
@@ -101,7 +102,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     if (
       !(
         cCtx.cfg.options.leaf ??
-        (!(cCtx.cfg.mapc || cCtx.cfg.options.parser) &&
+        (!(cCtx.cfg.options.parser || hasValues(cCtx.cfg.map)) &&
           cCtx.cfg.type === 'option')
       )
     ) {
@@ -169,7 +170,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   for (let a = 0; a < argv.length; a++) {
     let raw = argv[a];
 
-    if (!(pCtx.cfg.mapc || pCtx.cfg.options.parser)) {
+    if (!(pCtx.cfg.options.parser || hasValues(pCtx.cfg.map))) {
       // if a value node exists and not strict mode for the current node,
       // capture all args up until the end is reached if it's not null
       // allow number and undefined for end value

@@ -9,6 +9,7 @@ import {
 } from '../types/schema.types';
 import { DeepMutable, PartialPick } from '../types/util.types';
 import { array } from '../utils/array';
+import { hasValues } from '../utils/has-values';
 import { resolve } from './resolve';
 
 // NOTE: internal
@@ -37,7 +38,7 @@ export class Schema<T> implements ISchema<T> {
   }
 
   resolve(key: string, value?: string | null): ResolvedArg<T> | undefined {
-    if (this.cfg.mapc) return resolve(this.cfg, key, value);
+    if (hasValues(this.cfg.map)) return resolve(this.cfg, key, value);
   }
 
   parse(args: readonly string[]): Node<T> {
@@ -52,8 +53,7 @@ function use<T>(
   key: string,
   options: Options<T> = {}
 ) {
-  opts.mapc = true;
-
+  // TODO: properly unset aliases on override
   const cfg = (opts.map[key] = { type, options });
 
   for (let arr of array(options.alias)) {
