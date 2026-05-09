@@ -57,5 +57,5 @@ export function uErr<T>(
   // always use parent node for unrecognized arguments
   const name = display(ctx.node);
   // prettier-ignore
-  return new ParseError(code, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, ctx.node, ctx.cfg.options);
+  return new ParseError(code, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, ctx.node);
 }

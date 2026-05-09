@@ -374,8 +374,8 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
 
     if (m) {
       const name = display(c.node);
-      const msg = `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`;
-      throw new ParseError(ParseError.RANGE_ERROR, msg, c.node, c.cfg.options);
+      // prettier-ignore
+      throw new ParseError(ParseError.RANGE_ERROR, `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`, c.node);
     }
 
     // run onValidate if no errors
