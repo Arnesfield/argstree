@@ -17,8 +17,6 @@ export interface Alias<T> extends Readonly<Pick<Arg, 'key'>> {
 export interface Config<T> {
   readonly type: SchemaType;
   readonly options: Options<T>;
-  /** Determines if short options can be split. */
-  readonly split?: boolean;
   readonly map?: { readonly [arg: string]: Config<T> };
   readonly alias?: { readonly [alias: string]: Alias<T> };
   readonly short?: { readonly [code: number]: Alias<T> };

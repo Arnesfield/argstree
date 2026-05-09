@@ -5,6 +5,7 @@ import { Options } from '../types/options.types';
 import { ResolvedArg, ResolvedItem } from '../types/schema.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
+import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
 
 // make props optional except 'key' and make 'alias' nullable
@@ -66,7 +67,7 @@ export function resolve<T>(
   // handle split
   // require length of at least 3 since keys with length of 2
   // should have been matched by the alias check before this
-  else if (opts.split && key.length > 2 && isOption(key, 'short')) {
+  else if (key.length > 2 && isOption(key, 'short') && hasValues(opts.short)) {
     // incomplete aliases parsed
     let inc: boolean, m: number | null, o: Options<T>;
     i = 1;

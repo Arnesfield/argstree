@@ -243,7 +243,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     // require length of at least 3 since keys with length of 2
     // should have been matched by the alias check before this
     // also assume cfg.short is available if cfg.split is set
-    if (pCtx.cfg.split && key.length > 2 && isOption(key, 'short')) {
+    if (key.length > 2 && isOption(key, 'short') && hasValues(pCtx.cfg.short)) {
       // incomplete aliases parsed
       let inc: boolean, m: number | null, o: Options<T>;
       i = 1;

@@ -67,15 +67,12 @@ function use<T>(
       c: number;
     opts.alias[a] = { key, alias: a, args: arr.slice(1), cfg };
 
-    // check if single character short option
-    // 45: '-'
+    // prettier-ignore
+    // check if single character short option, 45: '-'
     if (
       a.length === 2 &&
       a.charCodeAt(0) === 45 &&
       (c = a.charCodeAt(1)) !== 45
-    ) {
-      opts.split = true;
-      opts.short[c] = opts.alias[a];
-    }
+    ) opts.short[c] = opts.alias[a];
   }
 }
