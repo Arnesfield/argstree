@@ -12,7 +12,12 @@ import { assign, Context, display, full, getArgs, ok, uErr } from './node';
 
 // NOTE: internal
 
-export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
+export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T>;
+
+export function parse<T>(
+  argv: readonly string[],
+  cfg: Config<T> | null | undefined
+): Node<T> {
   const all: Context<T>[] = [], // all node contexts
     bAll: Context<T>[] = []; // all with an onBeforeValidate callback option
 
@@ -102,8 +107,9 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     if (
       !(
         cCtx.cfg.options.leaf ??
-        (!(cCtx.cfg.options.parser || hasValues(cCtx.cfg.map)) &&
-          cCtx.cfg.type === 'option')
+        (!cCtx.cfg.options.parser &&
+          cCtx.cfg.type === 'option' &&
+          !hasValues(cCtx.cfg.map))
       )
     ) {
       ok(pCtx);
@@ -161,6 +167,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   }
 
   // create root node
+  __assertNotNull(cfg);
   node(cfg, null, null);
   // calling next() should set pCtx
   next();
@@ -170,7 +177,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
   for (let a = 0; a < argv.length; a++) {
     let raw = argv[a];
 
-    if (!(pCtx.cfg.options.parser || hasValues(pCtx.cfg.map))) {
+    if (!pCtx.cfg.options.parser && !hasValues(pCtx.cfg.map)) {
       // if a value node exists and not strict mode for the current node,
       // capture all args up until the end is reached if it's not null
       // allow number and undefined for end value
@@ -219,7 +226,6 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
     }
 
     // get node by map
-    // @ts-expect-error allow undefined config
     if ((cfg = pCtx.cfg.map?.[key]) && (noVal || assign(cfg))) {
       node(cfg, raw, key, value);
       use();
@@ -258,7 +264,7 @@ export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T> {
           (m = number((o = alias.cfg.options).min)) != null &&
           m - array(o.args).length > 0
         ) &&
-        (curr = pCtx.cfg.short![key.charCodeAt(i)]);
+        (curr = pCtx.cfg.short[key.charCodeAt(i)]);
         i++
       ) {
         // delay pushing the last alias to the next iteration instead
