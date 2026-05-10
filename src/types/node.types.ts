@@ -15,10 +15,8 @@ export interface Node<T = unknown> {
   name: string | null;
   /** The unparsed argument. The value is `null` for the root node. */
   raw: string | null;
-  /** The parsed key from the argument or alias (e.g., `--option` from `--option=value`). */
+  /** The parsed key from the argument (e.g., `--option` from `--option=value`). */
   key: string | null;
-  /** The alias used to parse the node, if any. */
-  alias: string | null;
   // NOTE: same doc as Arg.value
   /** The parsed value from the argument (e.g., `value` from `--option=value`). */
   value: string | null;

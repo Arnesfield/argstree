@@ -13,13 +13,8 @@ export interface Context<T> {
   strict: boolean | undefined;
 }
 
-export function getArgs<T>(
-  opts: Options<T>,
-  args?: string[],
-  val?: string | null
-): string[] {
+export function getArgs<T>(opts: Options<T>, val?: string | null): string[] {
   const a = array(opts.args, true);
-  args && a.push(...args);
   val != null && a.push(val);
   return a;
 }
@@ -49,13 +44,9 @@ export function display<T>(node: Node<T>): string | false {
 }
 
 /** Creates an unrecognized error to throw later before validation. */
-export function uErr<T>(
-  ctx: Context<T>,
-  raw: string,
-  code = ParseError.UNRECOGNIZED_ARGUMENT_ERROR
-): ParseError<T> {
+export function uErr<T>(ctx: Context<T>, raw: string): ParseError<T> {
   // always use parent node for unrecognized arguments
   const name = display(ctx.node);
   // prettier-ignore
-  return new ParseError(code, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, ctx.node);
+  return new ParseError(ParseError.UNRECOGNIZED_ARGUMENT_ERROR, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, ctx.node);
 }

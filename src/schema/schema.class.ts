@@ -20,19 +20,18 @@ export class Schema<T> implements ISchema<T> {
   constructor(readonly cfg: DeepMutable<SchemaConfig<T>>) {
     // NOTE: intentional mutate cfg
     cfg.map = { __proto__: null! };
-    cfg.alias = { __proto__: null! };
-    cfg.short = { __proto__: null } as Required<Config<T>>['short'];
+    cfg.alias = { __proto__: null! } as Required<Config<T>>['alias'];
 
     // always create a new copy of options
     cfg.options = { ...cfg.options, ...cfg.options?.init?.(this) };
   }
 
-  option(arg: string, options?: Options<T> | null): this {
+  option(arg: string | string[], options?: Options<T> | null): this {
     use(this.cfg, arg, 'option', options);
     return this;
   }
 
-  command(arg: string, options?: Options<T> | null): this {
+  command(arg: string | string[], options?: Options<T> | null): this {
     use(this.cfg, arg, 'command', options);
     return this;
   }
@@ -49,49 +48,18 @@ export class Schema<T> implements ISchema<T> {
 
 function use<T>(
   sc: DeepMutable<SchemaConfig<T>>,
-  key: string,
+  arg: string | string[],
   type: SchemaType,
   options: Options<T> | null = {}
 ) {
-  const old = sc.map[key];
+  // it's possible that cfg is unused, but it's not worth checking for that case
+  const cfg: Config<T> | null = options && { type, options };
 
-  // set/unset the new config and apply aliases
-  (sc.map[key] = options && { type, options }) &&
-    set(sc, key, sc.map[key], true);
+  for (const a of array(arg)) {
+    sc.map[a] = cfg;
 
-  // unset old config, if any
-  old && set(sc, key, old);
-}
-
-/**
- * @param ok When not `true`, {@linkcode cfg} is unset instead.
- */
-function set<T>(
-  sc: DeepMutable<SchemaConfig<T>>,
-  key: string,
-  cfg: Config<T>,
-  ok?: boolean
-) {
-  // note that when removing the alias, they're removed based on
-  // the existing aliases only and other aliases are not checked
-  for (let arr of array(cfg.options.alias)) {
-    if ((arr = array(arr)).length === 0) continue;
-
-    // eslint-disable-next-line prefer-const
-    let a = arr[0],
-      c: number;
-
-    if (ok) sc.alias[a] = { key, alias: a, args: arr.slice(1), cfg };
-    else if (sc.alias[a]?.cfg === cfg) sc.alias[a] = null;
-
-    // check if single character short option, 45: '-'
-    if (
-      a.length !== 2 ||
-      a.charCodeAt(0) !== 45 ||
-      (c = a.charCodeAt(1)) === 45
-    ) {
-      // skip if not a valid short option
-    } else if (ok) sc.short[c] = sc.alias[a];
-    else if (sc.short[c]?.cfg === cfg) sc.short[c] = null;
+    // check if single character short option
+    let c: string;
+    if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') sc.alias[c] = cfg;
   }
 }

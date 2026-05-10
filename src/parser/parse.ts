@@ -32,9 +32,7 @@ export function parse<T>(
     c: Config<T>,
     raw: string | null,
     key: string | null,
-    value: string | null = null,
-    alias: string | null = null,
-    args?: string[]
+    value: string | null = null
   ) {
     // mark previous node as parsed before creating next node
     cCtx && ok(cCtx);
@@ -50,7 +48,7 @@ export function parse<T>(
     const { id = key, name = key, strict: s } = o;
 
     // prettier-ignore
-    cNode = { id, name, raw, key, alias, value, type: c.type, depth: p ? p.depth + 1 : 0, args: getArgs(o, args, value), parent: p, children: [] };
+    cNode = { id, name, raw, key, value, type: c.type, depth: p ? p.depth + 1 : 0, args: getArgs(o, value), parent: p, children: [] };
     p?.children.push(cNode);
 
     // run onCreate and get parse options
@@ -84,7 +82,7 @@ export function parse<T>(
   function vNode(args: string[]) {
     const p = pCtx.node;
     // prettier-ignore
-    p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, alias: p.alias, value: p.value, type: 'value', depth: p.depth + 1, args, parent: p, children: [] });
+    p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, value: p.value, type: 'value', depth: p.depth + 1, args, parent: p, children: [] });
   }
 
   /** Sets `cCtx` as the next `pCtx`. */
@@ -160,10 +158,10 @@ export function parse<T>(
       cCtx = null;
       vNode([raw]);
     }
-    // save to value node
-    else if (cNode) cNode.args.push(raw);
-    // add value node if it doesn't exist
-    else vNode([raw]);
+
+    // save to value node if cNode exists
+    // otherwise, add value node
+    else cNode ? cNode.args.push(raw) : vNode([raw]);
   }
 
   // create root node
@@ -215,7 +213,6 @@ export function parse<T>(
 
     let key = raw,
       value: string | undefined,
-      alias: Alias<T> | null | undefined,
       i = raw.indexOf('='),
       // eslint-disable-next-line prefer-const
       noVal = i === -1; // would imply `value == null`
@@ -232,45 +229,36 @@ export function parse<T>(
       continue;
     }
 
-    // get node by alias
-    if ((alias = pCtx.cfg.alias?.[key]) && (noVal || assign(alias.cfg))) {
-      node(alias.cfg, raw, alias.key, value, alias.alias, alias.args);
-      use();
-      continue;
-    }
-
     // eslint-disable-next-line prefer-const
     let aliases: Alias<T>[] = [],
+      alias: Alias<T> | undefined,
       noParse: boolean | undefined, // skip parser callback
       aVal: string | undefined, // alias value
       rem: string | undefined; // remainder
 
     // handle split
     // require length of at least 3 since keys with length of 2
-    // should have been matched by the alias check before this
-    // also assume cfg.short is available if cfg.split is set
-    if (key.length > 2 && isOption(key, 'short') && hasValues(pCtx.cfg.short)) {
+    // should have been matched before this
+    if (key.length > 2 && isOption(key, 'short') && hasValues(pCtx.cfg.alias)) {
       // incomplete aliases parsed
-      let inc: boolean, m: number | null, o: Options<T>;
-      i = 1;
-      alias = null;
+      let inc: boolean, m: string | number | null, o: Options<T>;
 
       // if an alias exists, stop loop if it requires a value
       for (
-        let curr: Alias<T> | null | undefined;
+        i = 1;
         (inc = i < key.length) &&
         !(
           alias &&
           (m = number((o = alias.cfg.options).min)) != null &&
           m - array(o.args).length > 0
         ) &&
-        (curr = pCtx.cfg.short[key.charCodeAt(i)]);
+        (cfg = pCtx.cfg.alias[(m = key[i])]);
         i++
       ) {
         // delay pushing the last alias to the next iteration instead
         // so that the last alias is pushed outside only after condition checks
         alias && aliases.push(alias);
-        alias = curr;
+        alias = { key: m, cfg };
       }
 
       // if incomplete aliases parsed, check if the rest of the argument
@@ -344,12 +332,12 @@ export function parse<T>(
       // process aliases (even partial)
       for (i = 0; i < aliases.length; i++) {
         // prettier-ignore
-        node((alias = aliases[i]).cfg, raw, alias.key, i === aliases.length - 1 ? aVal : null, alias.alias, alias.args);
+        node((alias = aliases[i]).cfg, raw, '-' + alias.key, i === aliases.length - 1 ? aVal : null);
       }
       use();
     } else if (!rem) setArg(raw);
 
-    if (rem) err ||= uErr(pCtx, `-${rem}`, ParseError.UNRECOGNIZED_ALIAS_ERROR);
+    if (rem) err ||= uErr(pCtx, '-' + rem);
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
@@ -372,11 +360,11 @@ export function parse<T>(
       min != null && max != null && (len < min || len > max)
         ? min === max
           ? [min, min]
-          : [`${min}-${max}`, 0]
+          : [min + '-' + max, 0]
         : min != null && len < min
-          ? [`at least ${min}`, min]
+          ? ['at least ' + min, min]
           : max != null && len > max
-            ? [max && `up to ${max}`, max]
+            ? [max && 'up to ' + max, max]
             : null;
 
     if (m) {

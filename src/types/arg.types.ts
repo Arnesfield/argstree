@@ -7,6 +7,6 @@ export interface Arg {
   // NOTE: same doc as Node.value
   /** The parsed value from the argument (e.g., `value` from `--option=value`). */
   value?: string;
-  /** The remaining alias argument, if any. */
+  /** The remaining argument, if any. */
   remainder?: string;
 }

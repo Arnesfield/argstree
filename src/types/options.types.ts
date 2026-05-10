@@ -58,21 +58,6 @@ export interface Options<T = unknown> {
    */
   max?: number;
   /**
-   * The alias, list of aliases, or list of aliases with arguments for the option or command.
-   *
-   * Aliases that start with a single dash (`-`) can be grouped together after
-   * a single dash (e.g., aliases `-a`, `-b`, and `-c` can be written as `-abc`).
-   *
-   * If the option or command requires a value, it must be the last option when its alias
-   * is grouped together with other aliases, otherwise a {@linkcode ParseError} is thrown.
-   * @example
-   * const cmd = command()
-   *   .option('--input', { alias: '-i' })
-   *   .option('--force', { alias: ['-f', ['--no-force', '0']] })
-   *   .command('run', { alias: ['r', 'rum', 'urn'] });
-   */
-  alias?: string | (string | string[])[];
-  /**
    * When disabled, the option or command will not accept any arguments
    * (except for {@link assign assigned values}) and are instead saved to
    * the parent option or command if it can accept arguments. Otherwise,

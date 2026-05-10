@@ -19,8 +19,6 @@ export interface ResolvedOptions<T = unknown> extends Options<T> {
 export interface ResolvedItem<T = unknown> {
   /** The matched argument. */
   key: string;
-  /** The alias used to parse argument, if any. */
-  alias: string | null;
   /** The schema type. */
   type: SchemaType;
   /** The resolved options. */
@@ -37,18 +35,18 @@ export interface ResolvedArg<T = unknown> extends Arg {
 export interface Schema<T = unknown> {
   /**
    * Adds or removes an option. The argument is overwritten if it already exists.
-   * @param arg The argument to match.
+   * @param arg The argument(s) to match.
    * @param options The schema options or `null` to remove.
    * @returns `this` for chaining.
    */
-  option(arg: string, options?: Options<T> | null): this;
+  option(arg: string | string[], options?: Options<T> | null): this;
   /**
    * Adds or removes a command. The argument is overwritten if it already exists.
-   * @param arg The argument to match.
+   * @param arg The argument(s) to match.
    * @param options The schema options or `null` to remove.
    * @returns `this` for chaining.
    */
-  command(arg: string, options?: Options<T> | null): this;
+  command(arg: string | string[], options?: Options<T> | null): this;
   /**
    * Gets the configuration for the matched options and commands.
    * The {@linkcode key} is checked to have a value (e.g., `--option=value`)
