@@ -1,5 +1,5 @@
 import { Options } from './options.types';
-import { SchemaType } from './schema.types';
+import { ParserType } from './parser.types';
 
 // NOTE: internal
 
@@ -10,10 +10,10 @@ export interface Alias<T> {
 }
 
 export interface Config<T> {
-  readonly type: SchemaType;
+  readonly type: ParserType;
   readonly options: Options<T>;
   readonly map?: { readonly [arg: string]: Config<T> | null | undefined };
   readonly alias?: { readonly [char: string]: Config<T> | null | undefined };
 }
 
-export type SchemaConfig<T> = Required<Config<T>>;
+export type ParserConfig<T> = Required<Config<T>>;

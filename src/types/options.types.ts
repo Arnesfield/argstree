@@ -1,7 +1,7 @@
 import { ParseError } from '../lib/error';
 import { Arg } from './arg.types';
 import { Node } from './node.types';
-import { Schema } from './schema.types';
+import { Parser } from './parser.types';
 import { XOR } from './util.types';
 
 /** Options that can be changed during parsing for the node. */
@@ -22,7 +22,7 @@ export interface Value {
   strict?: boolean;
 }
 
-/** The schema options. */
+/** The parser options. */
 export interface Options<T = unknown> {
   /**
    * The option or command ID that is set to {@linkcode Node.id}.
@@ -92,15 +92,15 @@ export interface Options<T = unknown> {
    * When `false`, parsed nodes will be treated as parent nodes (has child nodes).
    *
    * If not provided, this option defaults to `true` for `option` types
-   * or if there are no options or commands configured for the schema.
+   * or if there are no options or commands configured for the parser.
    * Otherwise, this is `false`.
    */
   leaf?: boolean;
   /**
-   * Called only once when the schema is created and is used to gain
-   * a reference to the schema object to add options and/or commands.
-   * @param schema The schema object.
-   * @returns Options to override for the schema.
+   * Called only once when the parser is created and is used to gain
+   * a reference to the parser object to add options and/or commands.
+   * @param parser The parser object.
+   * @returns Options to override for the parser.
    * @example
    * const cmd = command()
    *   .option('--help')
@@ -110,13 +110,13 @@ export interface Options<T = unknown> {
    *     }
    *   });
    */
-  init?(schema: Schema<T>): Options<T> | void;
+  init?(parser: Parser<T>): Options<T> | void;
   /**
    * Serves as a fallback for parsed arguments that cannot be
    * recognized using the list of configured options and commands.
    * Can have the following return values:
    *
-   * - `Schema`s - Treated as options or commands.
+   * - `Parser`s - Treated as options or commands.
    * If the option or command (or for arrays, the last item) is a non-leaf node,
    * then the next arguments will be parsed using that node.
    * - `Value`s - Treated as value arguments and will be saved to either the
@@ -127,7 +127,7 @@ export interface Options<T = unknown> {
    * an unrecognized argument depending on the provided options.
    * @param arg The parsed argument.
    * @param node The node object.
-   * @returns The schemas or values, if any.
+   * @returns The parsers or values, if any.
    * @example
    * import command, { isOption, option } from 'argstree';
    *
@@ -148,7 +148,7 @@ export interface Options<T = unknown> {
   parser?(
     arg: Arg,
     node: Node<T>
-  ): XOR<Schema<T>, Value> | XOR<Schema<T>, Value>[] | boolean | void;
+  ): XOR<Parser<T>, Value> | XOR<Parser<T>, Value>[] | boolean | void;
   /**
    * Called when the node is created with its initial arguments.
    * @param node The node object.

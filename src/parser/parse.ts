@@ -1,6 +1,5 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { Schema } from '../schema/schema.class';
 import { Alias, Config } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options, Value } from '../types/options.types';
@@ -9,6 +8,7 @@ import { __assertNotNull } from '../utils/assert';
 import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
 import { assign, Context, display, full, getArgs, ok, uErr } from './node';
+import { Parser } from './parser';
 
 // NOTE: internal
 
@@ -38,10 +38,10 @@ export function parse<T>(
     cCtx && ok(cCtx);
 
     // make sure to initialize config before accessing options
-    // creating the schema instance should mutate and initialize
+    // creating the parser instance should mutate and initialize
     // the config object
     // also note that this is a partial initialization check
-    !c.map && c.options.init && new Schema(c);
+    !c.map && c.options.init && new Parser(c);
 
     const o = c.options;
     const p = pCtx ? pCtx.node : null;
@@ -298,10 +298,10 @@ export function parse<T>(
       // both `cCtx` and `cNode` can be unset after this loop
       let call: boolean | undefined;
       for (const r of res) {
-        if ((r as Schema<T>).cfg) {
+        if ((r as Parser<T>).cfg) {
           // set node value but not for args
           // since we leave it to the parser to set the value as an argument
-          node((r as Schema<T>).cfg, raw, key);
+          node((r as Parser<T>).cfg, raw, key);
 
           __assertNotNull(cNode);
           cNode.value = value ?? null;

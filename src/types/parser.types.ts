@@ -3,8 +3,8 @@ import { Arg } from './arg.types';
 import { Node } from './node.types';
 import { Options } from './options.types';
 
-/** The schema type. */
-export type SchemaType = 'option' | 'command';
+/** The parser type. */
+export type ParserType = 'option' | 'command';
 
 /** The resolved options. */
 export interface ResolvedOptions<T = unknown> extends Options<T> {
@@ -19,8 +19,8 @@ export interface ResolvedOptions<T = unknown> extends Options<T> {
 export interface ResolvedItem<T = unknown> {
   /** The matched argument. */
   key: string;
-  /** The schema type. */
-  type: SchemaType;
+  /** The parser type. */
+  type: ParserType;
   /** The resolved options. */
   options: ResolvedOptions<T>;
 }
@@ -31,19 +31,19 @@ export interface ResolvedArg<T = unknown> extends Arg {
   items?: ResolvedItem<T>[];
 }
 
-/** The schema object. */
-export interface Schema<T = unknown> {
+/** The parser object. */
+export interface Parser<T = unknown> {
   /**
    * Adds or removes an option. The argument is overwritten if it already exists.
    * @param arg The argument(s) to match.
-   * @param options The schema options or `null` to remove.
+   * @param options The parser options or `null` to remove.
    * @returns `this` for chaining.
    */
   option(arg: string | string[], options?: Options<T> | null): this;
   /**
    * Adds or removes a command. The argument is overwritten if it already exists.
    * @param arg The argument(s) to match.
-   * @param options The schema options or `null` to remove.
+   * @param options The parser options or `null` to remove.
    * @returns `this` for chaining.
    */
   command(arg: string | string[], options?: Options<T> | null): this;

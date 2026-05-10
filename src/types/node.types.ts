@@ -1,8 +1,8 @@
 import { Options } from './options.types';
-import { SchemaType } from './schema.types';
+import { ParserType } from './parser.types';
 
 /** The node type. */
-export type NodeType = SchemaType | 'value';
+export type NodeType = ParserType | 'value';
 
 /**
  * The node object.
