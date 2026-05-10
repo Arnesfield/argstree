@@ -187,12 +187,11 @@ export function parse<T>(
               ? a + pCtx.max - end
               : null) !== null
       ) {
-        // assume that at this point, there is no existing cNode
-        // so always create a new child value node with the args
-        vNode(argv.slice(a, end));
-        // vNode() should create the cNode
-        __assertNotNull(cNode);
-        pCtx.node.args.push(...cNode.args);
+        // when using options.parser,
+        // there is a change that the `cNode` is already a value node
+        const args = argv.slice(a, end);
+        cNode ? cNode.args.push(...args) : vNode(args);
+        pCtx.node.args.push(...args);
 
         // stop here if capturing all args
         if (end == null || end >= argv.length) break;
@@ -293,10 +292,7 @@ export function parse<T>(
     ) {
       type V = Value;
 
-      // NOTE: setArg calls will use the current node
-      // which can change when a new node is created within the same loop
-      // both `cCtx` and `cNode` can be unset after this loop
-      let call: boolean | undefined;
+      // allow the current working nodes to change
       for (const r of res) {
         if ((r as Parser<T>).cfg) {
           // set node value but not for args
@@ -306,15 +302,11 @@ export function parse<T>(
           __assertNotNull(cNode);
           cNode.value = value ?? null;
 
-          call = true;
+          use();
         }
         // handle parsed values (will set it to the current node)
         else for (const v of array((r as V).args)) setArg(v, (r as V).strict);
       }
-
-      // call use() if node() was called
-      // also make sure that `cCtx` exists since it can be unset by setArg
-      call && cCtx && use();
 
       // always skip after successful parser call
       continue;

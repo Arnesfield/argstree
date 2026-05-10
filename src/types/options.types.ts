@@ -111,6 +111,7 @@ export interface Options<T = unknown> {
    *   });
    */
   init?(parser: Parser<T>): Options<T> | void;
+  // TODO: fix parser doc: behavior has changed
   /**
    * Serves as a fallback for parsed arguments that cannot be
    * recognized using the list of configured options and commands.
