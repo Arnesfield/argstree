@@ -74,6 +74,7 @@ export interface Options<T = unknown> {
    * The default value is `true` for `option` types and `false` for `command` types.
    */
   assign?: boolean;
+  // TODO: fix doc, strict mode is enabled by default
   /**
    * When enabled, a {@linkcode ParseError} is thrown for
    * unrecognized arguments that look like an option (e.g., `-o`, `--option`).

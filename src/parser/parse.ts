@@ -65,10 +65,13 @@ export function parse<T>(
 
     const strict =
       s == null
-        ? (dstrict = pdstrict)
+        ? (dstrict = pdstrict ?? true)
         : typeof s === 'boolean'
           ? (dstrict = s)
           : !(dstrict = s !== 'self');
+
+    // set initial value to pdstrict
+    if (pdstrict == null) pdstrict = strict;
 
     cCtx = { cfg: c, node: cNode, min, max, read, strict };
 

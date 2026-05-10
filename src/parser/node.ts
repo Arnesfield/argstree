@@ -10,7 +10,7 @@ export interface Context<T> {
   min: number | null;
   max: number | null;
   read: boolean;
-  strict: boolean | undefined;
+  strict: boolean;
 }
 
 export function getArgs<T>(opts: Options<T>, val?: string | null): string[] {
