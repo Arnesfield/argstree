@@ -7,7 +7,7 @@ import { Parser } from '../types/parser.types';
  * @param options The parser options.
  * @returns The parser object.
  */
-export function option<T>(options?: Options<T>): Parser<T> {
+export function option<T>(options: Options<T> = {}): Parser<T> {
   return new ParserClass({ type: 'option', options });
 }
 
@@ -16,6 +16,6 @@ export function option<T>(options?: Options<T>): Parser<T> {
  * @param options The parser options.
  * @returns The parser object.
  */
-export function command<T>(options?: Options<T>): Parser<T> {
+export function command<T>(options: Options<T> = {}): Parser<T> {
   return new ParserClass({ type: 'command', options });
 }

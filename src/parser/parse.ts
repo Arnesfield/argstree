@@ -1,16 +1,32 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { Alias, Config } from '../types/config.types';
+import { Alias, Config, RawConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
-import { Options, Value } from '../types/options.types';
+import { Options } from '../types/options.types';
+import { Value } from '../types/parser.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
 import { assign, Context, display, full, getArgs, ok, uErr } from './node';
-import { Parser } from './parser';
+import type { Parser } from './parser';
 
 // NOTE: internal
+
+export function init<T>(
+  rc: RawConfig<T> | null | undefined
+): RawConfig<T> | null | undefined {
+  if (typeof rc?.init === 'function') {
+    rc.ref = rc.init()?.cfg || null;
+    rc.init = null;
+  }
+
+  return rc;
+}
+
+export function getCfg<T>(rc: RawConfig<T>): Config<T> | null | undefined {
+  return rc.ref !== undefined ? rc.ref : (rc as Config<T>);
+}
 
 export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T>;
 
@@ -32,20 +48,15 @@ export function parse<T>(
     c: Config<T>,
     raw: string | null,
     key: string | null,
-    value: string | null = null
+    value: string | null = null,
+    cid: string | null | undefined = c.id
   ) {
     // mark previous node as parsed before creating next node
     cCtx && ok(cCtx);
 
-    // make sure to initialize config before accessing options
-    // creating the parser instance should mutate and initialize
-    // the config object
-    // also note that this is a partial initialization check
-    !c.map && c.options.init && new Parser(c);
-
     const o = c.options;
     const p = pCtx ? pCtx.node : null;
-    const { id = key, name = key, strict: s } = o;
+    const { id = cid ?? key, name = cid ?? key, strict: s } = o;
 
     // prettier-ignore
     cNode = { id, name, raw, key, value, type: c.type, depth: p ? p.depth + 1 : 0, args: getArgs(o, value), parent: p, children: [] };
@@ -95,7 +106,7 @@ export function parse<T>(
     if (
       !(
         cCtx.cfg.options.leaf ??
-        (!cCtx.cfg.options.parser &&
+        (!cCtx.cfg.handler &&
           cCtx.cfg.type === 'option' &&
           !hasValues(cCtx.cfg.map))
       )
@@ -172,7 +183,7 @@ export function parse<T>(
   for (let a = 0; a < argv.length; a++) {
     let raw = argv[a];
 
-    if (!pCtx.cfg.options.parser && !hasValues(pCtx.cfg.map)) {
+    if (!pCtx.cfg.handler && !hasValues(pCtx.cfg.map)) {
       // if a value node exists and not strict mode for the current node,
       // capture all args up until the end is reached if it's not null
       // allow number and undefined for end value
@@ -209,6 +220,7 @@ export function parse<T>(
 
     let key = raw,
       value: string | undefined,
+      rc: RawConfig<T> | null | undefined,
       i = raw.indexOf('='),
       // eslint-disable-next-line prefer-const
       noVal = i === -1; // would imply `value == null`
@@ -219,8 +231,12 @@ export function parse<T>(
     }
 
     // get node by map
-    if ((cfg = pCtx.cfg.map?.[key]) && (noVal || assign(cfg))) {
-      node(cfg, raw, key, value);
+    if (
+      (rc = init(pCtx.cfg.map?.[key])) &&
+      (cfg = getCfg(rc)) &&
+      (noVal || assign(cfg))
+    ) {
+      node(cfg, raw, key, value, rc.id);
       use();
       continue;
     }
@@ -248,13 +264,14 @@ export function parse<T>(
           (m = number((o = alias.cfg.options).min)) != null &&
           m - array(o.args).length > 0
         ) &&
-        (cfg = pCtx.cfg.alias[(m = key[i])]);
+        (rc = init(pCtx.cfg.alias[(m = key[i])])) &&
+        (cfg = getCfg(rc));
         i++
       ) {
         // delay pushing the last alias to the next iteration instead
         // so that the last alias is pushed outside only after condition checks
         alias && aliases.push(alias);
-        alias = { key: m, cfg };
+        alias = { id: rc.id, key: m, cfg };
       }
 
       // if incomplete aliases parsed, check if the rest of the argument
@@ -281,7 +298,7 @@ export function parse<T>(
     // parse by parser
 
     // prettier-ignore
-    let res = noParse ? null : pCtx.cfg.options.parser?.({ raw, key, value, remainder: rem }, pCtx.node);
+    let res = noParse ? null : pCtx.cfg.handler?.({ raw, key, value, remainder: rem }, pCtx.node);
     // ignore raw argument
     if (res === false) continue;
 
@@ -321,7 +338,7 @@ export function parse<T>(
       // process aliases (even partial)
       for (i = 0; i < aliases.length; i++) {
         // prettier-ignore
-        node((alias = aliases[i]).cfg, raw, '-' + alias.key, i === aliases.length - 1 ? aVal : null);
+        node((alias = aliases[i]).cfg, raw, '-' + alias.key, i === aliases.length - 1 ? aVal : null, alias.id);
       }
       use();
     } else if (!rem) setArg(raw);

@@ -1,41 +1,56 @@
 import { isOption } from '../lib/is-option';
-import { Alias, Config, ParserConfig } from '../types/config.types';
+import {
+  Alias,
+  Config,
+  InitFunction,
+  ParserConfig,
+  RawConfig
+} from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import {
+  Handler,
   Parser as IParser,
-  ParserType,
   ResolvedArg,
   ResolvedItem
 } from '../types/parser.types';
-import { DeepMutable, PartialPick } from '../types/util.types';
+import { DeepMutable } from '../types/util.types';
 import { array } from '../utils/array';
 import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
 import { assign, getArgs } from './node';
-import { parse } from './parse';
+import { getCfg, init as initFn, parse } from './parse';
 
 // NOTE: internal
 
 export class Parser<T> implements IParser<T> {
-  // NOTE: using partial config type, but keep member property required
-  constructor(cfg: PartialPick<Config<T>, 'options'>);
+  // use config type as input but make mutable internally
+  constructor(cfg: Config<T>);
   constructor(readonly cfg: DeepMutable<ParserConfig<T>>) {
     // NOTE: intentional mutate cfg
     cfg.map = { __proto__: null! };
     cfg.alias = { __proto__: null! };
-
-    // always create a new copy of options
-    cfg.options = { ...cfg.options, ...cfg.options?.init?.(this) };
   }
 
-  option(arg: string | string[], options?: Options<T> | null): this {
-    use(this.cfg, arg, 'option', options);
+  option(arg: string | string[], options: Options<T> = {}): this {
+    use(this.cfg, arg, { type: 'option', options });
     return this;
   }
 
-  command(arg: string | string[], options?: Options<T> | null): this {
-    use(this.cfg, arg, 'command', options);
+  command(arg: string | string[], options: Options<T> = {}): Parser<T> {
+    const cfg: Config<T> = { type: 'command', options };
+    use(this.cfg, arg, cfg);
+    return new Parser(cfg);
+  }
+
+  arg(arg: string | string[], init: Parser<T> | InitFunction<T> | null): this {
+    // prettier-ignore
+    use(this.cfg, arg, typeof init === 'function' ? { init } : init && { ref: init.cfg });
+    return this;
+  }
+
+  unknown(handler: Handler<T> | null): this {
+    this.cfg.handler = handler;
     return this;
   }
 
@@ -45,6 +60,7 @@ export class Parser<T> implements IParser<T> {
     // eslint-disable-next-line prefer-const
     let raw = key,
       val: string | undefined,
+      rc: RawConfig<T> | null | undefined,
       cfg: Config<T> | null | undefined,
       i: number,
       noVal: boolean | undefined; // would imply `arg.value == null`
@@ -57,8 +73,12 @@ export class Parser<T> implements IParser<T> {
     const arg: ResolvedArg<T> = { raw, key, value: val };
 
     // get item by map
-    if ((cfg = this.cfg.map[key]) && (noVal || assign(cfg))) {
-      arg.items = [item(key, cfg, val)];
+    if (
+      (rc = initFn(this.cfg.map[key])) &&
+      (cfg = getCfg(rc)) &&
+      (noVal || assign(cfg))
+    ) {
+      arg.items = [item(rc.id, key, cfg, val)];
     }
 
     // handle split
@@ -84,11 +104,12 @@ export class Parser<T> implements IParser<T> {
           (m = number((o = alias.cfg.options).min)) != null &&
           m - array(o.args).length > 0
         ) &&
-        (cfg = this.cfg.alias[(m = key[i])]);
+        (rc = initFn(this.cfg.alias[(m = key[i])])) &&
+        (cfg = getCfg(rc));
         i++
       ) {
-        alias && arg.items.push(item(alias.key, alias.cfg));
-        alias = { key: '-' + m, cfg };
+        alias && arg.items.push(item(alias.id, alias.key, alias.cfg));
+        alias = { id: rc.id, key: '-' + m, cfg };
       }
 
       // if no alias was parsed, then assume that it's an invalid argument
@@ -101,10 +122,11 @@ export class Parser<T> implements IParser<T> {
             m - array(o.args).length < 1))
       ) {
         // if the config accepts no arguments, treat the rest as remainder
-        arg.items.push(item(alias.key, alias.cfg));
+        arg.items.push(item(alias.id, alias.key, alias.cfg));
         arg.remainder = key.slice(i);
       } else if ((noVal && !inc) || assign(alias.cfg)) {
-        arg.items.push(item(alias.key, alias.cfg, inc ? raw.slice(i) : val));
+        // prettier-ignore
+        arg.items.push(item(alias.id, alias.key, alias.cfg, inc ? raw.slice(i) : val));
       } else arg.remainder = key.slice(i - 1);
     }
 
@@ -123,24 +145,28 @@ export class Parser<T> implements IParser<T> {
 function use<T>(
   p: DeepMutable<ParserConfig<T>>,
   arg: string | string[],
-  type: ParserType,
-  options: Options<T> | null = {}
+  rc: RawConfig<T> | null
 ) {
-  // it's possible that cfg is unused, but it's not worth checking for that case
-  const cfg: Config<T> | null = options && { type, options };
+  arg = array(arg);
+  if (rc) rc.id ??= arg[0];
 
-  for (const a of array(arg)) {
-    p.map[a] = cfg;
+  for (const a of arg) {
+    p.map[a] = rc;
 
     // check if single character short option
     let c: string;
-    if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') p.alias[c] = cfg;
+    if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') p.alias[c] = rc;
   }
 }
 
-function item<T>(key: string, cfg: Config<T>, value?: string): ResolvedItem<T> {
+function item<T>(
+  cid: string | undefined,
+  key: string,
+  cfg: Config<T>,
+  value?: string
+): ResolvedItem<T> {
   const o = cfg.options;
-  const { id = key, name = key } = o;
+  const { id = cid ?? key, name = cid ?? key } = o;
   // prettier-ignore
   return { key, type: cfg.type, options: { ...o, id, name, args: getArgs(o, value) } };
 }

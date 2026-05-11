@@ -2,6 +2,7 @@ import { ParseError } from '../lib/error';
 import { Arg } from './arg.types';
 import { Node } from './node.types';
 import { Options } from './options.types';
+import { XOR } from './util.types';
 
 /** The parser type. */
 export type ParserType = 'option' | 'command';
@@ -31,22 +32,44 @@ export interface ResolvedArg<T = unknown> extends Arg {
   items?: ResolvedItem<T>[];
 }
 
+// TODO: rename?
+/** The parser value. */
+export interface Value {
+  /** Arguments to be saved to the current node. */
+  args: string | string[];
+  /** Overrides the strict mode for the current node. */
+  strict?: boolean;
+}
+
+// TODO: add doc
+export type Handler<T> = (
+  arg: Arg,
+  node: Node<T>
+) => XOR<Parser<T>, Value> | XOR<Parser<T>, Value>[] | boolean | void;
+
 /** The parser object. */
 export interface Parser<T = unknown> {
   /**
-   * Adds or removes an option. The argument is overwritten if it already exists.
+   * Adds an option. The argument is overwritten if it already exists.
    * @param arg The argument(s) to match.
-   * @param options The parser options or `null` to remove.
+   * @param options The parser options.
    * @returns `this` for chaining.
    */
-  option(arg: string | string[], options?: Options<T> | null): this;
+  option(arg: string | string[], options?: Options<T>): this;
   /**
-   * Adds or removes a command. The argument is overwritten if it already exists.
+   * Adds a command. The argument is overwritten if it already exists.
    * @param arg The argument(s) to match.
-   * @param options The parser options or `null` to remove.
-   * @returns `this` for chaining.
+   * @param options The parser options.
+   * @returns The command parser.
    */
-  command(arg: string | string[], options?: Options<T> | null): this;
+  command(arg: string | string[], options?: Options<T>): Parser<T>;
+  // TODO: add doc
+  arg(
+    arg: string | string[],
+    init: Parser<T> | (() => Parser<T> | null) | null
+  ): this;
+  // TODO: add doc
+  unknown(handler: Handler<T> | null): this;
   /**
    * Gets the configuration for the matched options and commands.
    * The {@linkcode key} is checked to have a value (e.g., `--option=value`)

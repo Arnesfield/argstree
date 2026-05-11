@@ -1,8 +1,5 @@
 import { ParseError } from '../lib/error';
-import { Arg } from './arg.types';
 import { Node } from './node.types';
-import { Parser } from './parser.types';
-import { XOR } from './util.types';
 
 /** Options that can be changed during parsing for the node. */
 export interface ParseOptions {
@@ -12,14 +9,6 @@ export interface ParseOptions {
   max?: number | null;
   /** Overrides the {@linkcode Options.read} option for the node. */
   read?: boolean;
-}
-
-/** The parser value. */
-export interface Value {
-  /** Arguments to be saved to the current node. */
-  args: string | string[];
-  /** Overrides the strict mode for the current node. */
-  strict?: boolean;
 }
 
 /** The parser options. */
@@ -97,60 +86,63 @@ export interface Options<T = unknown> {
    * Otherwise, this is `false`.
    */
   leaf?: boolean;
-  /**
-   * Called only once when the parser is created and is used to gain
-   * a reference to the parser object to add options and/or commands.
-   * @param parser The parser object.
-   * @returns Options to override for the parser.
-   * @example
-   * const cmd = command()
-   *   .option('--help')
-   *   .command('run', {
-   *     init(run) {
-   *       run.option('--help');
-   *     }
-   *   });
-   */
-  init?(parser: Parser<T>): Options<T> | void;
-  // TODO: fix parser doc: behavior has changed
-  /**
-   * Serves as a fallback for parsed arguments that cannot be
-   * recognized using the list of configured options and commands.
-   * Can have the following return values:
-   *
-   * - `Parser`s - Treated as options or commands.
-   * If the option or command (or for arrays, the last item) is a non-leaf node,
-   * then the next arguments will be parsed using that node.
-   * - `Value`s - Treated as value arguments and will be saved to either the
-   * current parent or child option or command depending on their provided options.
-   * - `false` - The argument is ignored as if it was never parsed.
-   * - Empty array, `true`, `undefined` - Fallback to the default behavior
-   * where the parsed argument may be treated either as a value or
-   * an unrecognized argument depending on the provided options.
-   * @param arg The parsed argument.
-   * @param node The node object.
-   * @returns The parsers or values, if any.
-   * @example
-   * import command, { isOption, option } from 'argstree';
-   *
-   * const cmd = command({
-   *   strict: true,
-   *   parser(arg) {
-   *     // return an option when '--option' is matched
-   *     if (arg.key === '--option') {
-   *       return option({ args: arg.value });
-   *     }
-   *     // allow negative numbers in strict mode
-   *     if (isOption(arg.raw, 'short') && !isNaN(Number(arg.raw))) {
-   *       return { args: arg.raw, strict: false };
-   *     }
-   *   }
-   * });
-   */
-  parser?(
-    arg: Arg,
-    node: Node<T>
-  ): XOR<Parser<T>, Value> | XOR<Parser<T>, Value>[] | boolean | void;
+
+  // TODO: remove
+  // /**
+  //  * Called only once when the parser is created and is used to gain
+  //  * a reference to the parser object to add options and/or commands.
+  //  * @param parser The parser object.
+  //  * @returns Options to override for the parser.
+  //  * @example
+  //  * const cmd = command()
+  //  *   .option('--help')
+  //  *   .command('run', {
+  //  *     init(run) {
+  //  *       run.option('--help');
+  //  *     }
+  //  *   });
+  //  */
+  // init?(parser: Parser<T>): Options<T> | void;
+  // // TODO: fix parser doc: behavior has changed
+  // /**
+  //  * Serves as a fallback for parsed arguments that cannot be
+  //  * recognized using the list of configured options and commands.
+  //  * Can have the following return values:
+  //  *
+  //  * - `Parser`s - Treated as options or commands.
+  //  * If the option or command (or for arrays, the last item) is a non-leaf node,
+  //  * then the next arguments will be parsed using that node.
+  //  * - `Value`s - Treated as value arguments and will be saved to either the
+  //  * current parent or child option or command depending on their provided options.
+  //  * - `false` - The argument is ignored as if it was never parsed.
+  //  * - Empty array, `true`, `undefined` - Fallback to the default behavior
+  //  * where the parsed argument may be treated either as a value or
+  //  * an unrecognized argument depending on the provided options.
+  //  * @param arg The parsed argument.
+  //  * @param node The node object.
+  //  * @returns The parsers or values, if any.
+  //  * @example
+  //  * import command, { isOption, option } from 'argstree';
+  //  *
+  //  * const cmd = command({
+  //  *   strict: true,
+  //  *   parser(arg) {
+  //  *     // return an option when '--option' is matched
+  //  *     if (arg.key === '--option') {
+  //  *       return option({ args: arg.value });
+  //  *     }
+  //  *     // allow negative numbers in strict mode
+  //  *     if (isOption(arg.raw, 'short') && !isNaN(Number(arg.raw))) {
+  //  *       return { args: arg.raw, strict: false };
+  //  *     }
+  //  *   }
+  //  * });
+  //  */
+  // parser?(
+  //   arg: Arg,
+  //   node: Node<T>
+  // ): XOR<Parser<T>, Value> | XOR<Parser<T>, Value>[] | boolean | void;
+
   /**
    * Called when the node is created with its initial arguments.
    * @param node The node object.
