@@ -42,7 +42,8 @@ export function parse<T>(
     cCtx: Context<T> | null | undefined, // child node context
     pdstrict: boolean | undefined, // parent node strict descendants
     dstrict: boolean | undefined, // current child node strict descendants
-    err: ParseError<T> | undefined; // error before validation
+    err: ParseError<T> | undefined, // error before validation
+    a = 0; // argv index
 
   function node(
     c: Config<T>,
@@ -180,45 +181,14 @@ export function parse<T>(
 
   const root = pCtx.node;
 
-  for (let a = 0; a < argv.length; a++) {
-    let raw = argv[a];
-
-    if (!pCtx.cfg.handler && !hasValues(pCtx.cfg.map)) {
-      // if a value node exists and not strict mode for the current node,
-      // capture all args up until the end is reached if it's not null
-      // allow number and undefined for end value
-      // note that `end` is used twice:
-      // once to get length of args and another for the end index
-      // also note that `cNode` is expected to be a value node at this point
-      let end: number | null | undefined;
-      if (
-        pCtx.read &&
-        !pCtx.strict &&
-        (end =
-          pCtx.max == null
-            ? undefined
-            : pCtx.max > (end = pCtx.node.args.length)
-              ? a + pCtx.max - end
-              : null) !== null
-      ) {
-        // when using options.parser,
-        // there is a change that the `cNode` is already a value node
-        const args = argv.slice(a, end);
-        cNode ? cNode.args.push(...args) : vNode(args);
-        pCtx.node.args.push(...args);
-
-        // stop here if capturing all args
-        if (end == null || end >= argv.length) break;
-
-        // call setArg for next raw argument
-        raw = argv[(a = end)];
-      }
-
-      setArg(raw);
-      continue;
-    }
-
-    let key = raw,
+  for (
+    ;
+    a < argv.length && (pCtx.cfg.handler || hasValues(pCtx.cfg.map));
+    a++
+  ) {
+    // eslint-disable-next-line prefer-const
+    let raw = argv[a],
+      key = raw,
       value: string | undefined,
       rc: RawConfig<T> | null | undefined,
       i = raw.indexOf('='),
@@ -344,6 +314,42 @@ export function parse<T>(
     } else if (!rem) setArg(raw);
 
     if (rem) err ||= uErr(pCtx, '-' + rem);
+  }
+
+  for (; a < argv.length; a++) {
+    // if not strict mode for the current node,
+    // capture the rest of the args until the end is reached
+    // note that `end` is used twice:
+    // once to get length of args and another for the end index
+    // also note that `cNode` is expected to be a value node at this point
+
+    let raw = argv[a],
+      end: number | null | undefined;
+
+    if (
+      pCtx.read &&
+      !pCtx.strict &&
+      (end =
+        pCtx.max == null
+          ? undefined
+          : pCtx.max > (end = pCtx.node.args.length)
+            ? a + pCtx.max - end
+            : null) !== null
+    ) {
+      // when using unknown handler,
+      // there is a chance that `cNode` is already a value node
+      const args = argv.slice(a, end);
+      cNode ? cNode.args.push(...args) : vNode(args);
+      pCtx.node.args.push(...args);
+
+      // stop here if the rest of the args were captured
+      if (end == null || end >= argv.length) break;
+
+      // call setArg for next raw argument
+      raw = argv[(a = end)];
+    }
+
+    setArg(raw);
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
