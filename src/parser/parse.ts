@@ -97,6 +97,19 @@ export function parse<T>(
     p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, value: p.value, type: 'value', depth: p.depth + 1, args, parent: p, children: [] });
   }
 
+  /** Sets `cCtx` as the next `pCtx`. */
+  function next() {
+    // set current child node context as new parent node context
+    __assertNotNull(cCtx);
+    pCtx = cCtx;
+
+    // set dstrict for parent node context
+    pdstrict = dstrict;
+
+    // clear child node context since it's now the parent node
+    cNode = cCtx = null;
+  }
+
   function use() {
     __assertNotNull(cCtx);
 
@@ -110,11 +123,7 @@ export function parse<T>(
       )
     ) {
       ok(pCtx);
-
-      // set current child node context as new parent node context
-      pCtx = cCtx;
-      pdstrict = dstrict;
-      cNode = cCtx = null;
+      next();
     } else if (!cCtx.read || full(cCtx)) {
       ok(cCtx);
       cNode = cCtx = null;
@@ -170,12 +179,9 @@ export function parse<T>(
   // create root node
   __assertNotNull(cfg);
   node(cfg, null, null);
-
-  __assertNotNull(cCtx);
-  // set parent context and the initial pdstrict value
-  pdstrict = (pCtx = cCtx).strict;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cNode = cCtx = null as any;
+  // calling next() should set pCtx
+  next();
+  __assertNotNull(pCtx!);
 
   const root = pCtx.node;
 
