@@ -53,7 +53,8 @@ export function parse<T>(
     raw: string | null,
     key: string | null,
     value: string | null = null,
-    cid = c.id
+    cid = c.id,
+    arg: string | null = value
   ) {
     // mark previous node as parsed before creating next node
     cCtx && ok(cCtx);
@@ -63,7 +64,7 @@ export function parse<T>(
     const { id = cid ?? key, name = cid ?? key, strict: s } = o;
 
     // prettier-ignore
-    cNode = { id, name, raw, key, value, type: c.type, depth: p ? p.depth + 1 : 0, args: getArgs(o, value), parent: p, children: [] };
+    cNode = { id, name, raw, key, value, type: c.type, depth: p ? p.depth + 1 : 0, args: getArgs(o, arg), parent: p, children: [] };
     p?.children.push(cNode);
 
     // run onCreate and get parse options
@@ -221,7 +222,7 @@ export function parse<T>(
     // eslint-disable-next-line prefer-const
     let aliases: Alias<T>[] = [],
       alias: Alias<T> | undefined,
-      noParse: boolean | undefined, // skip parser callback
+      noParse: boolean | undefined, // skip handler callback
       aVal: string | undefined, // alias value
       rem: string | undefined; // remainder
 
@@ -252,11 +253,11 @@ export function parse<T>(
       }
 
       // if incomplete aliases parsed, check if the rest of the argument
-      // can be assigned and also go through the parser function (!noParse)
+      // can be assigned and also go through the handler function (!noParse)
       // otherwise, use the parsed value if it can be assigned
 
       if (!alias) {
-        // continue to parser if no alias was parsed
+        // continue to handler if no alias was parsed
       } else if (
         inc &&
         (m = number((o = alias.cfg.options).max)) != null &&
@@ -272,10 +273,11 @@ export function parse<T>(
       } else rem = key.slice(i - 1);
     }
 
-    // parse by parser
+    // parse by handler
 
     // prettier-ignore
     let res = noParse ? null : pCtx.cfg.handler?.({ raw, key, value, remainder: rem }, pCtx.node);
+
     // ignore raw argument
     if (res === false) continue;
 
@@ -283,7 +285,7 @@ export function parse<T>(
     // default behavior if empty array
     // otherwise, iterate through parsed
     if (
-      res != null &&
+      res &&
       res !== true &&
       (res = Array.isArray(res) ? res : [res]).length > 0
     ) {
@@ -291,25 +293,21 @@ export function parse<T>(
 
       // allow the current working nodes to change
       for (const r of res) {
-        if ((r as Parser<T>).cfg) {
-          // set node value but not for args
-          // since we leave it to the parser to set the value as an argument
-          node((r as Parser<T>).cfg, raw, key);
-
-          __assertNotNull(cNode);
-          cNode.value = value ?? null;
-
+        if ((cfg = (r as Parser<T>).cfg)) {
+          // do not include value to node.args
+          // since we leave it to the handler to set the value as an argument
+          node(cfg, raw, key, value, cfg.id, null);
           use();
         }
         // handle parsed values (will set it to the current node)
         else for (const v of array((r as V).args)) setArg(v, (r as V).strict);
       }
 
-      // always skip after successful parser call
+      // always skip after successful handler call
       continue;
     }
 
-    // parser done
+    // handler done
 
     if (aliases.length > 0) {
       // process aliases (even partial)
