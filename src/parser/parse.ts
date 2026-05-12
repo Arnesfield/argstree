@@ -50,7 +50,7 @@ export function parse<T>(
     raw: string | null,
     key: string | null,
     value: string | null = null,
-    cid: string | null | undefined = c.id
+    cid = c.id
   ) {
     // mark previous node as parsed before creating next node
     cCtx && ok(cCtx);
