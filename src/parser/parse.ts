@@ -40,8 +40,8 @@ export function parse<T>(
   let pCtx: Context<T>, // parent node context
     cNode: Node<T> | null | undefined, // child node (can be value node)
     cCtx: Context<T> | null | undefined, // child node context
-    pdstrict: boolean | undefined, // parent node strict descendants
-    dstrict: boolean | undefined, // current child node strict descendants
+    pdstrict = true, // parent node strict descendants
+    dstrict: boolean, // current child node strict descendants
     err: ParseError<T> | undefined, // error before validation
     a = 0; // argv index
 
@@ -77,13 +77,10 @@ export function parse<T>(
 
     const strict =
       s == null
-        ? (dstrict = pdstrict ?? true)
+        ? (dstrict = pdstrict)
         : typeof s === 'boolean'
           ? (dstrict = s)
           : !(dstrict = s !== 'self');
-
-    // set initial value to pdstrict
-    if (pdstrict == null) pdstrict = strict;
 
     cCtx = { cfg: c, node: cNode, min, max, read, strict };
 
@@ -175,7 +172,8 @@ export function parse<T>(
   node(cfg, null, null);
 
   __assertNotNull(cCtx);
-  pCtx = cCtx;
+  // set parent context and the initial pdstrict value
+  pdstrict = (pCtx = cCtx).strict;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cNode = cCtx = null as any;
 
