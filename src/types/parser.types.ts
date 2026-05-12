@@ -66,7 +66,7 @@ export interface Parser<T = unknown> {
   // TODO: add doc
   arg(
     arg: string | string[],
-    init: Parser<T> | (() => Parser<T> | null) | null
+    value: Parser<T> | (() => Parser<T> | null) | null
   ): this;
   // TODO: add doc
   unknown(handler: Handler<T> | null): this;

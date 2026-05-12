@@ -1,6 +1,11 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { Alias, Config, RawConfig } from '../types/config.types';
+import {
+  Alias,
+  Config,
+  ConfigMap,
+  InitializedConfig
+} from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { Value } from '../types/parser.types';
@@ -14,18 +19,16 @@ import type { Parser } from './parser';
 // NOTE: internal
 
 export function init<T>(
-  rc: RawConfig<T> | null | undefined
-): RawConfig<T> | null | undefined {
-  if (typeof rc?.init === 'function') {
-    rc.ref = rc.init()?.cfg || null;
-    rc.init = null;
-  }
-
-  return rc;
+  cfg: ConfigMap<T>[string]
+): InitializedConfig<T> | null | undefined {
+  if (typeof cfg?.ref === 'function') cfg.ref = cfg.ref()?.cfg || null;
+  return cfg as InitializedConfig<T> | null | undefined;
 }
 
-export function getCfg<T>(rc: RawConfig<T>): Config<T> | null | undefined {
-  return rc.ref !== undefined ? rc.ref : (rc as Config<T>);
+export function getCfg<T>(
+  cfg: InitializedConfig<T>
+): Config<T> | null | undefined {
+  return cfg.ref !== undefined ? cfg.ref : cfg;
 }
 
 export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T>;
@@ -194,7 +197,7 @@ export function parse<T>(
     let raw = argv[a],
       key = raw,
       value: string | undefined,
-      rc: RawConfig<T> | null | undefined,
+      ic: InitializedConfig<T> | null | undefined,
       i = raw.indexOf('='),
       // eslint-disable-next-line prefer-const
       noVal = i === -1; // would imply `value == null`
@@ -206,11 +209,11 @@ export function parse<T>(
 
     // get node by map
     if (
-      (rc = init(pCtx.cfg.map?.[key])) &&
-      (cfg = getCfg(rc)) &&
+      (ic = init(pCtx.cfg.map?.[key])) &&
+      (cfg = getCfg(ic)) &&
       (noVal || assign(cfg))
     ) {
-      node(cfg, raw, key, value, rc.id);
+      node(cfg, raw, key, value, ic.id);
       use();
       continue;
     }
@@ -238,14 +241,14 @@ export function parse<T>(
           (m = number((o = alias.cfg.options).min)) != null &&
           m - array(o.args).length > 0
         ) &&
-        (rc = init(pCtx.cfg.alias[(m = key[i])])) &&
-        (cfg = getCfg(rc));
+        (ic = init(pCtx.cfg.alias[(m = key[i])])) &&
+        (cfg = getCfg(ic));
         i++
       ) {
         // delay pushing the last alias to the next iteration instead
         // so that the last alias is pushed outside only after condition checks
         alias && aliases.push(alias);
-        alias = { id: rc.id, key: m, cfg };
+        alias = { id: ic.id, key: m, cfg };
       }
 
       // if incomplete aliases parsed, check if the rest of the argument

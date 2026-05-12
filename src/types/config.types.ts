@@ -16,17 +16,20 @@ export interface Alias<T> {
 // don't use for Parser.arg() type
 export type InitFunction<T> = () => ParserClass<T> | null;
 
-export interface ConfigMap<T> {
-  readonly [arg: string]: RawConfig<T> | null | undefined;
-}
-
-export interface BaseConfig<T> {
+export interface BaseConfig {
   id?: string;
-  ref?: Config<T> | null;
-  init?: InitFunction<T> | null;
 }
 
-export interface Config<T> extends BaseConfig<T> {
+export interface InitializedRefConfig<T> extends BaseConfig {
+  ref: Config<T> | null;
+}
+
+export interface UninitializedRefConfig<T> extends BaseConfig {
+  ref: Config<T> | InitFunction<T> | null;
+}
+
+export interface Config<T> extends BaseConfig {
+  ref?: never;
   readonly type: ParserType;
   readonly options: Options<T>;
   readonly map?: ConfigMap<T>;
@@ -34,6 +37,15 @@ export interface Config<T> extends BaseConfig<T> {
   handler?: Handler<T> | null;
 }
 
-export type RawConfig<T> = Config<T> | BaseConfig<T>;
+export type InitializedConfig<T> = Config<T> | InitializedRefConfig<T>;
+export type UninitializedConfig<T> = Config<T> | UninitializedRefConfig<T>;
+
+export interface ConfigMap<T> {
+  readonly [arg: string]:
+    | InitializedConfig<T>
+    | UninitializedConfig<T>
+    | null
+    | undefined;
+}
 
 export type ParserConfig<T> = RequiredPick<Config<T>, 'map' | 'alias'>;

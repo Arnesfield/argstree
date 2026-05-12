@@ -3,8 +3,9 @@ import {
   Alias,
   Config,
   InitFunction,
+  InitializedConfig,
   ParserConfig,
-  RawConfig
+  UninitializedConfig
 } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
@@ -43,9 +44,9 @@ export class Parser<T> implements IParser<T> {
     return new Parser(cfg);
   }
 
-  arg(arg: string | string[], init: Parser<T> | InitFunction<T> | null): this {
+  arg(arg: string | string[], value: Parser<T> | InitFunction<T> | null): this {
     // prettier-ignore
-    use(this.cfg, arg, typeof init === 'function' ? { init } : init && { ref: init.cfg });
+    use(this.cfg, arg, value && { ref: typeof value === 'function' ? value : value.cfg });
     return this;
   }
 
@@ -60,7 +61,7 @@ export class Parser<T> implements IParser<T> {
     // eslint-disable-next-line prefer-const
     let raw = key,
       val: string | undefined,
-      rc: RawConfig<T> | null | undefined,
+      ic: InitializedConfig<T> | null | undefined,
       cfg: Config<T> | null | undefined,
       i: number,
       noVal: boolean | undefined; // would imply `arg.value == null`
@@ -74,11 +75,11 @@ export class Parser<T> implements IParser<T> {
 
     // get item by map
     if (
-      (rc = initFn(this.cfg.map[key])) &&
-      (cfg = getCfg(rc)) &&
+      (ic = initFn(this.cfg.map[key])) &&
+      (cfg = getCfg(ic)) &&
       (noVal || assign(cfg))
     ) {
-      arg.items = [item(rc.id, key, cfg, val)];
+      arg.items = [item(ic.id, key, cfg, val)];
     }
 
     // handle split
@@ -104,12 +105,12 @@ export class Parser<T> implements IParser<T> {
           (m = number((o = alias.cfg.options).min)) != null &&
           m - array(o.args).length > 0
         ) &&
-        (rc = initFn(this.cfg.alias[(m = key[i])])) &&
-        (cfg = getCfg(rc));
+        (ic = initFn(this.cfg.alias[(m = key[i])])) &&
+        (cfg = getCfg(ic));
         i++
       ) {
         alias && arg.items.push(item(alias.id, alias.key, alias.cfg));
-        alias = { id: rc.id, key: '-' + m, cfg };
+        alias = { id: ic.id, key: '-' + m, cfg };
       }
 
       // if no alias was parsed, then assume that it's an invalid argument
@@ -145,17 +146,17 @@ export class Parser<T> implements IParser<T> {
 function use<T>(
   p: DeepMutable<ParserConfig<T>>,
   arg: string | string[],
-  rc: RawConfig<T> | null
+  uc: UninitializedConfig<T> | null
 ) {
   arg = array(arg);
-  if (rc) rc.id ??= arg[0];
+  if (uc) uc.id ??= arg[0];
 
   for (const a of arg) {
-    p.map[a] = rc;
+    p.map[a] = uc;
 
     // check if single character short option
     let c: string;
-    if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') p.alias[c] = rc;
+    if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') p.alias[c] = uc;
   }
 }
 
