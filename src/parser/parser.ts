@@ -4,7 +4,6 @@ import {
   Config,
   InitFunction,
   InitializedConfig,
-  ParserConfig,
   UninitializedConfig
 } from '../types/config.types';
 import { Node } from '../types/node.types';
@@ -20,18 +19,12 @@ import { array } from '../utils/array';
 import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
 import { assign, getArgs } from './node';
-import { getCfg, init as initFn, parse } from './parse';
+import { getCfg, init, parse } from './parse';
 
 // NOTE: internal
 
 export class Parser<T> implements IParser<T> {
-  // use config type as input but make mutable internally
-  constructor(cfg: Config<T>);
-  constructor(readonly cfg: DeepMutable<ParserConfig<T>>) {
-    // NOTE: intentional mutate cfg
-    cfg.map = { __proto__: null! };
-    cfg.alias = { __proto__: null! };
-  }
+  constructor(readonly cfg: Config<T>) {}
 
   option(arg: string | string[], options: Options<T> = {}): this {
     use(this.cfg, arg, { type: 'option', options });
@@ -75,7 +68,7 @@ export class Parser<T> implements IParser<T> {
 
     // get item by map
     if (
-      (ic = initFn(this.cfg.map[key])) &&
+      (ic = init(this.cfg.map[key])) &&
       (cfg = getCfg(ic)) &&
       (noVal || assign(cfg))
     ) {
@@ -105,7 +98,7 @@ export class Parser<T> implements IParser<T> {
           (m = number((o = alias.cfg.options).min)) != null &&
           m - array(o.args).length > 0
         ) &&
-        (ic = initFn(this.cfg.alias[(m = key[i])])) &&
+        (ic = init(this.cfg.alias[(m = key[i])])) &&
         (cfg = getCfg(ic));
         i++
       ) {
@@ -144,19 +137,23 @@ export class Parser<T> implements IParser<T> {
 }
 
 function use<T>(
-  p: DeepMutable<ParserConfig<T>>,
+  cfg: DeepMutable<Config<T>>,
   arg: string | string[],
   uc: UninitializedConfig<T> | null
 ) {
   arg = array(arg);
   if (uc) uc.id ??= arg[0];
 
+  // NOTE: intentional mutate cfg
+  cfg.map ??= { __proto__: null! };
+  cfg.alias ??= { __proto__: null! };
+
   for (const a of arg) {
-    p.map[a] = uc;
+    cfg.map[a] = uc;
 
     // check if single character short option
     let c: string;
-    if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') p.alias[c] = uc;
+    if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') cfg.alias[c] = uc;
   }
 }
 

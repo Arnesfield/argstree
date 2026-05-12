@@ -1,7 +1,6 @@
 import { Parser as ParserClass } from '../parser/parser';
 import { Options } from './options.types';
 import { Handler, ParserType } from './parser.types';
-import { RequiredPick } from './util.types';
 
 // NOTE: internal
 
@@ -47,5 +46,3 @@ export interface ConfigMap<T> {
     | null
     | undefined;
 }
-
-export type ParserConfig<T> = RequiredPick<Config<T>, 'map' | 'alias'>;
