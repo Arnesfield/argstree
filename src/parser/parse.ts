@@ -322,17 +322,15 @@ export function parse<T>(
     // also note that `cNode` is expected to be a value node at this point
 
     let raw = argv[a],
-      end: number | null | undefined;
+      end: number | undefined;
 
     if (
+      !cCtx &&
       pCtx.read &&
       !pCtx.strict &&
-      (end =
-        pCtx.max == null
-          ? undefined
-          : pCtx.max > (end = pCtx.node.args.length)
-            ? a + pCtx.max - end
-            : null) !== null
+      (pCtx.max == null ||
+        (pCtx.max > (end = pCtx.node.args.length) &&
+          (end = a + pCtx.max - end)) !== false)
     ) {
       // when using unknown handler,
       // there is a chance that `cNode` is already a value node
