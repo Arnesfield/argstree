@@ -222,7 +222,7 @@ export function parse<T>(
     // eslint-disable-next-line prefer-const
     let aliases: Alias<T>[] = [],
       alias: Alias<T> | undefined,
-      noParse: boolean | undefined, // skip handler callback
+      skip: boolean | undefined, // skip handler callback
       aVal: string | undefined, // alias value
       rem: string | undefined; // remainder
 
@@ -269,14 +269,14 @@ export function parse<T>(
       } else if ((noVal && !inc) || assign(alias.cfg)) {
         aliases.push(alias);
         // eslint-disable-next-line no-cond-assign
-        aVal = (noParse = !inc) ? value : raw.slice(i);
+        aVal = (skip = !inc) ? value : raw.slice(i);
       } else rem = key.slice(i - 1);
     }
 
     // parse by handler
 
     // prettier-ignore
-    let res = noParse ? null : pCtx.cfg.handler?.({ raw, key, value, remainder: rem }, pCtx.node);
+    let res = skip ? null : pCtx.cfg.handler?.({ raw, key, value, remainder: rem }, pCtx.node);
 
     // ignore raw argument
     if (res === false) continue;
