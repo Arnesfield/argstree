@@ -21,7 +21,9 @@ import type { Parser } from './parser';
 export function init<T>(
   cfg: ConfigMap<T>[string]
 ): InitializedConfig<T> | null | undefined {
-  if (typeof cfg?.ref === 'function') cfg.ref = cfg.ref()?.cfg || null;
+  // remove `this` from function call
+  const ref = cfg?.ref;
+  if (typeof ref === 'function') cfg!.ref = ref()?.cfg || null;
   return cfg as InitializedConfig<T> | null | undefined;
 }
 
@@ -275,8 +277,9 @@ export function parse<T>(
 
     // parse by handler
 
-    // prettier-ignore
-    let res = skip ? null : pCtx.cfg.handler?.({ raw, key, value, remainder: rem }, pCtx.node);
+    // remove `this` from function call
+    const h = pCtx.cfg.handler;
+    let res = skip ? null : h?.({ raw, key, value, remainder: rem }, pCtx.node);
 
     // ignore raw argument
     if (res === false) continue;
