@@ -3,6 +3,7 @@ import { Config } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { array } from '../utils/array';
+import { hasValues } from '../utils/has-values';
 
 export interface Context<T> {
   cfg: Config<T>;
@@ -21,7 +22,10 @@ export function getArgs<T>(opts: Options<T>, val?: string | null): string[] {
 
 /** Checks whether the config is assignable. */
 export function assign<T>(cfg: Config<T>): boolean {
-  return cfg.options.assign ?? cfg.type === 'option';
+  return (
+    cfg.options.assign ??
+    (cfg.options.type ? cfg.options.type === 'option' : !hasValues(cfg.map))
+  );
 }
 
 export function ok<T>(ctx: Context<T>): void {

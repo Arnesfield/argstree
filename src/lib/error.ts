@@ -1,7 +1,7 @@
 import { Node } from '../types/node.types';
 
 /** The parse error. */
-export class ParseError<T = unknown> extends Error {
+export class ParseError<T> extends Error {
   /** The option or command did not satisfy the required number of arguments. */
   static readonly RANGE_ERROR = 'RANGE';
   /** The option or command cannot be recognized. */

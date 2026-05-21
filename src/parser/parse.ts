@@ -8,7 +8,7 @@ import {
 } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { Value } from '../types/parser.types';
+import { ParserType, Value } from '../types/parser.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { hasValues } from '../utils/has-values';
@@ -31,6 +31,10 @@ export function getCfg<T>(
   cfg: InitializedConfig<T>
 ): Config<T> | null | undefined {
   return cfg.ref !== undefined ? cfg.ref : cfg;
+}
+
+export function getType<T>(cfg: Config<T>): ParserType {
+  return cfg.options.type || (hasValues(cfg.map) ? 'command' : 'option');
 }
 
 export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T>;
@@ -66,7 +70,7 @@ export function parse<T>(
     const { id = cid ?? key, name = cid ?? key, strict: s } = o;
 
     // prettier-ignore
-    cNode = { id, name, raw, key, value, type: c.type, depth: p ? p.depth + 1 : 0, args: getArgs(o, arg), parent: p, children: [] };
+    cNode = { id, name, raw, key, value, type: getType(c), depth: p ? p.depth + 1 : 0, args: getArgs(o, arg), parent: p, children: [] };
     p?.children.push(cNode);
 
     // run onCreate and get parse options
@@ -120,12 +124,15 @@ export function parse<T>(
     __assertNotNull(cCtx);
 
     // check if not leaf node
+    const o = cCtx.cfg.options;
     if (
       !(
-        cCtx.cfg.options.leaf ??
-        (!cCtx.cfg.handler &&
-          cCtx.cfg.type === 'option' &&
-          !hasValues(cCtx.cfg.map))
+        o.leaf ??
+        !(
+          cCtx.cfg.fallback ||
+          (o.type && o.type !== 'option') ||
+          hasValues(cCtx.cfg.map)
+        )
       )
     ) {
       ok(pCtx);
@@ -193,7 +200,7 @@ export function parse<T>(
 
   for (
     ;
-    a < argv.length && (pCtx.cfg.handler || hasValues(pCtx.cfg.map));
+    a < argv.length && (pCtx.cfg.fallback || hasValues(pCtx.cfg.map));
     a++
   ) {
     // eslint-disable-next-line prefer-const
@@ -201,11 +208,9 @@ export function parse<T>(
       key = raw,
       value: string | undefined,
       ic: InitializedConfig<T> | null | undefined,
-      i = raw.indexOf('='),
-      // eslint-disable-next-line prefer-const
-      noVal = i === -1; // would imply `value == null`
+      i = raw.indexOf('=');
 
-    if (!noVal) {
+    if (i > -1) {
       key = raw.slice(0, i);
       value = raw.slice(i + 1);
     }
@@ -214,7 +219,7 @@ export function parse<T>(
     if (
       (ic = init(pCtx.cfg.map?.[key])) &&
       (cfg = getCfg(ic)) &&
-      (noVal || assign(cfg))
+      (value == null || assign(cfg))
     ) {
       node(cfg, raw, key, value, ic.id);
       use();
@@ -268,7 +273,7 @@ export function parse<T>(
         // if the config accepts no arguments, treat the rest as remainder
         aliases.push(alias);
         rem = key.slice(i);
-      } else if ((noVal && !inc) || assign(alias.cfg)) {
+      } else if ((value == null && !inc) || assign(alias.cfg)) {
         aliases.push(alias);
         // eslint-disable-next-line no-cond-assign
         aVal = (skip = !inc) ? value : raw.slice(i);
@@ -278,8 +283,8 @@ export function parse<T>(
     // parse by handler
 
     // remove `this` from function call
-    const h = pCtx.cfg.handler;
-    let res = skip ? null : h?.({ raw, key, value, remainder: rem }, pCtx.node);
+    const f = pCtx.cfg.fallback;
+    let res = skip ? null : f?.({ raw, key, value, remainder: rem }, pCtx.node);
 
     // ignore raw argument
     if (res === false) continue;
@@ -345,8 +350,9 @@ export function parse<T>(
       // when using unknown handler,
       // there is a chance that `cNode` is already a value node
       const args = argv.slice(a, end);
-      cNode ? cNode.args.push(...args) : vNode(args);
+
       pCtx.node.args.push(...args);
+      cNode ? cNode.args.push(...args) : vNode(args);
 
       // stop here if the rest of the args were captured
       if (end == null || end >= argv.length) break;

@@ -3,19 +3,10 @@ import { Options } from '../types/options.types';
 import { Parser } from '../types/parser.types';
 
 /**
- * Creates an option parser.
+ * Creates a parser.
  * @param options The parser options.
  * @returns The parser object.
  */
-export function option<T>(options: Options<T> = {}): Parser<T> {
-  return new ParserClass({ type: 'option', options });
-}
-
-/**
- * Creates a command parser.
- * @param options The parser options.
- * @returns The parser object.
- */
-export function command<T>(options: Options<T> = {}): Parser<T> {
-  return new ParserClass({ type: 'command', options });
+export function parser<T>(options: Options<T> = {}): Parser<T> {
+  return new ParserClass({ options });
 }

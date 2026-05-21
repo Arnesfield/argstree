@@ -20,6 +20,7 @@ export interface ResolvedOptions<T = unknown> extends Options<T> {
 export interface ResolvedItem<T = unknown> {
   /** The matched argument. */
   key: string;
+  // TODO: add value
   /** The parser type. */
   type: ParserType;
   /** The resolved options. */
@@ -42,7 +43,7 @@ export interface Value {
 }
 
 // TODO: add doc
-export type Handler<T> = (
+export type Fallback<T> = (
   arg: Arg,
   node: Node<T>
 ) => XOR<Parser<T>, Value> | XOR<Parser<T>, Value>[] | boolean | void;
@@ -50,26 +51,17 @@ export type Handler<T> = (
 /** The parser object. */
 export interface Parser<T = unknown> {
   /**
-   * Adds an option. The argument is overwritten if it already exists.
+   * Sets the argument to match.
    * @param arg The argument(s) to match.
-   * @param options The parser options.
+   * @param options The parser or options. Set to `null` to remove the argument.
    * @returns `this` for chaining.
    */
-  option(arg: string | string[], options?: Options<T>): this;
-  /**
-   * Adds a command. The argument is overwritten if it already exists.
-   * @param arg The argument(s) to match.
-   * @param options The parser options.
-   * @returns The command parser.
-   */
-  command(arg: string | string[], options?: Options<T>): Parser<T>;
-  // TODO: add doc
   arg(
     arg: string | string[],
-    value: Parser<T> | (() => Parser<T> | null) | null
+    options?: Options<T> | Parser<T> | (() => Parser<T> | null) | null
   ): this;
   // TODO: add doc
-  unknown(handler: Handler<T> | null): this;
+  fallback(fn: Fallback<T> | null): this;
   /**
    * Gets the configuration for the matched options and commands.
    * The {@linkcode key} is checked to have a value (e.g., `--option=value`)

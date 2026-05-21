@@ -1,5 +1,6 @@
 import { ParseError } from '../lib/error';
 import { Node } from './node.types';
+import { ParserType } from './parser.types';
 
 /** Options that can be changed during parsing for the node. */
 export interface ParseOptions {
@@ -13,6 +14,8 @@ export interface ParseOptions {
 
 /** The parser options. */
 export interface Options<T = unknown> {
+  // TODO: add doc
+  type?: ParserType;
   /**
    * The option or command ID that is set to {@linkcode Node.id}.
    * If not provided, the default value is the {@linkcode Node.key}.

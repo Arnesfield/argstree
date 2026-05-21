@@ -1,6 +1,6 @@
 import { Parser as ParserClass } from '../parser/parser';
 import { Options } from './options.types';
-import { Handler, ParserType } from './parser.types';
+import { Fallback } from './parser.types';
 
 // NOTE: internal
 
@@ -29,18 +29,17 @@ export interface UninitializedRefConfig<T> extends BaseConfig {
 
 export interface Config<T> extends BaseConfig {
   ref?: never;
-  readonly type: ParserType;
-  readonly options: Options<T>;
-  readonly map?: ConfigMap<T>;
-  readonly alias?: ConfigMap<T>;
-  handler?: Handler<T> | null;
+  options: Options<T>;
+  map?: ConfigMap<T>;
+  alias?: ConfigMap<T>;
+  fallback?: Fallback<T> | null;
 }
 
 export type InitializedConfig<T> = Config<T> | InitializedRefConfig<T>;
 export type UninitializedConfig<T> = Config<T> | UninitializedRefConfig<T>;
 
 export interface ConfigMap<T> {
-  readonly [arg: string]:
+  [arg: string]:
     | InitializedConfig<T>
     | UninitializedConfig<T>
     | null

@@ -9,42 +9,54 @@ import {
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import {
-  Handler,
+  Fallback,
   Parser as IParser,
   ResolvedArg,
   ResolvedItem
 } from '../types/parser.types';
-import { DeepMutable } from '../types/util.types';
 import { array } from '../utils/array';
 import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
 import { assign, getArgs } from './node';
-import { getCfg, init, parse } from './parse';
+import { getCfg, getType, init, parse } from './parse';
 
 // NOTE: internal
 
 export class Parser<T> implements IParser<T> {
   constructor(readonly cfg: Config<T>) {}
 
-  option(arg: string | string[], options: Options<T> = {}): this {
-    use(this.cfg, arg, { type: 'option', options });
+  arg(
+    arg: string | string[],
+    options: Options<T> | Parser<T> | InitFunction<T> | null = {}
+  ): this {
+    arg = array(arg);
+
+    const uc: UninitializedConfig<T> | null =
+      options &&
+      (typeof options === 'function'
+        ? { id: arg[0], ref: options }
+        : (options as Parser<T>).cfg
+          ? { id: arg[0], ref: (options as Parser<T>).cfg }
+          : ({ id: arg[0], options } as Config<T>));
+
+    // intentionally mutate cfg
+    this.cfg.map ??= { __proto__: null! };
+    this.cfg.alias ??= { __proto__: null! };
+
+    for (const a of arg) {
+      this.cfg.map[a] = uc;
+
+      // check if single character short option
+      let c: string;
+      // prettier-ignore
+      if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') this.cfg.alias[c] = uc;
+    }
+
     return this;
   }
 
-  command(arg: string | string[], options: Options<T> = {}): Parser<T> {
-    const cfg: Config<T> = { type: 'command', options };
-    use(this.cfg, arg, cfg);
-    return new Parser(cfg);
-  }
-
-  arg(arg: string | string[], value: Parser<T> | InitFunction<T> | null): this {
-    // prettier-ignore
-    use(this.cfg, arg, value && { ref: typeof value === 'function' ? value : value.cfg });
-    return this;
-  }
-
-  unknown(handler: Handler<T> | null): this {
-    this.cfg.handler = handler;
+  fallback(fn: Fallback<T> | null): this {
+    this.cfg.fallback = fn;
     return this;
   }
 
@@ -57,22 +69,23 @@ export class Parser<T> implements IParser<T> {
       ic: InitializedConfig<T> | null | undefined,
       cfg: Config<T> | null | undefined,
       i: number,
-      noVal: boolean | undefined; // would imply `arg.value == null`
+      items: ResolvedItem<T>[] | undefined,
+      rem: string | undefined;
 
     if (value === undefined && (i = raw.indexOf('=')) > -1) {
       key = raw.slice(0, i);
       val = raw.slice(i + 1);
-    } else if (!(noVal = value == null)) val = value;
+    } else if (value != null) val = value;
 
-    const arg: ResolvedArg<T> = { raw, key, value: val };
+    // const arg: ResolvedArg<T> = { raw, key, value: val };
 
     // get item by map
     if (
       (ic = init(this.cfg.map[key])) &&
       (cfg = getCfg(ic)) &&
-      (noVal || assign(cfg))
+      (val == null || assign(cfg))
     ) {
-      arg.items = [item(ic.id, key, cfg, val)];
+      items = [item(ic.id, key, cfg, val)];
     }
 
     // handle split
@@ -91,7 +104,7 @@ export class Parser<T> implements IParser<T> {
 
       // if an alias exists, stop loop if it requires a value
       for (
-        i = 1, arg.items = [];
+        i = 1, items = [];
         (inc = i < key.length) &&
         !(
           alias &&
@@ -102,7 +115,7 @@ export class Parser<T> implements IParser<T> {
         (cfg = getCfg(ic));
         i++
       ) {
-        alias && arg.items.push(item(alias.id, alias.key, alias.cfg));
+        alias && items.push(item(alias.id, alias.key, alias.cfg));
         alias = { id: ic.id, key: '-' + m, cfg };
       }
 
@@ -116,44 +129,23 @@ export class Parser<T> implements IParser<T> {
             m - array(o.args).length < 1))
       ) {
         // if the config accepts no arguments, treat the rest as remainder
-        arg.items.push(item(alias.id, alias.key, alias.cfg));
-        arg.remainder = key.slice(i);
-      } else if ((noVal && !inc) || assign(alias.cfg)) {
+        items.push(item(alias.id, alias.key, alias.cfg));
+        rem = key.slice(i);
+      } else if ((val == null && !inc) || assign(alias.cfg)) {
         // prettier-ignore
-        arg.items.push(item(alias.id, alias.key, alias.cfg, inc ? raw.slice(i) : val));
-      } else arg.remainder = key.slice(i - 1);
+        items.push(item(alias.id, alias.key, alias.cfg, inc ? raw.slice(i) : val));
+      } else rem = key.slice(i - 1);
     }
 
     // if cannot be split, treat as value
     else return;
 
-    return arg;
+    return { raw, key, value: val, items, remainder: rem };
   }
 
   parse(args: readonly string[]): Node<T> {
     // create copy of args to avoid external mutation
     return parse(args.slice(), this.cfg);
-  }
-}
-
-function use<T>(
-  cfg: DeepMutable<Config<T>>,
-  arg: string | string[],
-  uc: UninitializedConfig<T> | null
-) {
-  arg = array(arg);
-  if (uc) uc.id ??= arg[0];
-
-  // NOTE: intentional mutate cfg
-  cfg.map ??= { __proto__: null! };
-  cfg.alias ??= { __proto__: null! };
-
-  for (const a of arg) {
-    cfg.map[a] = uc;
-
-    // check if single character short option
-    let c: string;
-    if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') cfg.alias[c] = uc;
   }
 }
 
@@ -163,8 +155,9 @@ function item<T>(
   cfg: Config<T>,
   value?: string
 ): ResolvedItem<T> {
-  const o = cfg.options;
-  const { id = cid ?? key, name = cid ?? key } = o;
+  const o = cfg.options,
+    { id = cid ?? key, name = cid ?? key } = o;
+
   // prettier-ignore
-  return { key, type: cfg.type, options: { ...o, id, name, args: getArgs(o, value) } };
+  return { key, type: getType(cfg), options: { ...o, id, name, args: getArgs(o, value) } };
 }
