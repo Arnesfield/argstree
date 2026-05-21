@@ -4,8 +4,8 @@ import { Node } from './node.types';
 import { Options } from './options.types';
 import { XOR } from './util.types';
 
-/** The parser type. */
-export type ParserType = 'option' | 'command';
+/** The spec type. */
+export type SpecType = 'option' | 'command';
 
 /** The resolved options. */
 export interface ResolvedOptions<T = unknown> extends Options<T> {
@@ -21,8 +21,8 @@ export interface ResolvedItem<T = unknown> {
   /** The matched argument. */
   key: string;
   // TODO: add value
-  /** The parser type. */
-  type: ParserType;
+  /** The spec type. */
+  type: SpecType;
   /** The resolved options. */
   options: ResolvedOptions<T>;
 }
@@ -34,7 +34,7 @@ export interface ResolvedArg<T = unknown> extends Arg {
 }
 
 // TODO: rename?
-/** The parser value. */
+/** Fallback value. */
 export interface Value {
   /** Arguments to be saved to the current node. */
   args: string | string[];
@@ -46,19 +46,19 @@ export interface Value {
 export type Fallback<T> = (
   arg: Arg,
   node: Node<T>
-) => XOR<Parser<T>, Value> | XOR<Parser<T>, Value>[] | boolean | void;
+) => XOR<Spec<T>, Value> | XOR<Spec<T>, Value>[] | boolean | void;
 
-/** The parser object. */
-export interface Parser<T = unknown> {
+/** The spec object. */
+export interface Spec<T = unknown> {
   /**
    * Sets the argument to match.
    * @param arg The argument(s) to match.
-   * @param options The parser or options. Set to `null` to remove the argument.
+   * @param options The options or spec object. Set to `null` to remove the argument.
    * @returns `this` for chaining.
    */
   arg(
     arg: string | string[],
-    options?: Options<T> | Parser<T> | (() => Parser<T> | null) | null
+    options?: Options<T> | Spec<T> | (() => Spec<T> | null | undefined) | null
   ): this;
   // TODO: add doc
   fallback(fn: Fallback<T> | null): this;

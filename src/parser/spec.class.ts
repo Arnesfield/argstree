@@ -10,10 +10,10 @@ import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import {
   Fallback,
-  Parser as IParser,
+  Spec as ISpec,
   ResolvedArg,
   ResolvedItem
-} from '../types/parser.types';
+} from '../types/spec.types';
 import { array } from '../utils/array';
 import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
@@ -22,12 +22,12 @@ import { getCfg, getType, init, parse } from './parse';
 
 // NOTE: internal
 
-export class Parser<T> implements IParser<T> {
+export class Spec<T> implements ISpec<T> {
   constructor(readonly cfg: Config<T>) {}
 
   arg(
     arg: string | string[],
-    options: Options<T> | Parser<T> | InitFunction<T> | null = {}
+    options: Options<T> | Spec<T> | InitFunction<T> | null = {}
   ): this {
     arg = array(arg);
 
@@ -35,8 +35,8 @@ export class Parser<T> implements IParser<T> {
       options &&
       (typeof options === 'function'
         ? { id: arg[0], ref: options }
-        : (options as Parser<T>).cfg
-          ? { id: arg[0], ref: (options as Parser<T>).cfg }
+        : (options as Spec<T>).cfg
+          ? { id: arg[0], ref: (options as Spec<T>).cfg }
           : ({ id: arg[0], options } as Config<T>));
 
     // intentionally mutate cfg

@@ -1,6 +1,6 @@
 import { ParseError } from '../lib/error';
 import { Node } from './node.types';
-import { ParserType } from './parser.types';
+import { SpecType } from './spec.types';
 
 /** Options that can be changed during parsing for the node. */
 export interface ParseOptions {
@@ -12,10 +12,10 @@ export interface ParseOptions {
   read?: boolean;
 }
 
-/** The parser options. */
+/** The spec options. */
 export interface Options<T = unknown> {
   // TODO: add doc
-  type?: ParserType;
+  type?: SpecType;
   /**
    * The option or command ID that is set to {@linkcode Node.id}.
    * If not provided, the default value is the {@linkcode Node.key}.
@@ -85,7 +85,7 @@ export interface Options<T = unknown> {
    * When `false`, parsed nodes will be treated as parent nodes (has child nodes).
    *
    * If not provided, this option defaults to `true` for `option` types
-   * or if there are no options or commands configured for the parser.
+   * or if there are no options or commands configured for the spec.
    * Otherwise, this is `false`.
    */
   leaf?: boolean;

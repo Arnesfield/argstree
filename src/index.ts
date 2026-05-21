@@ -1,9 +1,9 @@
 export * from './lib/error';
 export * from './lib/flatten';
 export * from './lib/is-option';
-export * from './lib/parsers';
-export { parser as default } from './lib/parsers';
+export * from './lib/spec';
+export { spec as default } from './lib/spec';
 export * from './types/arg.types';
 export * from './types/node.types';
 export * from './types/options.types';
-export * from './types/parser.types';
+export * from './types/spec.types';

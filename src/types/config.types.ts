@@ -1,6 +1,6 @@
-import { Parser as ParserClass } from '../parser/parser';
+import { Spec as SpecClass } from '../parser/spec.class';
 import { Options } from './options.types';
-import { Fallback } from './parser.types';
+import { Fallback } from './spec.types';
 
 // NOTE: internal
 
@@ -12,8 +12,8 @@ export interface Alias<T> {
   cfg: Config<T>;
 }
 
-// don't use for Parser.arg() type
-export type InitFunction<T> = () => ParserClass<T> | null;
+// don't use for Spec.arg() type
+export type InitFunction<T> = () => SpecClass<T> | null | undefined;
 
 export interface BaseConfig {
   id?: string;

@@ -8,13 +8,13 @@ import {
 } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { ParserType, Value } from '../types/parser.types';
+import { SpecType, Value } from '../types/spec.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
 import { assign, Context, display, full, getArgs, ok, uErr } from './node';
-import type { Parser } from './parser';
+import type { Spec } from './spec.class';
 
 // NOTE: internal
 
@@ -33,7 +33,7 @@ export function getCfg<T>(
   return cfg.ref !== undefined ? cfg.ref : cfg;
 }
 
-export function getType<T>(cfg: Config<T>): ParserType {
+export function getType<T>(cfg: Config<T>): SpecType {
   return cfg.options.type || (hasValues(cfg.map) ? 'command' : 'option');
 }
 
@@ -301,7 +301,7 @@ export function parse<T>(
 
       // allow the current working nodes to change
       for (const r of res) {
-        if ((cfg = (r as Parser<T>).cfg)) {
+        if ((cfg = (r as Spec<T>).cfg)) {
           // do not include value to node.args
           // since we leave it to the handler to set the value as an argument
           node(cfg, raw, key, value, cfg.id, null);
