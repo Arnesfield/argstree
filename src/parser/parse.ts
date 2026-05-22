@@ -65,9 +65,9 @@ export function parse<T>(
     // mark previous node as parsed before creating next node
     cCtx && ok(cCtx);
 
-    const o = c.options;
-    const p = pCtx ? pCtx.node : null;
-    const { id = cid ?? key, name = cid ?? key, strict: s } = o;
+    const o = c.options,
+      p = pCtx ? pCtx.node : null,
+      { id = cid ?? key, name = cid ?? key, strict: s } = o;
 
     // prettier-ignore
     cNode = { id, name, raw, key, value, type: getType(c), depth: p ? p.depth + 1 : 0, args: getArgs(o, arg), parent: p, children: [] };
@@ -378,18 +378,18 @@ export function parse<T>(
   // validate and run onValidate for all nodes
   for (const c of all) {
     // validate node
-    const { min, max } = c;
-    const len = c.node.args.length;
-    const m: [string | number, number] | null =
-      min != null && max != null && (len < min || len > max)
-        ? min === max
-          ? [min, min]
-          : [min + '-' + max, 0]
-        : min != null && len < min
-          ? ['at least ' + min, min]
-          : max != null && len > max
-            ? [max && 'up to ' + max, max]
-            : null;
+    const { min, max } = c,
+      len = c.node.args.length,
+      m: [string | number, number] | null =
+        min != null && max != null && (len < min || len > max)
+          ? min === max
+            ? [min, min]
+            : [min + '-' + max, 0]
+          : min != null && len < min
+            ? ['at least ' + min, min]
+            : max != null && len > max
+              ? [max && 'up to ' + max, max]
+              : null;
 
     if (m) {
       const name = display(c.node);
