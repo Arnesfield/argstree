@@ -27,13 +27,15 @@ export interface UninitializedRefConfig<T> extends BaseConfig {
   ref: Config<T> | InitFunction<T> | null;
 }
 
-export interface Config<T> extends BaseConfig {
+export type Config<T> = BaseConfig & {
   ref?: never;
   options: Options<T>;
-  map?: ConfigMap<T>;
-  alias?: ConfigMap<T>;
   fallback?: Fallback<T> | null;
-}
+} & ({ mapv: true; map: ConfigMap<T> } | { mapv?: false; map?: ConfigMap<T> }) &
+  (
+    | { aliasv: true; alias: ConfigMap<T> }
+    | { aliasv?: false; alias?: ConfigMap<T> }
+  );
 
 export type InitializedConfig<T> = Config<T> | InitializedRefConfig<T>;
 export type UninitializedConfig<T> = Config<T> | UninitializedRefConfig<T>;

@@ -4,7 +4,6 @@ import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { ResolvedItem, SpecType } from '../types/spec.types';
 import { array } from '../utils/array';
-import { hasValues } from '../utils/has-values';
 
 export interface Context<T> {
   cfg: Config<T>;
@@ -31,7 +30,7 @@ export function getCfg<T>(
 }
 
 export function getType<T>(cfg: Config<T>): SpecType {
-  return cfg.options.type || (hasValues(cfg.map) ? 'command' : 'option');
+  return cfg.options.type || (cfg.mapv ? 'command' : 'option');
 }
 
 export function getArgs<T>(opts: Options<T>, val?: string | null): string[] {
@@ -42,10 +41,8 @@ export function getArgs<T>(opts: Options<T>, val?: string | null): string[] {
 
 /** Checks whether the config is assignable. */
 export function assign<T>(cfg: Config<T>): boolean {
-  return (
-    cfg.options.assign ??
-    (cfg.options.type ? cfg.options.type === 'option' : !hasValues(cfg.map))
-  );
+  const o = cfg.options;
+  return o.assign ?? (o.type ? o.type === 'option' : !cfg.mapv);
 }
 
 export function ok<T>(ctx: Context<T>): void {

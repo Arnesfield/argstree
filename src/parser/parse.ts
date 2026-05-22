@@ -6,7 +6,6 @@ import { Options } from '../types/options.types';
 import { Value } from '../types/spec.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
-import { hasValues } from '../utils/has-values';
 import {
   assign,
   Context,
@@ -107,11 +106,7 @@ export function parse<T>(
     if (
       !(
         o.leaf ??
-        !(
-          cCtx.cfg.fallback ||
-          (o.type && o.type !== 'option') ||
-          hasValues(cCtx.cfg.map)
-        )
+        !(cCtx.cfg.mapv || cCtx.cfg.fallback || (o.type && o.type !== 'option'))
       )
     ) {
       ok(pCtx);
@@ -177,11 +172,7 @@ export function parse<T>(
 
   const root = pCtx.node;
 
-  for (
-    ;
-    a < argv.length && (pCtx.cfg.fallback || hasValues(pCtx.cfg.map));
-    a++
-  ) {
+  for (; a < argv.length && (pCtx.cfg.mapv || pCtx.cfg.fallback); a++) {
     // eslint-disable-next-line prefer-const
     let raw = argv[a],
       key = raw,
@@ -215,7 +206,7 @@ export function parse<T>(
     // handle split
     // require length of at least 3 since keys with length of 2
     // should have been matched before this
-    if (key.length > 2 && isOption(key, 'short') && hasValues(pCtx.cfg.alias)) {
+    if (key.length > 2 && pCtx.cfg.aliasv && isOption(key, 'short')) {
       // incomplete aliases parsed
       let inc: boolean, o: Options<T> | string;
 

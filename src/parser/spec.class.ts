@@ -38,18 +38,27 @@ export class Spec<T> implements ISpec<T> {
           ? { id: arg[0], ref: (options as Spec<T>).cfg }
           : ({ id: arg[0], options } as Config<T>));
 
+    // eslint-disable-next-line prefer-const
+    let c = this.cfg,
+      k: string,
+      alias: boolean | undefined;
+
     // intentionally mutate cfg
-    this.cfg.map ??= { __proto__: null! };
-    this.cfg.alias ??= { __proto__: null! };
+    c.map ??= { __proto__: null! };
+    c.alias ??= { __proto__: null! };
 
     for (const a of arg) {
-      this.cfg.map[a] = uc;
+      c.map[a] = uc;
 
       // check if single character short option
-      let c: string;
-      // prettier-ignore
-      if (a.length === 2 && a[0] === '-' && (c = a[1]) !== '-') this.cfg.alias[c] = uc;
+      if (a.length === 2 && a[0] === '-' && (k = a[1]) !== '-') {
+        alias = true;
+        c.alias[k] = uc;
+      }
     }
+
+    c.mapv = !!uc || hasValues(c.map);
+    if (alias) c.aliasv = !!uc || hasValues(c.alias);
 
     return this;
   }
@@ -60,7 +69,7 @@ export class Spec<T> implements ISpec<T> {
   }
 
   resolve(key: string, value?: string | null): ResolvedArg<T> | undefined {
-    if (!hasValues(this.cfg.map)) return;
+    if (!this.cfg.mapv) return;
 
     // eslint-disable-next-line prefer-const
     let raw = key,
@@ -90,11 +99,7 @@ export class Spec<T> implements ISpec<T> {
     // handle split
     // require length of at least 3 since keys with length of 2
     // should have been matched by the alias check before this
-    else if (
-      key.length > 2 &&
-      isOption(key, 'short') &&
-      hasValues(this.cfg.alias)
-    ) {
+    else if (key.length > 2 && this.cfg.aliasv && isOption(key, 'short')) {
       // incomplete aliases parsed
       let alias: Alias<T> | undefined, inc: boolean, o: Options<T> | string;
 
