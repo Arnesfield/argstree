@@ -7,7 +7,6 @@ import { Value } from '../types/spec.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { hasValues } from '../utils/has-values';
-import { number } from '../utils/number';
 import {
   assign,
   Context,
@@ -61,15 +60,9 @@ export function parse<T>(
 
     // run onCreate and get parse options
     // prettier-ignore
-    let { min = o.min, max = o.max, read = o.read ?? true } = o.onCreate?.(cNode) || o;
+    const { min = o.min, max = o.max, read = o.read ?? true } = o.onCreate?.(cNode) || o;
     // run onChild for parent node
     pCtx?.cfg.options.onChild?.(p!);
-
-    // validate range: if min is greater than max,
-    // prioritize the min value instead of throwing an error
-    min = number(min);
-    max = number(max);
-    if (min != null && max != null && min > max) max = min;
 
     const strict =
       s == null
@@ -224,7 +217,7 @@ export function parse<T>(
     // should have been matched before this
     if (key.length > 2 && isOption(key, 'short') && hasValues(pCtx.cfg.alias)) {
       // incomplete aliases parsed
-      let inc: boolean, m: string | number | null, o: Options<T>;
+      let inc: boolean, o: Options<T> | string;
 
       // if an alias exists, stop loop if it requires a value
       for (
@@ -232,17 +225,17 @@ export function parse<T>(
         (inc = i < key.length) &&
         !(
           alias &&
-          (m = number((o = alias.cfg.options).min)) != null &&
-          m - array(o.args).length > 0
+          (o = alias.cfg.options).min != null &&
+          o.min > array(o.args).length
         ) &&
-        (ic = init(pCtx.cfg.alias[(m = key[i])])) &&
+        (ic = init(pCtx.cfg.alias[(o = key[i])])) &&
         (cfg = getCfg(ic));
         i++
       ) {
         // delay pushing the last alias to the next iteration instead
         // so that the last alias is pushed outside only after condition checks
         alias && aliases.push(alias);
-        alias = { id: ic.id, key: m, cfg };
+        alias = { id: ic.id, key: o, cfg };
       }
 
       // if incomplete aliases parsed, check if the rest of the argument
@@ -253,8 +246,8 @@ export function parse<T>(
         // continue to handler if no alias was parsed
       } else if (
         inc &&
-        (m = number((o = alias.cfg.options).max)) != null &&
-        m - array(o.args).length < 1
+        (o = alias.cfg.options).max != null &&
+        o.max <= array(o.args).length
       ) {
         // if the config accepts no arguments, treat the rest as remainder
         aliases.push(alias);
@@ -366,14 +359,16 @@ export function parse<T>(
     // validate node
     const { min, max } = c,
       len = c.node.args.length,
-      m: [string | number, number] | null =
-        min != null && max != null && (len < min || len > max)
+      cmin = min != null && min >= 0,
+      cmax = max != null && max >= 0,
+      m: [string | number, number?] | null =
+        cmin && cmax && max >= min && (len < min || len > max)
           ? min === max
             ? [min, min]
-            : [min + '-' + max, 0]
-          : min != null && len < min
+            : [min + '-' + max]
+          : cmin && len < min
             ? ['at least ' + min, min]
-            : max != null && len > max
+            : cmax && len > max
               ? [max && 'up to ' + max, max]
               : null;
 

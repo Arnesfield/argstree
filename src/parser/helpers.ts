@@ -9,8 +9,8 @@ import { hasValues } from '../utils/has-values';
 export interface Context<T> {
   cfg: Config<T>;
   node: Node<T>;
-  min: number | null;
-  max: number | null;
+  min: number | null | undefined;
+  max: number | null | undefined;
   read: boolean;
   strict: boolean;
 }

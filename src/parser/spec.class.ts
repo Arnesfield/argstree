@@ -16,7 +16,6 @@ import {
 } from '../types/spec.types';
 import { array } from '../utils/array';
 import { hasValues } from '../utils/has-values';
-import { number } from '../utils/number';
 import { assign, getCfg, init, item } from './helpers';
 import { parse } from './parse';
 
@@ -97,10 +96,7 @@ export class Spec<T> implements ISpec<T> {
       hasValues(this.cfg.alias)
     ) {
       // incomplete aliases parsed
-      let alias: Alias<T> | undefined,
-        inc: boolean,
-        m: string | number | null,
-        o: Options<T>;
+      let alias: Alias<T> | undefined, inc: boolean, o: Options<T> | string;
 
       // if an alias exists, stop loop if it requires a value
       for (
@@ -108,15 +104,15 @@ export class Spec<T> implements ISpec<T> {
         (inc = i < key.length) &&
         !(
           alias &&
-          (m = number((o = alias.cfg.options).min)) != null &&
-          m - array(o.args).length > 0
+          (o = alias.cfg.options).min != null &&
+          o.min > array(o.args).length
         ) &&
-        (ic = init(this.cfg.alias[(m = key[i])])) &&
+        (ic = init(this.cfg.alias[(o = key[i])])) &&
         (cfg = getCfg(ic));
         i++
       ) {
         alias && items.push(item(alias.id, alias.key, alias.cfg));
-        alias = { id: ic.id, key: '-' + m, cfg };
+        alias = { id: ic.id, key: '-' + o, cfg };
       }
 
       // if no alias was parsed, then assume that it's an invalid argument
@@ -125,8 +121,8 @@ export class Spec<T> implements ISpec<T> {
       if (
         inc &&
         (value !== undefined ||
-          ((m = number((o = alias.cfg.options).max)) != null &&
-            m - array(o.args).length < 1))
+          ((o = alias.cfg.options).max != null &&
+            o.max <= array(o.args).length))
       ) {
         // if the config accepts no arguments, treat the rest as remainder
         items.push(item(alias.id, alias.key, alias.cfg));
