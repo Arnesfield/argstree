@@ -1,44 +1,30 @@
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import {
-  Alias,
-  Config,
-  ConfigMap,
-  InitializedConfig
-} from '../types/config.types';
+import { Alias, Config, InitializedConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { SpecType, Value } from '../types/spec.types';
+import { Value } from '../types/spec.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
-import { assign, Context, display, full, getArgs, ok, uErr } from './node';
+import {
+  assign,
+  Context,
+  display,
+  full,
+  getArgs,
+  getCfg,
+  getType,
+  init,
+  ok,
+  uErr
+} from './helpers';
 import type { Spec } from './spec.class';
 
 // NOTE: internal
 
-export function init<T>(
-  cfg: ConfigMap<T>[string]
-): InitializedConfig<T> | null | undefined {
-  // remove `this` from function call
-  const ref = cfg?.ref;
-  if (typeof ref === 'function') cfg!.ref = ref()?.cfg || null;
-  return cfg as InitializedConfig<T> | null | undefined;
-}
-
-export function getCfg<T>(
-  cfg: InitializedConfig<T>
-): Config<T> | null | undefined {
-  return cfg.ref !== undefined ? cfg.ref : cfg;
-}
-
-export function getType<T>(cfg: Config<T>): SpecType {
-  return cfg.options.type || (hasValues(cfg.map) ? 'command' : 'option');
-}
-
 export function parse<T>(argv: readonly string[], cfg: Config<T>): Node<T>;
-
 export function parse<T>(
   argv: readonly string[],
   cfg: Config<T> | null | undefined

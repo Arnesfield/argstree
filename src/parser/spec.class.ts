@@ -17,8 +17,8 @@ import {
 import { array } from '../utils/array';
 import { hasValues } from '../utils/has-values';
 import { number } from '../utils/number';
-import { assign, getArgs } from './node';
-import { getCfg, getType, init, parse } from './parse';
+import { assign, getCfg, init, item } from './helpers';
+import { parse } from './parse';
 
 // NOTE: internal
 
@@ -147,17 +147,4 @@ export class Spec<T> implements ISpec<T> {
     // create copy of args to avoid external mutation
     return parse(args.slice(), this.cfg);
   }
-}
-
-function item<T>(
-  cid: string | undefined,
-  key: string,
-  cfg: Config<T>,
-  value?: string
-): ResolvedItem<T> {
-  const o = cfg.options,
-    { id = cid ?? key, name = cid ?? key } = o;
-
-  // prettier-ignore
-  return { key, type: getType(cfg), options: { ...o, id, name, args: getArgs(o, value) } };
 }
