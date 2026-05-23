@@ -80,12 +80,10 @@ export class Spec<T> implements ISpec<T> {
       items: ResolvedItem<T>[] | undefined,
       rem: string | undefined;
 
-    if (value === undefined && (i = raw.indexOf('=')) > -1) {
+    if (value === undefined && (i = raw.indexOf('=')) >= 0) {
       key = raw.slice(0, i);
       val = raw.slice(i + 1);
     } else if (value != null) val = value;
-
-    // const arg: ResolvedArg<T> = { raw, key, value: val };
 
     // get item by map
     if (

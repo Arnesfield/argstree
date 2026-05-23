@@ -180,7 +180,7 @@ export function parse<T>(
       ic: InitializedConfig<T> | null | undefined,
       i = raw.indexOf('=');
 
-    if (i > -1) {
+    if (i >= 0) {
       key = raw.slice(0, i);
       value = raw.slice(i + 1);
     }
