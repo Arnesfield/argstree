@@ -73,7 +73,7 @@ export class Spec<T> implements ISpec<T> {
 
     // eslint-disable-next-line prefer-const
     let raw = key,
-      val: string | undefined,
+      val: string | null = null,
       ic: InitializedConfig<T> | null | undefined,
       cfg: Config<T> | null | undefined,
       i: number,

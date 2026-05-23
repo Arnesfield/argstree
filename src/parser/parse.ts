@@ -176,7 +176,7 @@ export function parse<T>(
     // eslint-disable-next-line prefer-const
     let raw = argv[a],
       key = raw,
-      value: string | undefined,
+      value: string | null = null,
       ic: InitializedConfig<T> | null | undefined,
       i = raw.indexOf('=');
 
@@ -200,7 +200,7 @@ export function parse<T>(
     let aliases: Alias<T>[] = [],
       alias: Alias<T> | undefined,
       skip: boolean | undefined, // skip handler callback
-      aVal: string | undefined, // alias value
+      aVal: string | null | undefined, // alias value
       rem: string | undefined; // remainder
 
     // handle split

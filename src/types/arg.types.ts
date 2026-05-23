@@ -6,7 +6,7 @@ export interface Arg {
   key: string;
   // NOTE: same doc as Node.value
   /** The parsed value from the argument (e.g., `value` from `--option=value`). */
-  value?: string;
+  value: string | null;
   /** The remaining argument, if any. */
   remainder?: string;
 }

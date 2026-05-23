@@ -76,11 +76,11 @@ export function item<T>(
   cid: string | undefined,
   key: string,
   cfg: Config<T>,
-  value?: string
+  val?: string | null
 ): ResolvedItem<T> {
   const o = cfg.options,
     { id = cid ?? key, name = cid ?? key } = o;
 
   // prettier-ignore
-  return { key, type: getType(cfg), options: { ...o, id, name, args: getArgs(o, value) } };
+  return { key, type: getType(cfg), options: { ...o, id, name, args: getArgs(o, val) } };
 }

@@ -31,7 +31,7 @@ export interface Options<T = unknown> {
    * The initial arguments for the option or command. Strict mode does not apply to these values.
    * Note that this is not a default value and additional arguments will be added on top of this list.
    */
-  args?: string | string[];
+  args?: string | string[] | null;
   /**
    * The minimum number of arguments to read before the next parsed option or command.
    *
