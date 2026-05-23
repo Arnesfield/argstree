@@ -28,7 +28,7 @@ export class Spec<T> implements ISpec<T> {
     arg: string | string[],
     options: Options<T> | Spec<T> | InitFunction<T> | null = {}
   ): this {
-    arg = array(arg);
+    if ((arg = array(arg)).length === 0) return this;
 
     const uc: UninitializedConfig<T> | null =
       options &&
