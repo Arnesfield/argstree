@@ -2,7 +2,7 @@ import { ParseError } from '../lib/error';
 import { Config, ConfigMap, InitializedConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { ResolvedItem, SpecType } from '../types/spec.types';
+import { ResolvedItem } from '../types/spec.types';
 import { array } from '../utils/array';
 
 export interface Context<T> {
@@ -18,8 +18,9 @@ export function init<T>(
   cfg: ConfigMap<T>[string]
 ): InitializedConfig<T> | null | undefined {
   // remove `this` from function call
-  const ref = cfg?.ref;
-  if (typeof ref === 'function') cfg!.ref = ref()?.cfg || null;
+  const i = cfg?.init;
+  if (i && cfg.ref === undefined) cfg.ref = i()?.cfg || null;
+
   return cfg as InitializedConfig<T> | null | undefined;
 }
 
@@ -27,10 +28,6 @@ export function getCfg<T>(
   cfg: InitializedConfig<T>
 ): Config<T> | null | undefined {
   return cfg.ref !== undefined ? cfg.ref : cfg;
-}
-
-export function getType<T>(cfg: Config<T>): SpecType {
-  return cfg.options.type || (cfg.mapv ? 'command' : 'option');
 }
 
 export function getArgs<T>(opts: Options<T>, val?: string | null): string[] {
@@ -73,14 +70,15 @@ export function uErr<T>(ctx: Context<T>, raw: string): ParseError<T> {
 }
 
 export function item<T>(
-  cid: string | undefined,
   key: string,
+  ic: InitializedConfig<T>,
   cfg: Config<T>,
-  val?: string | null
+  value: string | null = null
 ): ResolvedItem<T> {
   const o = cfg.options,
-    { id = cid ?? key, name = cid ?? key } = o;
+    k = ic.id ?? key,
+    { id = k, name = k } = o;
 
   // prettier-ignore
-  return { key, type: getType(cfg), options: { ...o, id, name, args: getArgs(o, val) } };
+  return { key, value, options: { ...o, id, name, args: getArgs(o, value) }, spec: ic.init };
 }

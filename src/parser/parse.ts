@@ -13,7 +13,6 @@ import {
   full,
   getArgs,
   getCfg,
-  getType,
   init,
   ok,
   uErr
@@ -51,10 +50,11 @@ export function parse<T>(
 
     const o = c.options,
       p = pCtx ? pCtx.node : null,
-      { id = cid ?? key, name = cid ?? key, strict: s } = o;
+      // prettier-ignore
+      { id = cid ?? key, name = cid ?? key, strict: s, type = c.mapv ? 'command' : 'option' } = o;
 
     // prettier-ignore
-    cNode = { id, name, raw, key, value, type: getType(c), depth: p ? p.depth + 1 : 0, args: getArgs(o, arg), parent: p, children: [] };
+    cNode = { id, name, raw, key, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o, arg), parent: p, children: [] };
     p?.children.push(cNode);
 
     // run onCreate and get parse options
@@ -226,7 +226,7 @@ export function parse<T>(
         // delay pushing the last alias to the next iteration instead
         // so that the last alias is pushed outside only after condition checks
         alias && aliases.push(alias);
-        alias = { id: ic.id, key: o, cfg };
+        alias = { ic, key: o, cfg };
       }
 
       // if incomplete aliases parsed, check if the rest of the argument
@@ -271,7 +271,9 @@ export function parse<T>(
 
       // allow the current working nodes to change
       for (const r of res) {
-        if ((cfg = (r as Spec<T>).cfg)) {
+        if (!r) {
+          // skip if null or undefined
+        } else if ((cfg = (r as Spec<T>).cfg)) {
           // do not include value to node.args
           // since we leave it to the handler to set the value as an argument
           node(cfg, raw, key, value, cfg.id, null);
@@ -291,7 +293,7 @@ export function parse<T>(
       // process aliases (even partial)
       for (i = 0; i < aliases.length; i++) {
         // prettier-ignore
-        node((alias = aliases[i]).cfg, raw, '-' + alias.key, i === aliases.length - 1 ? aVal : null, alias.id);
+        node((alias = aliases[i]).cfg, raw, '-' + alias.key, i === aliases.length - 1 ? aVal : null, alias.ic.id);
       }
       use();
     } else if (!rem) setArg(raw);

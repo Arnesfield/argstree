@@ -5,30 +5,33 @@ import { Fallback } from './spec.types';
 // NOTE: internal
 
 export interface Alias<T> {
-  /** Config ID. */
-  id: string | undefined;
+  ic: InitializedConfig<T>;
   /** Either used as a single character key or an alias string. */
   key: string;
   cfg: Config<T>;
 }
 
 // don't use for Spec.arg() type
-export type InitFunction<T> = () => SpecClass<T> | null | undefined;
+export type InitFunction<T> = (
+  options?: Options<T>
+) => SpecClass<T> | null | undefined;
 
-export interface BaseConfig {
-  id?: string;
-}
-
-export interface InitializedRefConfig<T> extends BaseConfig {
+export interface InitializedRefConfig<T> {
+  id: string;
   ref: Config<T> | null;
+  init?: InitFunction<T>;
 }
 
-export interface UninitializedRefConfig<T> extends BaseConfig {
-  ref: Config<T> | InitFunction<T> | null;
+export interface UninitializedRefConfig<T> {
+  id: string;
+  ref?: Config<T> | null;
+  init: InitFunction<T>;
 }
 
-export type Config<T> = BaseConfig & {
+export type Config<T> = {
+  id?: string;
   ref?: never;
+  init?: never;
   options: Options<T>;
   fallback?: Fallback<T> | null;
 } & ({ mapv: true; map: ConfigMap<T> } | { mapv?: false; map?: ConfigMap<T> }) &

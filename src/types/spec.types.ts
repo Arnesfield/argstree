@@ -20,11 +20,12 @@ export interface ResolvedOptions<T = unknown> extends Options<T> {
 export interface ResolvedItem<T = unknown> {
   /** The matched argument. */
   key: string;
-  // TODO: add value
-  /** The spec type. */
-  type: SpecType;
+  /** The parsed value. */
+  value: string | null;
   /** The resolved options. */
   options: ResolvedOptions<T>;
+  // TODO: add doc
+  spec?(options?: Options<T>): Spec<T> | null | undefined;
 }
 
 /** The resolved argument. */
@@ -42,11 +43,18 @@ export interface Value {
   strict?: boolean;
 }
 
+export type FallbackValue<T = unknown> = XOR<Spec<T>, Value>;
+
 // TODO: add doc
-export type Fallback<T> = (
+export type Fallback<T = unknown> = (
   arg: Arg,
   node: Node<T>
-) => XOR<Spec<T>, Value> | XOR<Spec<T>, Value>[] | boolean | void;
+) =>
+  | FallbackValue<T>
+  | (FallbackValue<T> | null | undefined)[]
+  | boolean
+  | null
+  | void;
 
 /** The spec object. */
 export interface Spec<T = unknown> {
@@ -58,7 +66,11 @@ export interface Spec<T = unknown> {
    */
   arg(
     arg: string | string[],
-    options?: Options<T> | Spec<T> | (() => Spec<T> | null | undefined) | null
+    options?:
+      | Options<T>
+      | Spec<T>
+      | ((options?: Options<T>) => Spec<T> | null | undefined)
+      | null
   ): this;
   // TODO: add doc
   fallback(fn: Fallback<T> | null): this;

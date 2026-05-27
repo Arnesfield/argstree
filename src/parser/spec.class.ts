@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import { isOption } from '../lib/is-option';
 import {
   Alias,
@@ -30,16 +31,14 @@ export class Spec<T> implements ISpec<T> {
   ): this {
     if ((arg = array(arg)).length === 0) return this;
 
-    const uc: UninitializedConfig<T> | null =
-      options &&
-      (typeof options === 'function'
-        ? { id: arg[0], ref: options }
-        : (options as Spec<T>).cfg
-          ? { id: arg[0], ref: (options as Spec<T>).cfg }
-          : ({ id: arg[0], options } as Config<T>));
-
-    // eslint-disable-next-line prefer-const
-    let c = this.cfg,
+    let uc: InitializedConfig<T> | UninitializedConfig<T> | null =
+        options &&
+        (typeof options === 'function'
+          ? { id: arg[0], init: options }
+          : (options as Spec<T>).cfg
+            ? { id: arg[0], ref: (options as Spec<T>).cfg }
+            : ({ id: arg[0], options } as Config<T>)),
+      c = this.cfg,
       k: string,
       alias: boolean | undefined;
 
@@ -71,7 +70,6 @@ export class Spec<T> implements ISpec<T> {
   resolve(key: string, value?: string | null): ResolvedArg<T> | undefined {
     if (!this.cfg.mapv) return;
 
-    // eslint-disable-next-line prefer-const
     let raw = key,
       val: string | null = null,
       ic: InitializedConfig<T> | null | undefined,
@@ -91,7 +89,7 @@ export class Spec<T> implements ISpec<T> {
       (cfg = getCfg(ic)) &&
       (val == null || assign(cfg))
     ) {
-      items = [item(ic.id, key, cfg, val)];
+      items = [item(key, ic, cfg, val)];
     }
 
     // handle split
@@ -114,8 +112,8 @@ export class Spec<T> implements ISpec<T> {
         (cfg = getCfg(ic));
         i++
       ) {
-        alias && items.push(item(alias.id, alias.key, alias.cfg));
-        alias = { id: ic.id, key: '-' + o, cfg };
+        alias && items.push(item(alias.key, alias.ic, alias.cfg));
+        alias = { ic, key: '-' + o, cfg };
       }
 
       // if no alias was parsed, then assume that it's an invalid argument
@@ -128,11 +126,11 @@ export class Spec<T> implements ISpec<T> {
             o.max <= array(o.args).length))
       ) {
         // if the config accepts no arguments, treat the rest as remainder
-        items.push(item(alias.id, alias.key, alias.cfg));
+        items.push(item(alias.key, alias.ic, alias.cfg));
         rem = key.slice(i);
       } else if ((val == null && !inc) || assign(alias.cfg)) {
         // prettier-ignore
-        items.push(item(alias.id, alias.key, alias.cfg, inc ? raw.slice(i) : val));
+        items.push(item(alias.key, alias.ic, alias.cfg, inc ? raw.slice(i) : val));
       } else rem = key.slice(i - 1);
     }
 
