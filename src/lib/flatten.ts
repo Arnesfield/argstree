@@ -15,7 +15,7 @@ export function flatten<T>(node: Node<T> | undefined): Node<T>[] {
 
   while ((node = stack.pop())) {
     nodes.push(node);
-    for (let i = node.children.length; i-- > 0; ) stack.push(node.children[i]);
+    for (let c = node.children, i = c.length; i-- > 0; ) stack.push(c[i]);
   }
 
   return nodes;
