@@ -117,7 +117,7 @@ export function parse<T>(
     }
   }
 
-  function setArg(raw: string, strict?: boolean) {
+  function setArg(raw: string, strict?: boolean): ParseError<T> | undefined {
     // if child is strict, pass it over to parent
     // if parent is non-strict, child is marked as parsed and accept arg
 
@@ -199,7 +199,7 @@ export function parse<T>(
     // eslint-disable-next-line prefer-const
     let aliases: Alias<T>[] = [],
       alias: Alias<T> | undefined,
-      skip: boolean | undefined, // skip handler callback
+      skip: boolean | undefined, // skip fallback
       aVal: string | null | undefined, // alias value
       rem: string | undefined; // remainder
 
@@ -230,11 +230,11 @@ export function parse<T>(
       }
 
       // if incomplete aliases parsed, check if the rest of the argument
-      // can be assigned and also go through the handler function (!noParse)
+      // can be assigned and also go through the fallback function
       // otherwise, use the parsed value if it can be assigned
 
       if (!alias) {
-        // continue to handler if no alias was parsed
+        // continue to fallback if no alias was parsed
       } else if (
         inc &&
         (o = alias.cfg.options).max != null &&
@@ -250,11 +250,12 @@ export function parse<T>(
       } else rem = key.slice(i - 1);
     }
 
-    // parse by handler
+    // parse by fallback
 
     // remove `this` from function call
-    const f = pCtx.cfg.fallback;
-    let res = skip ? null : f?.({ raw, key, value, remainder: rem }, pCtx.node);
+    // eslint-disable-next-line prefer-const
+    let f = skip ? null : pCtx.cfg.fallback,
+      res = f?.({ raw, key, value, remainder: rem }, pCtx.node);
 
     // ignore raw argument
     if (res === false) continue;
@@ -275,7 +276,7 @@ export function parse<T>(
           // skip if null or undefined
         } else if ((cfg = (r as Spec<T>).cfg)) {
           // do not include value to node.args
-          // since we leave it to the handler to set the value as an argument
+          // since we leave it to the fallback to set the value as an argument
           node(cfg, raw, key, value, cfg.id, null);
           use();
         }
@@ -283,11 +284,11 @@ export function parse<T>(
         else for (const v of array((r as V).args)) setArg(v, (r as V).strict);
       }
 
-      // always skip after successful handler call
+      // always skip after successful fallback call
       continue;
     }
 
-    // handler done
+    // fallback done
 
     if (aliases.length > 0) {
       // process aliases (even partial)
@@ -308,8 +309,7 @@ export function parse<T>(
     // once to get length of args and another for the end index
     // also note that `cNode` is expected to be a value node at this point
 
-    let raw = argv[a],
-      end: number | undefined;
+    let end: number | undefined;
 
     if (
       !cCtx &&
@@ -319,8 +319,7 @@ export function parse<T>(
         (pCtx.max > (end = pCtx.node.args.length) &&
           (end = a + pCtx.max - end)) !== false)
     ) {
-      // when using unknown handler,
-      // there is a chance that `cNode` is already a value node
+      // when using fallback, `cNode` can already a value node
       const args = argv.slice(a, end);
 
       pCtx.node.args.push(...args);
@@ -330,10 +329,11 @@ export function parse<T>(
       if (end == null || end >= argv.length) break;
 
       // call setArg for next raw argument
-      raw = argv[(a = end)];
+      a = end;
     }
 
-    setArg(raw);
+    // if error, stop loop
+    if (setArg(argv[a])) break;
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
