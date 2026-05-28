@@ -31,16 +31,16 @@ export class Spec<T> implements ISpec<T> {
   ): this {
     if ((arg = array(arg)).length === 0) return this;
 
-    let uc: InitializedConfig<T> | UninitializedConfig<T> | null =
+    let c = this.cfg,
+      k: string,
+      alias: boolean | undefined,
+      uc: InitializedConfig<T> | UninitializedConfig<T> | null =
         options &&
         (typeof options === 'function'
           ? { id: arg[0], init: options }
           : (options as Spec<T>).cfg
             ? { id: arg[0], ref: (options as Spec<T>).cfg }
-            : ({ id: arg[0], options } as Config<T>)),
-      c = this.cfg,
-      k: string,
-      alias: boolean | undefined;
+            : ({ id: arg[0], options } as Config<T>));
 
     // intentionally mutate cfg
     c.map ??= { __proto__: null! };
