@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
 import { Alias, Config, InitializedConfig } from '../types/config.types';
@@ -26,10 +27,9 @@ export function parse<T>(
   argv: readonly string[],
   cfg: Config<T> | null | undefined
 ): Node<T> {
-  const all: Context<T>[] = [], // all node contexts
-    bAll: Context<T>[] = []; // all with an onBeforeValidate callback option
-
-  let pCtx: Context<T>, // parent node context
+  let all: Context<T>[] = [], // all node contexts
+    bAll: Context<T>[] = [], // all with an onBeforeValidate callback option
+    pCtx: Context<T>, // parent node context
     cNode: Node<T> | null | undefined, // child node (can be value node)
     cCtx: Context<T> | null | undefined, // child node context
     pdstrict = true, // parent node strict descendants
@@ -173,7 +173,6 @@ export function parse<T>(
   const root = pCtx.node;
 
   for (; a < argv.length && (pCtx.cfg.mapv || pCtx.cfg.fallback); a++) {
-    // eslint-disable-next-line prefer-const
     let raw = argv[a],
       key = raw,
       value: string | null = null,
@@ -196,7 +195,6 @@ export function parse<T>(
       continue;
     }
 
-    // eslint-disable-next-line prefer-const
     let aliases: Alias<T>[] = [],
       alias: Alias<T> | undefined,
       skip: boolean | undefined, // skip fallback
@@ -253,7 +251,6 @@ export function parse<T>(
     // parse by fallback
 
     // remove `this` from function call
-    // eslint-disable-next-line prefer-const
     let f = skip ? null : pCtx.cfg.fallback,
       res = f?.({ raw, key, value, remainder: rem }, pCtx.node);
 
