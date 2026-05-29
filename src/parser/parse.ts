@@ -34,8 +34,7 @@ export function parse<T>(
     cCtx: Context<T> | null | undefined, // child node context
     pdstrict = true, // parent node strict descendants
     dstrict: boolean, // current child node strict descendants
-    err: ParseError<T> | undefined, // error before validation
-    a = 0; // argv index
+    err: ParseError<T> | undefined; // error before validation
 
   function node(
     c: Config<T>,
@@ -111,13 +110,10 @@ export function parse<T>(
     ) {
       ok(pCtx);
       next();
-    } else if (!cCtx.read || full(cCtx)) {
-      ok(cCtx);
-      cNode = cCtx = null;
     }
   }
 
-  function setArg(raw: string, strict?: boolean): ParseError<T> | undefined {
+  function setArg(raw: string, strict?: boolean) {
     // if child is strict, pass it over to parent
     // if parent is non-strict, child is marked as parsed and accept arg
 
@@ -125,17 +121,22 @@ export function parse<T>(
     let opt: boolean | undefined;
 
     // save value to child node if it exists and strict mode is satisfied
-    if (cCtx && !((strict ?? cCtx.strict) && (opt = isOption(raw)))) {
+    if (
+      cCtx?.read &&
+      !full(cCtx) &&
+      !((strict ?? cCtx.strict) && (opt = isOption(raw)))
+    ) {
       // assume cNode exists if cCtx exists
       __assertNotNull(cNode);
-
       cNode.args.push(raw);
-
-      if (full(cCtx)) {
-        ok(cCtx);
-        cNode = cCtx = null;
-      }
       return;
+    }
+
+    // if the raw argument isn't saved to the existing child node, mark the
+    // child node as parsed before attempting to save it to the parent node
+    if (cCtx) {
+      ok(cCtx);
+      cNode = cCtx = null;
     }
 
     // save value to parent node
@@ -151,16 +152,9 @@ export function parse<T>(
 
     pCtx.node.args.push(raw);
 
-    // if cCtx exists, it means cNode is not a value node yet
-    if (cCtx) {
-      ok(cCtx);
-      cCtx = null;
-      vNode([raw]);
-    }
-
-    // save to value node if cNode exists
-    // otherwise, add value node
-    else cNode ? cNode.args.push(raw) : vNode([raw]);
+    // if cNode exists, it is a value node
+    // otherwise, create a new value node
+    cNode ? cNode.args.push(raw) : vNode([raw]);
   }
 
   // create root node
@@ -172,7 +166,41 @@ export function parse<T>(
 
   const root = pCtx.node;
 
-  for (; a < argv.length && (pCtx.cfg.mapv || pCtx.cfg.fallback); a++) {
+  for (let a = 0; a < argv.length; a++) {
+    if (!pCtx.cfg.mapv && !pCtx.cfg.fallback) {
+      // if not strict mode for the current node,
+      // capture the rest of the args until the end is reached
+      // note that `end` is used twice:
+      // once to get length of args and another for the end index
+      // also note that `cNode` is expected to be a value node at this point
+
+      let end: number | undefined;
+
+      if (
+        !cCtx &&
+        pCtx.read &&
+        !pCtx.strict &&
+        (pCtx.max == null ||
+          (pCtx.max > (end = pCtx.node.args.length) &&
+            ((end = a + pCtx.max - end), true)))
+      ) {
+        // when using fallback, `cNode` can already a value node
+        const args = argv.slice(a, end);
+
+        pCtx.node.args.push(...args);
+        cNode ? cNode.args.push(...args) : vNode(args);
+
+        // stop here if the rest of the args were captured
+        if (end == null || end >= argv.length) break;
+
+        // call setArg for next raw argument
+        a = end;
+      }
+
+      setArg(argv[a]);
+      continue;
+    }
+
     let raw = argv[a],
       key = raw,
       value: string | null = null,
@@ -297,40 +325,6 @@ export function parse<T>(
     } else if (!rem) setArg(raw);
 
     if (rem) err ||= uErr(pCtx, '-' + rem);
-  }
-
-  for (; a < argv.length; a++) {
-    // if not strict mode for the current node,
-    // capture the rest of the args until the end is reached
-    // note that `end` is used twice:
-    // once to get length of args and another for the end index
-    // also note that `cNode` is expected to be a value node at this point
-
-    let end: number | undefined;
-
-    if (
-      !cCtx &&
-      pCtx.read &&
-      !pCtx.strict &&
-      (pCtx.max == null ||
-        (pCtx.max > (end = pCtx.node.args.length) &&
-          (end = a + pCtx.max - end)) !== false)
-    ) {
-      // when using fallback, `cNode` can already a value node
-      const args = argv.slice(a, end);
-
-      pCtx.node.args.push(...args);
-      cNode ? cNode.args.push(...args) : vNode(args);
-
-      // stop here if the rest of the args were captured
-      if (end == null || end >= argv.length) break;
-
-      // call setArg for next raw argument
-      a = end;
-    }
-
-    // if error, stop loop
-    if (setArg(argv[a])) break;
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
