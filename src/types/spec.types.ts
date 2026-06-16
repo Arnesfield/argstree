@@ -1,7 +1,6 @@
 import { ParseError } from '../lib/error';
-import { Arg } from './arg.types';
 import { Node } from './node.types';
-import { Options } from './options.types';
+import { Context, Options } from './options.types';
 import { XOR } from './util.types';
 
 /** The spec type. */
@@ -29,26 +28,42 @@ export interface ResolvedItem<T = unknown> {
 }
 
 /** The resolved argument. */
-export interface ResolvedArg<T = unknown> extends Arg {
+export interface ResolvedArg<T = unknown> {
+  /** The unparsed argument. */
+  raw: string;
+  /** The parsed key from the argument (e.g., `--option` from `--option=value`). */
+  key: string;
+  // NOTE: same doc as Node.value
+  /** The parsed value from the argument (e.g., `value` from `--option=value`). */
+  value: string | null;
+  /** The remaining argument, if any. */
+  remainder?: string;
   /** The resolved items. */
   items?: ResolvedItem<T>[];
 }
 
-// TODO: rename?
-/** Fallback value. */
-export interface Value {
+/** Fallback argument. */
+export interface FallbackArg<T = unknown> extends Omit<ResolvedArg, 'items'> {
+  /** The current node context. */
+  ctx: Context<T>;
+  /** The child node context, if any. */
+  childCtx: Context<T> | null;
+}
+
+/** Fallback arguments. */
+export interface FallbackArgs {
   /** Arguments to be saved to the current node. */
   args: string | string[];
   /** Overrides the strict mode for the current node. */
   strict?: boolean;
 }
 
-export type FallbackValue<T = unknown> = XOR<Spec<T>, Value>;
+/** Fallback value. */
+export type FallbackValue<T = unknown> = XOR<Spec<T>, FallbackArgs>;
 
 // TODO: add doc
 export type Fallback<T = unknown> = (
-  arg: Arg,
-  node: Node<T>
+  arg: FallbackArg
 ) =>
   | FallbackValue<T>
   | (FallbackValue<T> | null | undefined)[]

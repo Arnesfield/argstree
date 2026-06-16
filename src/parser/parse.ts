@@ -4,17 +4,17 @@ import { isOption } from '../lib/is-option';
 import { Alias, Config, InitializedConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { Value } from '../types/spec.types';
+import { FallbackArgs } from '../types/spec.types';
 import { array } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import {
   assign,
-  Context,
   display,
   full,
   getArgs,
   getCfg,
   init,
+  NodeContext,
   ok,
   uErr
 } from './helpers';
@@ -27,11 +27,11 @@ export function parse<T>(
   argv: readonly string[],
   cfg: Config<T> | null | undefined
 ): Node<T> {
-  let all: Context<T>[] = [], // all node contexts
-    bAll: Context<T>[] = [], // all with an onBeforeValidate callback option
-    pCtx: Context<T>, // parent node context
+  let all: NodeContext<T>[] = [], // all node contexts
+    bAll: NodeContext<T>[] = [], // all with an onBeforeValidate callback option
+    pc: NodeContext<T>, // parent node context
     cNode: Node<T> | null | undefined, // child node (can be value node)
-    cCtx: Context<T> | null | undefined, // child node context
+    cc: NodeContext<T> | null | undefined, // child node context
     pdstrict = true, // parent node strict descendants
     dstrict: boolean, // current child node strict descendants
     err: ParseError<T> | undefined; // error before validation
@@ -45,22 +45,16 @@ export function parse<T>(
     arg: string | null = value
   ) {
     // mark previous node as parsed before creating next node
-    cCtx && ok(cCtx);
+    cc && ok(cc);
 
     const o = c.options,
-      p = pCtx ? pCtx.node : null,
+      p = pc ? pc.ctx.node : null,
       // prettier-ignore
-      { id = cid ?? key, name = cid ?? key, strict: s, type = c.mapv ? 'command' : 'option' } = o;
+      { min, max, read = true, id = cid ?? key, name = cid ?? key, strict: s, type = c.mapv ? 'command' : 'option' } = o;
 
     // prettier-ignore
     cNode = { id, name, raw, key, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o, arg), parent: p, children: [] };
     p?.children.push(cNode);
-
-    // run onCreate and get parse options
-    // prettier-ignore
-    const { min = o.min, max = o.max, read = o.read ?? true } = o.onCreate?.(cNode) || o;
-    // run onChild for parent node
-    pCtx?.cfg.options.onChild?.(p!);
 
     const strict =
       s == null
@@ -69,46 +63,47 @@ export function parse<T>(
           ? (dstrict = s)
           : !(dstrict = s !== 'self');
 
-    cCtx = { cfg: c, node: cNode, min, max, read, strict };
+    // prettier-ignore
+    cc = { cfg: c, ctx: { node: cNode, min, max, read, strict, parent: pc ? pc.ctx : null } };
 
-    // save to list if node can be validated
-    (min != null || max != null || o.onValidate) && all.push(cCtx);
+    o.onCreate?.(cc.ctx);
+    pc?.cfg.options.onChild?.(pc.ctx);
 
     // save to before validate list if has onBeforeValidate callback
-    o.onBeforeValidate && bAll.push(cCtx);
+    o.onBeforeValidate && bAll.push(cc);
+    all.push(cc);
   }
 
   function vNode(args: string[]) {
-    const p = pCtx.node;
+    const p = pc.ctx.node;
     // prettier-ignore
     p.children.push(cNode = { id: p.id, name: p.name, raw: p.raw, key: p.key, value: p.value, type: 'value', depth: p.depth + 1, args, parent: p, children: [] });
   }
 
-  /** Sets `cCtx` as the next `pCtx`. */
   function next() {
     // set current child node context as new parent node context
-    __assertNotNull(cCtx);
-    pCtx = cCtx;
+    __assertNotNull(cc);
+    pc = cc;
 
     // set dstrict for parent node context
     pdstrict = dstrict;
 
     // clear child node context since it's now the parent node
-    cNode = cCtx = null;
+    cNode = cc = null;
   }
 
   function use() {
-    __assertNotNull(cCtx);
+    __assertNotNull(cc);
 
     // check if not leaf node
-    const o = cCtx.cfg.options;
+    const o = cc.cfg.options;
     if (
       !(
         o.leaf ??
-        !(cCtx.cfg.mapv || cCtx.cfg.fallback || (o.type && o.type !== 'option'))
+        !(cc.cfg.mapv || cc.cfg.fallback || (o.type && o.type !== 'option'))
       )
     ) {
-      ok(pCtx);
+      ok(pc);
       next();
     }
   }
@@ -122,11 +117,10 @@ export function parse<T>(
 
     // save value to child node if it exists and strict mode is satisfied
     if (
-      cCtx?.read &&
-      !full(cCtx) &&
-      !((strict ?? cCtx.strict) && (opt = isOption(raw)))
+      cc?.ctx.read &&
+      !full(cc) &&
+      !((strict ?? cc.ctx.strict) && (opt = isOption(raw)))
     ) {
-      // assume cNode exists if cCtx exists
       __assertNotNull(cNode);
       cNode.args.push(raw);
       return;
@@ -134,23 +128,23 @@ export function parse<T>(
 
     // if the raw argument isn't saved to the existing child node, mark the
     // child node as parsed before attempting to save it to the parent node
-    if (cCtx) {
-      ok(cCtx);
-      cNode = cCtx = null;
+    if (cc) {
+      ok(cc);
+      cNode = cc = null;
     }
 
     // save value to parent node
     // unrecognized argument if parent cannot read or if strict mode
     // at this point, the value of `opt` is either true or undefined
     if (
-      !pCtx.read ||
-      full(pCtx) ||
-      ((strict ?? pCtx.strict) && (opt ?? isOption(raw)))
+      !pc.ctx.read ||
+      full(pc) ||
+      ((strict ?? pc.ctx.strict) && (opt ?? isOption(raw)))
     ) {
-      return (err ||= uErr(pCtx, raw));
+      return (err ||= uErr(pc, raw));
     }
 
-    pCtx.node.args.push(raw);
+    pc.ctx.node.args.push(raw);
 
     // if cNode exists, it is a value node
     // otherwise, create a new value node
@@ -160,34 +154,32 @@ export function parse<T>(
   // create root node
   __assertNotNull(cfg);
   node(cfg, null, null);
-  // calling next() should set pCtx
   next();
-  __assertNotNull(pCtx!);
+  __assertNotNull(pc!);
 
-  const root = pCtx.node;
+  const root = pc.ctx.node;
 
   for (let a = 0; a < argv.length; a++) {
-    if (!pCtx.cfg.mapv && !pCtx.cfg.fallback) {
+    if (!pc.cfg.mapv && !pc.cfg.fallback) {
       // if not strict mode for the current node,
       // capture the rest of the args until the end is reached
       // note that `end` is used twice:
       // once to get length of args and another for the end index
-      // also note that `cNode` is expected to be a value node at this point
 
       let end: number | undefined;
 
       if (
-        !cCtx &&
-        pCtx.read &&
-        !pCtx.strict &&
-        (pCtx.max == null ||
-          (pCtx.max > (end = pCtx.node.args.length) &&
-            ((end = a + pCtx.max - end), true)))
+        !cc &&
+        pc.ctx.read &&
+        !pc.ctx.strict &&
+        (pc.ctx.max == null ||
+          (pc.ctx.max > (end = pc.ctx.node.args.length) &&
+            ((end = a + pc.ctx.max - end), true)))
       ) {
         // when using fallback, `cNode` can already a value node
         const args = argv.slice(a, end);
 
-        pCtx.node.args.push(...args);
+        pc.ctx.node.args.push(...args);
         cNode ? cNode.args.push(...args) : vNode(args);
 
         // stop here if the rest of the args were captured
@@ -214,7 +206,7 @@ export function parse<T>(
 
     // get node by map
     if (
-      (ic = init(pCtx.cfg.map?.[key])) &&
+      (ic = init(pc.cfg.map?.[key])) &&
       (cfg = getCfg(ic)) &&
       (value == null || assign(cfg))
     ) {
@@ -232,7 +224,7 @@ export function parse<T>(
     // handle split
     // require length of at least 3 since keys with length of 2
     // should have been matched before this
-    if (key.length > 2 && pCtx.cfg.aliasv && isOption(key, 'short')) {
+    if (key.length > 2 && pc.cfg.aliasv && isOption(key, 'short')) {
       // incomplete aliases parsed
       let inc: boolean, o: Options<T> | string;
 
@@ -245,7 +237,7 @@ export function parse<T>(
           (o = alias.cfg.options).min != null &&
           o.min > array(o.args).length
         ) &&
-        (ic = init(pCtx.cfg.alias[(o = key[i])])) &&
+        (ic = init(pc.cfg.alias[(o = key[i])])) &&
         (cfg = getCfg(ic));
         i++
       ) {
@@ -279,8 +271,9 @@ export function parse<T>(
     // parse by fallback
 
     // remove `this` from function call
-    let f = skip ? null : pCtx.cfg.fallback,
-      res = f?.({ raw, key, value, remainder: rem }, pCtx.node);
+    let f = skip ? null : pc.cfg.fallback,
+      // prettier-ignore
+      res = f?.({ raw, key, value, remainder: rem, ctx: pc.ctx, childCtx: cc ? cc.ctx : null });
 
     // ignore raw argument
     if (res === false) continue;
@@ -293,7 +286,7 @@ export function parse<T>(
       res !== true &&
       (res = Array.isArray(res) ? res : [res]).length > 0
     ) {
-      type V = Value;
+      type A = FallbackArgs;
 
       // allow the current working nodes to change
       for (const r of res) {
@@ -306,7 +299,7 @@ export function parse<T>(
           use();
         }
         // handle parsed values (will set it to the current node)
-        else for (const v of array((r as V).args)) setArg(v, (r as V).strict);
+        else for (const v of array((r as A).args)) setArg(v, (r as A).strict);
       }
 
       // always skip after successful fallback call
@@ -324,16 +317,16 @@ export function parse<T>(
       use();
     } else if (!rem) setArg(raw);
 
-    if (rem) err ||= uErr(pCtx, '-' + rem);
+    if (rem) err ||= uErr(pc, '-' + rem);
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes
-  cCtx && ok(cCtx);
-  ok(pCtx);
+  cc && ok(cc);
+  ok(pc);
 
   // run onBeforeValidate for all nodes per depth level incrementally
   // NOTE: expect onBeforeValidate to exist if part of `bAll`
-  for (const c of bAll) c.cfg.options.onBeforeValidate!(c.node);
+  for (const c of bAll) c.cfg.options.onBeforeValidate!(c.ctx);
 
   // throw error before validation
   if (err) throw err;
@@ -341,8 +334,8 @@ export function parse<T>(
   // validate and run onValidate for all nodes
   for (const c of all) {
     // validate node
-    const { min, max } = c,
-      len = c.node.args.length,
+    const { min, max } = c.ctx,
+      len = c.ctx.node.args.length,
       cmin = min != null && min >= 0,
       cmax = max != null && max >= 0,
       m: [string | number, number?] | null =
@@ -357,13 +350,13 @@ export function parse<T>(
               : null;
 
     if (m) {
-      const name = display(c.node);
+      const name = display(c.ctx.node);
       // prettier-ignore
-      throw new ParseError(ParseError.RANGE_ERROR, `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`, c.node);
+      throw new ParseError(ParseError.RANGE_ERROR, `${name ? name + 'e' : 'E'}xpected ${m[0]} argument${m[1] === 1 ? '' : 's'}, but got ${len}.`, c.ctx);
     }
 
     // run onValidate if no errors
-    c.cfg.options.onValidate?.(c.node);
+    c.cfg.options.onValidate?.(c.ctx);
   }
 
   // return the root node

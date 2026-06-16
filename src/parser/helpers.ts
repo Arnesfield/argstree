@@ -1,17 +1,15 @@
 import { ParseError } from '../lib/error';
 import { Config, ConfigMap, InitializedConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
-import { Options } from '../types/options.types';
+import { Context, Options } from '../types/options.types';
 import { ResolvedItem } from '../types/spec.types';
 import { array } from '../utils/array';
 
-export interface Context<T> {
+// NOTE: internal
+
+export interface NodeContext<T> {
   cfg: Config<T>;
-  node: Node<T>;
-  min: number | null | undefined;
-  max: number | null | undefined;
-  read: boolean;
-  strict: boolean;
+  ctx: Context<T>;
 }
 
 export function init<T>(
@@ -42,16 +40,16 @@ export function assign<T>(cfg: Config<T>): boolean {
   return o.assign ?? (o.type ? o.type === 'option' : !cfg.mapv);
 }
 
-export function ok<T>(ctx: Context<T>): void {
-  ctx.cfg.options.onData?.(ctx.node);
+export function ok<T>(c: NodeContext<T>): void {
+  c.cfg.options.onData?.(c.ctx);
 }
 
 /**
  * Checks if {@linkcode Node.args} has reached the
  * {@linkcode Context.max} length.
  */
-export function full<T>(ctx: Context<T>): boolean {
-  return ctx.max != null && ctx.max <= ctx.node.args.length;
+export function full<T>(c: NodeContext<T>): boolean {
+  return c.ctx.max != null && c.ctx.max <= c.ctx.node.args.length;
 }
 
 export function display<T>(node: Node<T>): string | false {
@@ -62,11 +60,11 @@ export function display<T>(node: Node<T>): string | false {
 }
 
 /** Creates an unrecognized error to throw later before validation. */
-export function uErr<T>(ctx: Context<T>, raw: string): ParseError<T> {
+export function uErr<T>(c: NodeContext<T>, raw: string): ParseError<T> {
   // always use parent node for unrecognized arguments
-  const name = display(ctx.node);
+  const name = display(c.ctx.node);
   // prettier-ignore
-  return new ParseError(ParseError.UNRECOGNIZED_ERROR, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, ctx.node);
+  return new ParseError(ParseError.UNRECOGNIZED_ERROR, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, c.ctx);
 }
 
 export function item<T>(
