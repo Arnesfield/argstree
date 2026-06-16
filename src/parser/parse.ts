@@ -338,16 +338,14 @@ export function parse<T>(
       len = c.ctx.node.args.length,
       cmin = min != null && min >= 0,
       cmax = max != null && max >= 0,
-      m: [string | number, number?] | null =
+      m: [string | number, number?] | false =
         cmin && cmax && max >= min && (len < min || len > max)
           ? min === max
-            ? [min, min]
+            ? [min, max]
             : [min + '-' + max]
           : cmin && len < min
             ? ['at least ' + min, min]
-            : cmax && len > max
-              ? [max && 'up to ' + max, max]
-              : null;
+            : cmax && len > max && [max && 'up to ' + max, max];
 
     if (m) {
       const name = display(c.ctx.node);
