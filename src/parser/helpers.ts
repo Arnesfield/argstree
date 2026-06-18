@@ -3,7 +3,6 @@ import { Config, ConfigMap, InitializedConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Context, Options } from '../types/options.types';
 import { ResolvedItem } from '../types/spec.types';
-import { array } from '../utils/array';
 
 // NOTE: internal
 
@@ -28,8 +27,11 @@ export function getCfg<T>(
   return cfg.ref !== undefined ? cfg.ref : cfg;
 }
 
-export function getArgs<T>(opts: Options<T>, val?: string | null): string[] {
-  const a = array(opts.args, true);
+export function getArgs<T>(
+  a: Options<T>['args'],
+  val?: string | null
+): string[] {
+  a = Array.isArray(a) ? a.slice() : a != null ? [a] : [];
   val != null && a.push(val);
   return a;
 }
@@ -78,5 +80,5 @@ export function item<T>(
     { id = k, name = k } = o;
 
   // prettier-ignore
-  return { key, value, options: { ...o, id, name, args: getArgs(o, value) }, spec: ic.init };
+  return { key, value, options: { ...o, id, name, args: getArgs(o.args, value) }, spec: ic.init };
 }

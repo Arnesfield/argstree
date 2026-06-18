@@ -15,7 +15,7 @@ import {
   ResolvedArg,
   ResolvedItem
 } from '../types/spec.types';
-import { array } from '../utils/array';
+import { array, size } from '../utils/array';
 import { hasValues } from '../utils/has-values';
 import { assign, getCfg, init, item } from './helpers';
 import { parse } from './parse';
@@ -106,7 +106,7 @@ export class Spec<T> implements ISpec<T> {
         !(
           alias &&
           (o = alias.cfg.options).min != null &&
-          o.min > array(o.args).length
+          o.min > size(o.args)
         ) &&
         (ic = init(this.cfg.alias[(o = key[i])])) &&
         (cfg = getCfg(ic));
@@ -122,8 +122,7 @@ export class Spec<T> implements ISpec<T> {
       if (
         inc &&
         (value !== undefined ||
-          ((o = alias.cfg.options).max != null &&
-            o.max <= array(o.args).length))
+          ((o = alias.cfg.options).max != null && o.max <= size(o.args)))
       ) {
         // if the config accepts no arguments, treat the rest as remainder
         items.push(item(alias.key, alias.ic, alias.cfg));

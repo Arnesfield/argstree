@@ -5,7 +5,7 @@ import { Alias, Config, InitializedConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { FallbackArgs } from '../types/spec.types';
-import { array } from '../utils/array';
+import { array, size } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import {
   assign,
@@ -42,7 +42,7 @@ export function parse<T>(
     key: string | null,
     value: string | null = null,
     cid = c.id,
-    arg: string | null = value
+    arg = value
   ) {
     // mark previous node as parsed before creating next node
     cc && ok(cc);
@@ -53,7 +53,7 @@ export function parse<T>(
       { min, max, read = true, id = cid ?? key, name = cid ?? key, strict: s, type = c.mapv ? 'command' : 'option' } = o;
 
     // prettier-ignore
-    cNode = { id, name, raw, key, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o, arg), parent: p, children: [] };
+    cNode = { id, name, raw, key, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o.args, arg), parent: p, children: [] };
     p?.children.push(cNode);
 
     const strict =
@@ -235,7 +235,7 @@ export function parse<T>(
         !(
           alias &&
           (o = alias.cfg.options).min != null &&
-          o.min > array(o.args).length
+          o.min > size(o.args)
         ) &&
         (ic = init(pc.cfg.alias[(o = key[i])])) &&
         (cfg = getCfg(ic));
@@ -256,7 +256,7 @@ export function parse<T>(
       } else if (
         inc &&
         (o = alias.cfg.options).max != null &&
-        o.max <= array(o.args).length
+        o.max <= size(o.args)
       ) {
         // if the config accepts no arguments, treat the rest as remainder
         aliases.push(alias);
@@ -281,11 +281,7 @@ export function parse<T>(
     // default behavior if no parsed or true
     // default behavior if empty array
     // otherwise, iterate through parsed
-    if (
-      res &&
-      res !== true &&
-      (res = Array.isArray(res) ? res : [res]).length > 0
-    ) {
+    if (res && res !== true && (res = array(res)).length > 0) {
       type A = FallbackArgs;
 
       // allow the current working nodes to change
