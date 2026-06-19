@@ -332,8 +332,8 @@ export function parse<T>(
     // validate node
     const { min, max } = c.ctx,
       len = c.ctx.node.args.length,
-      cmin = min != null && min >= 0,
-      cmax = max != null && max >= 0,
+      cmin = min != null && min >= 0 && isFinite(min),
+      cmax = max != null && max >= 0 && isFinite(max),
       m: [string | number, number?] | false =
         cmin && cmax && max >= min && (len < min || len > max)
           ? min === max
