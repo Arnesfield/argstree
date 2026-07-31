@@ -39,7 +39,9 @@ export function getArgs<T>(
 /** Checks whether the config is assignable. */
 export function assign<T>(cfg: Config<T>): boolean {
   const o = cfg.options;
-  return o.assign ?? (o.type ? o.type === 'option' : !cfg.mapv);
+  return (
+    o.assignable ?? (o.type ? o.type === 'option' : !cfg.mapv && !cfg.fallback)
+  );
 }
 
 export function ok<T>(c: NodeContext<T>): void {

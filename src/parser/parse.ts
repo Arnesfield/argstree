@@ -50,7 +50,7 @@ export function parse<T>(
     const o = c.options,
       p = pc ? pc.ctx.node : null,
       // prettier-ignore
-      { min, max, read = true, id = cid ?? key, name = cid ?? key, strict: s, type = c.mapv ? 'command' : 'option' } = o;
+      { min, max, consume = true, id = cid ?? key, name = cid ?? key, strict: s, type = c.mapv || c.fallback ? 'command' : 'option' } = o;
 
     // prettier-ignore
     cNode = { id, name, raw, key, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o.args, arg), parent: p, children: [] };
@@ -64,7 +64,7 @@ export function parse<T>(
           : !(dstrict = s !== 'self');
 
     // prettier-ignore
-    cc = { cfg: c, ctx: { node: cNode, min, max, read, strict, parent: pc ? pc.ctx : null } };
+    cc = { cfg: c, ctx: { node: cNode, min, max, consume, strict, parent: pc ? pc.ctx : null } };
 
     o.onCreate?.(cc.ctx);
     pc?.cfg.options.onChild?.(pc.ctx);
@@ -117,7 +117,7 @@ export function parse<T>(
 
     // save value to child node if it exists and strict mode is satisfied
     if (
-      cc?.ctx.read &&
+      cc?.ctx.consume &&
       !full(cc) &&
       !((strict ?? cc.ctx.strict) && (opt = isOption(raw)))
     ) {
@@ -134,10 +134,10 @@ export function parse<T>(
     }
 
     // save value to parent node
-    // unrecognized argument if parent cannot read or if strict mode
+    // unrecognized argument if parent cannot consume or if strict mode
     // at this point, the value of `opt` is either true or undefined
     if (
-      !pc.ctx.read ||
+      !pc.ctx.consume ||
       full(pc) ||
       ((strict ?? pc.ctx.strict) && (opt ?? isOption(raw)))
     ) {
@@ -170,7 +170,7 @@ export function parse<T>(
 
       if (
         !cc &&
-        pc.ctx.read &&
+        pc.ctx.consume &&
         !pc.ctx.strict &&
         (pc.ctx.max == null ||
           (pc.ctx.max > (end = pc.ctx.node.args.length) &&
@@ -197,7 +197,14 @@ export function parse<T>(
       key = raw,
       value: string | null = null,
       ic: InitializedConfig<T> | null | undefined,
-      i = raw.indexOf('=');
+      i = raw.indexOf('='),
+      // save argument to child node
+      ca =
+        cc?.ctx.min != null &&
+        cc.ctx.consume === 'min' &&
+        cc.ctx.min > cNode!.args.length &&
+        !full(cc) &&
+        !(cc.ctx.strict && isOption(raw));
 
     if (i >= 0) {
       key = raw.slice(0, i);
@@ -208,10 +215,18 @@ export function parse<T>(
     if (
       (ic = init(pc.cfg.map?.[key])) &&
       (cfg = getCfg(ic)) &&
+      !(ca && cfg.options.consumable !== false) &&
       (value == null || assign(cfg))
     ) {
       node(cfg, raw, key, value, ic.id);
       use();
+      continue;
+    }
+
+    // save value to child node if condition is satisfied
+    if (ca) {
+      __assertNotNull(cNode);
+      cNode.args.push(raw);
       continue;
     }
 
