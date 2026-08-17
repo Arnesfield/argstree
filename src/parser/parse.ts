@@ -259,7 +259,7 @@ export function parse<T>(
         // delay pushing the last alias to the next iteration instead
         // so that the last alias is pushed outside only after condition checks
         alias && aliases.push(alias);
-        alias = { ic, key: o, cfg };
+        alias = { key: o, ic, cfg };
       }
 
       // if incomplete aliases parsed, check if the rest of the argument

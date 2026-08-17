@@ -113,7 +113,7 @@ export class Spec<T> implements ISpec<T> {
         i++
       ) {
         alias && items.push(item(alias.key, alias.ic, alias.cfg));
-        alias = { ic, key: '-' + o, cfg };
+        alias = { key: '-' + o, ic, cfg };
       }
 
       // if no alias was parsed, then assume that it's an invalid argument

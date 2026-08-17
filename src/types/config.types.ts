@@ -5,9 +5,9 @@ import { Fallback } from './spec.types';
 // NOTE: internal
 
 export interface Alias<T> {
-  ic: InitializedConfig<T>;
   /** Either used as a single character key or an alias string. */
   key: string;
+  ic: InitializedConfig<T>;
   cfg: Config<T>;
 }
 
