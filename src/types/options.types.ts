@@ -41,7 +41,7 @@ export interface Options<T = unknown> {
   /**
    * The maximum number of arguments to read before the next parsed option or command.
    * Arguments over the maximum limit are saved to the parent option or command instead.
-   * {@link assignable Assigned values} are always treated as arguments
+   * {@link assign Assigned values} are always treated as arguments
    * for the option or command regardless of this option.
    *
    * A {@linkcode ParseError} is thrown if the option or command does not
@@ -52,7 +52,7 @@ export interface Options<T = unknown> {
   // TODO: doc
   /**
    * When disabled, the option or command will not accept any arguments
-   * (except for {@link assignable assigned values}) and are instead saved to
+   * (except for {@link assign assigned values}) and are instead saved to
    * the parent option or command if it can accept arguments. Otherwise,
    * a {@linkcode ParseError} is thrown and the argument is treated as an
    * unrecognized argument.
@@ -69,7 +69,7 @@ export interface Options<T = unknown> {
    *
    * The default value is `true` for `option` types and `false` for `command` types.
    */
-  assignable?: boolean;
+  assign?: boolean;
   // TODO: fix doc, strict mode is enabled by default
   /**
    * When enabled, a {@linkcode ParseError} is thrown for

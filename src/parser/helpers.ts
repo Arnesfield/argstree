@@ -40,7 +40,7 @@ export function getArgs<T>(
 export function assign<T>(cfg: Config<T>): boolean {
   const o = cfg.options;
   return (
-    o.assignable ?? (o.type ? o.type === 'option' : !cfg.mapv && !cfg.fallback)
+    o.assign ?? (o.type ? o.type === 'option' : !cfg.mapv && !cfg.fallback)
   );
 }
 
