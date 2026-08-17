@@ -62,6 +62,8 @@ export interface Options<T = unknown> {
   // TODO: doc
   consumable?: boolean;
   // TODO: doc
+  combinable?: boolean;
+  // TODO: doc
   /**
    * Determines if the option or command can have an assigned value using the
    * equal sign (e.g., `--option=value`, `command=value`). Otherwise, the option

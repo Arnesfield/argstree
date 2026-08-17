@@ -99,17 +99,18 @@ export class Spec<T> implements ISpec<T> {
       // incomplete aliases parsed
       let alias: Alias<T> | undefined, inc: boolean, o: Options<T> | string;
 
-      // if an alias exists, stop loop if it requires a value
+      // if an alias exists, stop loop if it requires a value or if not combinable
       for (
         i = 1, items = [];
         (inc = i < key.length) &&
         !(
           alias &&
-          (o = alias.cfg.options).min != null &&
-          o.min > size(o.args)
+          ((o = alias.cfg.options).combinable === false ||
+            (o.min != null && o.min > size(o.args)))
         ) &&
         (ic = init(this.cfg.alias[(o = key[i])])) &&
-        (cfg = getCfg(ic));
+        (cfg = getCfg(ic)) &&
+        (!alias || cfg.options.combinable !== false);
         i++
       ) {
         alias && items.push(item(alias.key, alias.ic, alias.cfg));

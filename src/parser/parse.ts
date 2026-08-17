@@ -243,17 +243,18 @@ export function parse<T>(
       // incomplete aliases parsed
       let inc: boolean, o: Options<T> | string;
 
-      // if an alias exists, stop loop if it requires a value
+      // if an alias exists, stop loop if it requires a value or if not combinable
       for (
         i = 1;
         (inc = i < key.length) &&
         !(
           alias &&
-          (o = alias.cfg.options).min != null &&
-          o.min > size(o.args)
+          ((o = alias.cfg.options).combinable === false ||
+            (o.min != null && o.min > size(o.args)))
         ) &&
         (ic = init(pc.cfg.alias[(o = key[i])])) &&
-        (cfg = getCfg(ic));
+        (cfg = getCfg(ic)) &&
+        (!alias || cfg.options.combinable !== false);
         i++
       ) {
         // delay pushing the last alias to the next iteration instead
