@@ -95,13 +95,10 @@ export function parse<T>(
   function use() {
     __assertNotNull(cc);
 
-    // check if not leaf node
-    const o = cc.cfg.options;
+    // check if parent node
     if (
-      !(
-        o.leaf ??
-        !(cc.cfg.mapv || cc.cfg.fallback || (o.type && o.type !== 'option'))
-      )
+      cc.cfg.options.parent ??
+      (cc.cfg.mapv || cc.cfg.fallback || cc.cfg.options.type === 'command')
     ) {
       ok(pc);
       next();

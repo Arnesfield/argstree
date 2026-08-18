@@ -86,15 +86,20 @@ export interface Options<T = unknown> {
    * @default false
    */
   strict?: boolean | 'self' | 'descendants';
-  /**
-   * When `true`, parsed nodes will be treated as leaf nodes (no child nodes).
-   * When `false`, parsed nodes will be treated as parent nodes (has child nodes).
-   *
-   * If not provided, this option defaults to `true` for `option` types
-   * or if there are no options or commands configured for the spec.
-   * Otherwise, this is `false`.
-   */
-  leaf?: boolean;
+
+  // TODO: remove
+  // /**
+  //  * When `true`, parsed nodes will be treated as leaf nodes (no child nodes).
+  //  * When `false`, parsed nodes will be treated as parent nodes (has child nodes).
+  //  *
+  //  * If not provided, this option defaults to `true` for `option` types
+  //  * or if there are no options or commands configured for the spec.
+  //  * Otherwise, this is `false`.
+  //  */
+  // leaf?: boolean;
+
+  // TODO: doc
+  parent?: boolean;
 
   // TODO: remove
   // /**
