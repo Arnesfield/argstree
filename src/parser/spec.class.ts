@@ -27,20 +27,18 @@ export class Spec<T> implements ISpec<T> {
 
   arg(
     arg: string | string[],
-    options: Options<T> | Spec<T> | InitFunction<T> | null = {}
+    options: Options<T> | InitFunction<T> | null = {}
   ): this {
     if ((arg = array(arg)).length === 0) return this;
 
     let c = this.cfg,
-      k: string,
+      id = arg[0], // use as id and alias character
       alias: boolean | undefined,
-      uc: InitializedConfig<T> | UninitializedConfig<T> | null =
+      uc: UninitializedConfig<T> | null =
         options &&
         (typeof options === 'function'
-          ? { id: arg[0], init: options }
-          : (options as Spec<T>).cfg
-            ? { id: arg[0], ref: (options as Spec<T>).cfg }
-            : ({ id: arg[0], options } as Config<T>));
+          ? { id, init: options }
+          : { id, options });
 
     // intentionally mutate cfg
     c.map ??= { __proto__: null! };
@@ -50,9 +48,9 @@ export class Spec<T> implements ISpec<T> {
       c.map[a] = uc;
 
       // check if single character short option
-      if (a.length === 2 && a[0] === '-' && (k = a[1]) !== '-') {
+      if (a.length === 2 && a[0] === '-' && (id = a[1]) !== '-') {
         alias = true;
-        c.alias[k] = uc;
+        c.alias[id] = uc;
       }
     }
 

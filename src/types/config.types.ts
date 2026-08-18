@@ -16,17 +16,13 @@ export type InitFunction<T> = (
   options?: Options<T>
 ) => SpecClass<T> | null | undefined;
 
-export interface InitializedRefConfig<T> {
-  id: string;
-  ref: Config<T> | null;
-  init?: InitFunction<T>;
-}
-
 export interface UninitializedRefConfig<T> {
   id: string;
   ref?: Config<T> | null;
   init: InitFunction<T>;
 }
+
+export type InitializedRefConfig<T> = Required<UninitializedRefConfig<T>>;
 
 export type Config<T> = {
   id?: string;

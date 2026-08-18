@@ -76,14 +76,13 @@ export interface Spec<T = unknown> {
   /**
    * Sets the argument to match.
    * @param arg The argument(s) to match.
-   * @param options The options or spec object. Set to `null` to remove the argument.
+   * @param options The options or spec function. Set to `null` to remove the argument.
    * @returns `this` for chaining.
    */
   arg(
     arg: string | string[],
     options?:
       | Options<T>
-      | Spec<T>
       | ((options?: Options<T>) => Spec<T> | null | undefined)
       | null
   ): this;
