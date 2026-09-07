@@ -1,6 +1,6 @@
 import { ParseError } from '../lib/error';
 import { Node } from './node.types';
-import { Context, Options } from './options.types';
+import { Options } from './options.types';
 import { XOR } from './util.types';
 
 /** The spec type. */
@@ -44,10 +44,10 @@ export interface ResolvedArg<T = unknown> {
 
 /** Fallback argument. */
 export interface FallbackArg<T = unknown> extends Omit<ResolvedArg, 'items'> {
-  /** The current node context. */
-  ctx: Context<T>;
-  /** The child node context, if any. */
-  childCtx: Context<T> | null;
+  // TODO: doc
+  node: Node<T>;
+  // TODO: doc
+  subnode: Node<T> | null;
 }
 
 /** Fallback arguments. */

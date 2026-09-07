@@ -1,14 +1,15 @@
 import { ParseError } from '../lib/error';
 import { Config, ConfigMap, InitializedConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
-import { Context, Options } from '../types/options.types';
+import { Options } from '../types/options.types';
 import { ResolvedItem } from '../types/spec.types';
 
 // NOTE: internal
 
+// TODO: rename?
 export interface NodeContext<T> {
   cfg: Config<T>;
-  ctx: Context<T>;
+  node: Node<T>;
 }
 
 export function init<T>(
@@ -45,15 +46,14 @@ export function assign<T>(cfg: Config<T>): boolean {
 }
 
 export function ok<T>(c: NodeContext<T>): void {
-  c.cfg.options.onData?.(c.ctx);
+  c.cfg.options.onData?.(c.node);
 }
 
 /**
- * Checks if {@linkcode Node.args} has reached the
- * {@linkcode Context.max} length.
+ * Checks if {@linkcode Node.args} has reached the {@linkcode Node.max} length.
  */
-export function full<T>(c: NodeContext<T>): boolean {
-  return c.ctx.max != null && c.ctx.max <= c.ctx.node.args.length;
+export function full<T>(node: Node<T>): boolean {
+  return node.max != null && node.max <= node.args.length;
 }
 
 export function display<T>(node: Node<T>): string | false {
@@ -64,11 +64,11 @@ export function display<T>(node: Node<T>): string | false {
 }
 
 /** Creates an unrecognized error to throw later before validation. */
-export function uErr<T>(c: NodeContext<T>, raw: string): ParseError<T> {
+export function uErr<T>(n: Node<T>, raw: string): ParseError<T> {
   // always use parent node for unrecognized arguments
-  const name = display(c.ctx.node);
+  const name = display(n);
   // prettier-ignore
-  return new ParseError(ParseError.UNRECOGNIZED_ERROR, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, c.ctx);
+  return new ParseError(ParseError.UNRECOGNIZED_ERROR, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, n);
 }
 
 export function item<T>(

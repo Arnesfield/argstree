@@ -2,20 +2,11 @@ import { ParseError } from '../lib/error';
 import { Node } from './node.types';
 import { SpecType } from './spec.types';
 
-// TODO: add doc
-export interface Context<T = unknown> {
-  node: Node<T>;
-  min: number | null | undefined;
-  max: number | null | undefined;
-  consume: boolean | 'min';
-  strict: boolean;
-  parent: Context<T> | null;
-}
-
 /** The spec options. */
 export interface Options<T = unknown> {
   // TODO: add doc
   type?: SpecType;
+  // TODO: doc
   /**
    * The option or command ID that is set to {@linkcode Node.id}.
    * If not provided, the default value is the {@linkcode Node.key}.
@@ -159,27 +150,27 @@ export interface Options<T = unknown> {
 
   /**
    * Called when the node is created with its initial arguments.
-   * @param ctx The context object.
+   * @param node The node object.
    */
-  onCreate?(ctx: Context<T>): void;
+  onCreate?(node: Node<T>): void;
   /**
    * Called when the node receives an option or command child node.
-   * @param ctx The context object.
+   * @param node The node object.
    */
-  onChild?(ctx: Context<T>): void;
+  onChild?(node: Node<T>): void;
   /**
    * Called after the node has received all arguments and direct child nodes that it can have.
-   * @param ctx The context object.
+   * @param node The node object.
    */
-  onData?(ctx: Context<T>): void;
+  onData?(node: Node<T>): void;
   /**
    * Called once all nodes have been parsed and before any validation checks.
-   * @param ctx The context object.
+   * @param node The node object.
    */
-  onBeforeValidate?(ctx: Context<T>): void;
+  onBeforeValidate?(node: Node<T>): void;
   /**
    * Called after throwing any validation errors for the node.
-   * @param ctx The context object.
+   * @param node The node object.
    */
-  onValidate?(ctx: Context<T>): void;
+  onValidate?(node: Node<T>): void;
 }

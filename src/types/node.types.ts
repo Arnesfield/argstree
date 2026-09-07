@@ -30,6 +30,13 @@ export interface Node<T = unknown> {
   parent: Node<T> | null;
   /** The child nodes. */
   children: Node<T>[];
+
   /** The node metadata. */
   meta?: T;
+
+  // TODO: doc
+  min?: number;
+  max?: number;
+  consume?: boolean | 'min';
+  strict?: boolean;
 }

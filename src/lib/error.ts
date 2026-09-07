@@ -1,4 +1,4 @@
-import { Context } from '../types/options.types';
+import { Node } from '../types/node.types';
 
 /** The parse error. */
 export class ParseError<T> extends Error {
@@ -15,12 +15,12 @@ export class ParseError<T> extends Error {
    * - {@linkcode ParseError.RANGE_ERROR}
    * - {@linkcode ParseError.UNRECOGNIZED_ERROR}
    * @param message The error message.
-   * @param ctx The context object.
+   * @param node The node object.
    */
   constructor(
     public code: string,
     message: string,
-    public ctx: Context<T>
+    public node: Node<T>
   ) {
     super(message);
   }
