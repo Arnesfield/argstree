@@ -4,7 +4,7 @@ import { isOption } from '../lib/is-option';
 import { Alias, Config, InitializedConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
-import { FallbackArgs } from '../types/spec.types';
+import { Fallback, FallbackArgs } from '../types/spec.types';
 import { array, size } from '../utils/array';
 import { __assertNotNull } from '../utils/assert';
 import {
@@ -50,7 +50,7 @@ export function parse<T>(
     key: string | null,
     value: string | null = null,
     cid = c.id,
-    arg = value
+    val = value
   ) {
     // mark previous node as parsed before creating next node
     cc && ok(cc);
@@ -67,7 +67,7 @@ export function parse<T>(
             : !(dstrict = s !== 'self');
 
     // prettier-ignore
-    cc = { cfg: c, node: (cn = { id, name, raw, key, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o.args, arg), parent: p, children: [], min, max, consume, strict }) };
+    cc = { cfg: c, node: (cn = { id, name, raw, key, value, type, depth: p ? p.depth + 1 : 0, args: getArgs(o.args, val), parent: p, children: [], min, max, consume, strict }) };
     p?.children.push(cn);
 
     o.onCreate?.(cn);
@@ -235,9 +235,10 @@ export function parse<T>(
 
     let aliases: Alias<T>[] = [],
       alias: Alias<T> | undefined,
-      skip: boolean | undefined, // skip fallback
       aVal: string | null | undefined, // alias value
-      rem: string | undefined; // remainder
+      rem: string | undefined, // remainder
+      f = pc.cfg.fallback, // fallback function, remove `this` from function call
+      res: ReturnType<Fallback<T>>; // fallback result
 
     // handle split
     // require length of at least 3 since keys with length of 2
@@ -282,20 +283,18 @@ export function parse<T>(
         rem = key.slice(i);
       } else if ((value == null && !inc) || assign(alias.cfg)) {
         aliases.push(alias);
-        // eslint-disable-next-line no-cond-assign
-        aVal = (skip = !inc) ? value : raw.slice(i);
+        aVal = inc ? raw.slice(i) : value;
+
+        // skip fallback if parsed completely
+        if (!inc) f = null;
       } else rem = key.slice(i - 1);
     }
 
     // parse by fallback
 
-    // remove `this` from function call
-    let f = skip ? null : pc.cfg.fallback,
-      // prettier-ignore
-      res = f?.({ raw, key, value, remainder: rem, node: pc.node, subnode: cc ? cn! : null });
-
-    // ignore raw argument
-    if (res === false) continue;
+    // if false, ignore raw argument
+    // prettier-ignore
+    if ((res = f?.({ raw, key, value, remainder: rem, node: pc.node, subnode: cc ? cn! : null })) === false) continue;
 
     // default behavior if no parsed or true
     // default behavior if empty array
@@ -313,7 +312,7 @@ export function parse<T>(
           node(cfg, raw, key, value, cfg.id, null);
           use();
         }
-        // handle parsed values (will set it to the current node)
+        // set parsed values to the current node
         else for (const v of array((r as A).args)) setArg(v, (r as A).strict);
       }
 

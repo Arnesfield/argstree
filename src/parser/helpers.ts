@@ -12,19 +12,19 @@ export interface NodeContext<T> {
 }
 
 export function init<T>(
-  cfg: ConfigMap<T>[string]
+  uc: ConfigMap<T>[string]
 ): InitializedConfig<T> | null | undefined {
   // remove `this` from function call
-  const i = cfg?.init;
-  if (i && cfg.ref === undefined) cfg.ref = i()?.cfg || null;
+  const i = uc?.init;
+  if (i && uc.ref === undefined) uc.ref = i()?.cfg || null;
 
-  return cfg as InitializedConfig<T> | null | undefined;
+  return uc as InitializedConfig<T> | null | undefined;
 }
 
 export function getCfg<T>(
-  cfg: InitializedConfig<T>
+  ic: InitializedConfig<T>
 ): Config<T> | null | undefined {
-  return cfg.ref !== undefined ? cfg.ref : cfg;
+  return ic.ref === undefined ? ic : ic.ref;
 }
 
 export function getArgs<T>(
