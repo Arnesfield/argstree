@@ -2,7 +2,7 @@ import { Options } from './options.types';
 import { SpecType } from './spec.types';
 
 /** The node type. */
-export type NodeType = SpecType | 'value';
+export type NodeType = SpecType | 'arg';
 
 /**
  * The node object.

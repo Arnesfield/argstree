@@ -30,7 +30,7 @@ export function parse<T>(
   let all: NodeContext<T>[] = [], // all node contexts
     bAll: NodeContext<T>[] = [], // all with an onBeforeValidate callback option
     pc: NodeContext<T>, // parent node context
-    cn: Node<T> | null | undefined, // child node (can be value node)
+    cn: Node<T> | null | undefined, // child node (can be an argument node)
     cc: NodeContext<T> | null | undefined, // child node context
     pdstrict = true, // parent node strict descendants
     dstrict: boolean, // current child node strict descendants
@@ -70,10 +70,11 @@ export function parse<T>(
     all.push(cc);
   }
 
-  function vNode(args: string[]) {
+  /** Creates an argument node. */
+  function aNode(args: string[]) {
     const p = pc.node;
     // prettier-ignore
-    p.children.push((cn = { id: p.id, name: p.name, raw: p.raw, key: p.key, value: p.value, type: 'value', depth: p.depth + 1, args, parent: p, children: [] }));
+    p.children.push((cn = { id: p.id, name: p.name, raw: p.raw, key: p.key, value: p.value, type: 'arg', depth: p.depth + 1, args, parent: p, children: [] }));
   }
 
   function next() {
@@ -141,9 +142,9 @@ export function parse<T>(
 
     pc.node.args.push(raw);
 
-    // if the current node exists, it is a value node
-    // otherwise, create a new value node
-    cn ? cn.args.push(raw) : vNode([raw]);
+    // if the current node exists, it is an argument node
+    // otherwise, create a new argument node
+    cn ? cn.args.push(raw) : aNode([raw]);
   }
 
   // create root node
@@ -169,11 +170,11 @@ export function parse<T>(
           (pc.node.max > (end = pc.node.args.length) &&
             ((end = a + pc.node.max - end), true)))
       ) {
-        // when using fallback, the current node can be a value node
+        // when using fallback, the current node can be an argument node
         const args = argv.slice(a, end);
 
         pc.node.args.push(...args);
-        cn ? cn.args.push(...args) : vNode(args);
+        cn ? cn.args.push(...args) : aNode(args);
 
         // stop here if the rest of the args were captured
         if (end == null || end >= argv.length) break;
