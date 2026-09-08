@@ -15,8 +15,7 @@ import {
   getCfg,
   init,
   NodeContext,
-  ok,
-  uErr
+  ok
 } from './helpers';
 import type { Spec } from './spec.class';
 
@@ -35,6 +34,15 @@ export function parse<T>(
     pdstrict = true, // parent node strict descendants
     dstrict: boolean, // current child node strict descendants
     err: ParseError<T> | undefined; // error before validation
+
+  /** Creates an unrecognized error to throw later before validation. */
+  function uErr(raw: string): ParseError<T> {
+    // always use parent node for unrecognized arguments
+    const name = display(pc.node);
+
+    // prettier-ignore
+    return new ParseError(ParseError.UNRECOGNIZED_ERROR, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, pc.node);
+  }
 
   function node(
     c: Config<T>,
@@ -136,7 +144,7 @@ export function parse<T>(
       full(pc.node) ||
       ((strict ?? pc.node.strict) && (opt ?? isOption(raw)))
     ) {
-      err ||= uErr(pc.node, raw);
+      err ||= uErr(raw);
       return;
     }
 
@@ -324,7 +332,7 @@ export function parse<T>(
       use();
     } else if (!rem) setArg(raw);
 
-    if (rem) err ||= uErr(pc.node, '-' + rem);
+    if (rem) err ||= uErr('-' + rem);
   }
 
   // finally, mark nodes as parsed then build tree and validate nodes

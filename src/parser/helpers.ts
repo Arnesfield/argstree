@@ -1,4 +1,3 @@
-import { ParseError } from '../lib/error';
 import { Config, ConfigMap, InitializedConfig } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
@@ -61,14 +60,6 @@ export function display<T>(node: Node<T>): string | false {
     node.name != null &&
     `${node.type === 'option' ? 'Option' : 'Command'} '${node.name}' `
   );
-}
-
-/** Creates an unrecognized error to throw later before validation. */
-export function uErr<T>(n: Node<T>, raw: string): ParseError<T> {
-  // always use parent node for unrecognized arguments
-  const name = display(n);
-  // prettier-ignore
-  return new ParseError(ParseError.UNRECOGNIZED_ERROR, `${name ? name + 'does not recognize the' : 'Unrecognized'} argument: ${raw}`, n);
 }
 
 export function item<T>(
