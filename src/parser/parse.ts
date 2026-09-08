@@ -1,7 +1,7 @@
 /* eslint-disable prefer-const */
 import { ParseError } from '../lib/error';
 import { isOption } from '../lib/is-option';
-import { Alias, Config, InitializedConfig } from '../types/config.types';
+import { Config, InitializedConfig, Short } from '../types/config.types';
 import { Node } from '../types/node.types';
 import { Options } from '../types/options.types';
 import { Fallback, FallbackArgs } from '../types/spec.types';
@@ -233,9 +233,9 @@ export function parse<T>(
       continue;
     }
 
-    let aliases: Alias<T>[] = [],
-      alias: Alias<T> | undefined,
-      aVal: string | null | undefined, // alias value
+    let shorts: Short<T>[] = [],
+      short: Short<T> | undefined,
+      sVal: string | null | undefined, // short value
       rem: string | undefined, // remainder
       f = pc.cfg.fallback, // fallback function, remove `this` from function call
       res: ReturnType<Fallback<T>>; // fallback result
@@ -243,47 +243,48 @@ export function parse<T>(
     // handle split
     // require length of at least 3 since keys with length of 2
     // should have been matched before this
-    if (key.length > 2 && pc.cfg.aliasv && isOption(key, 'short')) {
-      // incomplete aliases parsed
+    if (key.length > 2 && pc.cfg.shortv && isOption(key, 'short')) {
+      // `inc` for incomplete short options parsed
       let inc: boolean, o: Options<T> | string;
 
-      // if an alias exists, stop loop if it requires a value or if not combinable
+      // if a short option exists,
+      // stop loop if it requires a value or if it's not combinable
       for (
         i = 1;
         (inc = i < key.length) &&
         !(
-          alias &&
-          ((o = alias.cfg.options).combinable === false ||
+          short &&
+          ((o = short.cfg.options).combinable === false ||
             (o.min != null && o.min > size(o.args)))
         ) &&
-        (ic = init(pc.cfg.alias[(o = key[i])])) &&
+        (ic = init(pc.cfg.short[(o = key[i])])) &&
         (cfg = getCfg(ic)) &&
-        (!alias || cfg.options.combinable !== false);
+        (!short || cfg.options.combinable !== false);
         i++
       ) {
-        // delay pushing the last alias to the next iteration instead
-        // so that the last alias is pushed outside only after condition checks
-        alias && aliases.push(alias);
-        alias = { key: o, ic, cfg };
+        // delay pushing the last short option to the next iteration instead
+        // so that it is pushed outside only after condition checks
+        short && shorts.push(short);
+        short = { key: o, ic, cfg };
       }
 
-      // if incomplete aliases parsed, check if the rest of the argument
+      // if incomplete short option parsed, check if the rest of the argument
       // can be assigned and also go through the fallback function
       // otherwise, use the parsed value if it can be assigned
 
-      if (!alias) {
-        // continue to fallback if no alias was parsed
+      if (!short) {
+        // continue to fallback if no short option was parsed
       } else if (
         inc &&
-        (o = alias.cfg.options).max != null &&
+        (o = short.cfg.options).max != null &&
         o.max <= size(o.args)
       ) {
         // if the config accepts no arguments, treat the rest as remainder
-        aliases.push(alias);
+        shorts.push(short);
         rem = key.slice(i);
-      } else if ((value == null && !inc) || assign(alias.cfg)) {
-        aliases.push(alias);
-        aVal = inc ? raw.slice(i) : value;
+      } else if ((value == null && !inc) || assign(short.cfg)) {
+        shorts.push(short);
+        sVal = inc ? raw.slice(i) : value;
 
         // skip fallback if parsed completely
         if (!inc) f = null;
@@ -322,12 +323,13 @@ export function parse<T>(
 
     // fallback done
 
-    if (aliases.length > 0) {
-      // process aliases (even partial)
-      for (i = 0; i < aliases.length; i++) {
+    if (shorts.length > 0) {
+      // process short options even if there is an unparsed part
+      for (i = 0; i < shorts.length; i++) {
         // prettier-ignore
-        node((alias = aliases[i]).cfg, raw, '-' + alias.key, i === aliases.length - 1 ? aVal : null, alias.ic.id);
+        node((short = shorts[i]).cfg, raw, '-' + short.key, i === shorts.length - 1 ? sVal : null, short.ic.id);
       }
+
       use();
     } else if (!rem) setArg(raw);
 

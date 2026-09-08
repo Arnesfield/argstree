@@ -4,8 +4,8 @@ import { Fallback } from './spec.types';
 
 // NOTE: internal
 
-export interface Alias<T> {
-  /** Either used as a single character key or an alias string. */
+export interface Short<T> {
+  /** Either used as a single character key or one short option. */
   key: string;
   ic: InitializedConfig<T>;
   cfg: Config<T>;
@@ -32,8 +32,8 @@ export type Config<T> = {
   fallback?: Fallback<T> | null;
 } & ({ mapv: true; map: ConfigMap<T> } | { mapv?: false; map?: ConfigMap<T> }) &
   (
-    | { aliasv: true; alias: ConfigMap<T> }
-    | { aliasv?: false; alias?: ConfigMap<T> }
+    | { shortv: true; short: ConfigMap<T> }
+    | { shortv?: false; short?: ConfigMap<T> }
   );
 
 export type InitializedConfig<T> = Config<T> | InitializedRefConfig<T>;
